@@ -28,7 +28,7 @@ for large models. If \code{NULL} (the default), all draws are used.}
 \value{
 A \code{\link[tibble]{tibble}} with the following columns:
 \describe{
-\item{\if{html}{\out{<group>}}}{The grouping variable (e.g., item name or person id).}
+\item{\code{group}}{The grouping variable (e.g., item name or person id).}
 \item{draw}{Integer index of the posterior draw.}
 \item{crit}{The observed fit statistic (criterion applied to observed
 data) summed within each group and draw.}

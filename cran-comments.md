@@ -16,6 +16,9 @@
 
 * This is a first submission.
 
+* "DIF", "Rasch", and "infit" are established psychometric terms,
+  not misspellings.
+
 * The package depends on 'brms', which requires a C++ toolchain for
   Stan model compilation. All examples and the vignette use
   `\dontrun{}` or pre-computed results to avoid long-running MCMC

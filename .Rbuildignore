@@ -10,3 +10,7 @@
 ^doc$
 ^Meta$
 ^CRAN-SUBMISSION$
+^cran-comments\.md$
+^vignettes/.*\.Rmd\.orig$
+^vignettes/precompile\.R$
+^vignettes/fits$

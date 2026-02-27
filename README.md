@@ -67,6 +67,19 @@ Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
 Stan. *Journal of Statistical Software*, *100*, 1–54.
 <https://doi.org/10.18637/jss.v100.i05>
 
+## Credits
+
+This started as a little side project to update the code posted by Bürkner (2020) 
+to assess item fit. With the help of Claude Opus 4.6 the things expanded to try to 
+reproduce the core Rasch analysis aspects. Most of the code in this package is
+produced by the LLM.
+
+[Magnus Johansson](https://ki.se/en/people/magnus-johansson-3) is a licensed psychologist with a PhD in behavior analysis. He works as a research specialist at [Karolinska Institutet](https://ki.se/en/cns/research/centre-for-psychiatry-research), Department of Clinical Neuroscience, Center for Psychiatry Research.
+
+- ORCID: [0000-0003-1669-592X](https://orcid.org/0000-0003-1669-592X)
+- Bluesky: [@pgmj.bsky.social](https://bsky.app/profile/pgmj.bsky.social) 
+- Mastodon: [@pgmj@scicomm.xyz](https://scicomm.xyz/@pgmj)
+
 ## License
 
 GPL (>= 3)
