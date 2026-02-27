@@ -130,9 +130,6 @@
 #' brms and Stan. \emph{Journal of Statistical Software}, \emph{100},
 #' 1--54. \doi{10.18637/jss.v100.i05}
 #'
-#' Holland, P. W. & Wainer, H. (1993). \emph{Differential Item
-#' Functioning}. Lawrence Erlbaum Associates.
-#'
 #' @seealso
 #' \code{\link{infit_statistic}} for item fit,
 #' \code{\link{q3_statistic}} for local dependence,

@@ -223,9 +223,6 @@ in Psychological Science}, \emph{1}(2), 270--280.
 Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
 brms and Stan. \emph{Journal of Statistical Software}, \emph{100},
 1--54. \doi{10.18637/jss.v100.i05}
-
-Holland, P. W. & Wainer, H. (1993). \emph{Differential Item
-Functioning}. Lawrence Erlbaum Associates.
 }
 \seealso{
 \code{\link{infit_statistic}} for item fit,
