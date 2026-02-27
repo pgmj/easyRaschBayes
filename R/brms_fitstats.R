@@ -312,7 +312,7 @@ fit_statistic_pcm <- function(model, criterion, group, ndraws_use = NULL) {
 #'
 #' @details
 #' This function is the binary-response counterpart of
-#' \code{\link{fit_statistic}}, which handles polytomous (ordinal /
+#' \code{\link{fit_statistic_pcm}}, which handles polytomous (ordinal /
 #' categorical) models. For dichotomous models, \code{posterior_epred()}
 #' returns a 2D matrix (S x N) of success probabilities, so the criterion
 #' function receives the observed binary response and the corresponding
@@ -499,7 +499,7 @@ fit_statistic_rm <- function(model, criterion, group,
 
   if (length(dim(ppe_mat)) == 3) {
     stop("Model appears to be ordinal/categorical (3D posterior_epred). ",
-         "Use fit_statistic() instead.", call. = FALSE)
+         "Use fit_statistic_pcm() instead.", call. = FALSE)
   }
 
   n_draws <- nrow(ppe_mat)
@@ -638,7 +638,9 @@ fit_statistic_rm <- function(model, criterion, group,
 #' \doi{10.1186/s40488-020-00108-7}
 #'
 #' @seealso
-#' \code{\link{fit_statistic}} for a general-purpose posterior predictive
+#' \code{\link{fit_statistic_pcm}} for a general-purpose posterior predictive
+#' fit statistic with user-supplied criterion functions,
+#' \code{\link{fit_statistic_rm}} for a general-purpose posterior predictive
 #' fit statistic with user-supplied criterion functions,
 #' \code{\link[brms]{posterior_epred}},
 #' \code{\link[brms]{posterior_predict}},

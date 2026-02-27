@@ -171,7 +171,9 @@ Müller, M. (2020). Item fit statistics for Rasch analysis: can we trust them?
 \doi{10.1186/s40488-020-00108-7}
 }
 \seealso{
-\code{\link{fit_statistic}} for a general-purpose posterior predictive
+\code{\link{fit_statistic_pcm}} for a general-purpose posterior predictive
+fit statistic with user-supplied criterion functions,
+\code{\link{fit_statistic_rm}} for a general-purpose posterior predictive
 fit statistic with user-supplied criterion functions,
 \code{\link[brms]{posterior_epred}},
 \code{\link[brms]{posterior_predict}},

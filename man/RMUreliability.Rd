@@ -24,15 +24,21 @@ A list containing:
 This function measures reliability using posterior draws from a fitted Bayesian model.
 }
 \details{
-To use this function, you will need to provide a matrix (input_draws) that contains the posterior draws for the parameter you wish to calculate reliability. The function assumes that rows of input_draws represent subjects and columns represent posterior draws.
+To use this function, you will need to provide a matrix (input_draws) that
+contains the posterior draws for the parameter you wish to calculate reliability.
+The function assumes that rows of input_draws represent subjects and columns represent posterior draws.
 
-For an example of how to apply this function to calculate mean score reliability using brms, see \href{https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html}{this tutorial}.
+For an example of how to apply this function to calculate mean score reliability
+using brms, see
+\href{https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html}{this tutorial}.
 
-For an example of how to apply this function to go/go-no task data using brms, see \href{https://www.bignardi.co.uk/8_bayes_reliability/tutorial_calculating_rmu_gonogo.html}{this tutorial}.
+For an example of how to apply this function to go/go-no task data using brms, see
+\href{https://www.bignardi.co.uk/8_bayes_reliability/tutorial_calculating_rmu_gonogo.html}{this tutorial}.
 }
 \examples{
 \dontrun{
-# See https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html for more details on this example
+# See https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html 
+for more details on this example
 
 # Simulate data
 

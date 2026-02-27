@@ -50,7 +50,7 @@ output to assess fit.
 }
 \details{
 This function is the binary-response counterpart of
-\code{\link{fit_statistic}}, which handles polytomous (ordinal /
+\code{\link{fit_statistic_pcm}}, which handles polytomous (ordinal /
 categorical) models. For dichotomous models, \code{posterior_epred()}
 returns a 2D matrix (S x N) of success probabilities, so the criterion
 function receives the observed binary response and the corresponding
