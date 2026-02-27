@@ -1,0 +1,49 @@
+url: https://pgmj.github.io/easyRaschBayes/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left:  [intro, reference, articles, news]
+    right: [github]
+  components:
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      menu:
+      - text: Vignettes
+        href: articles/index.html
+    news:
+      text: Changelog
+      href: news/index.html
+    github:
+      icon: fab fa-github
+      href: https://github.com/pgmj/easyRaschBayes/
+      aria-label: GitHub
+
+reference:
+- title: Item Fit
+  contents:
+  - fit_statistic_pcm
+  - fit_statistic_rm
+  - infit_statistic
+  - item_restscore_statistic
+- title: Local Dependence
+  contents:
+  - q3_statistic
+- title: Dimensionality
+  contents:
+  - plot_residual_pca
+- title: Differential Item Functioning
+  contents:
+  - dif_statistic
+- title: Plots
+  contents:
+  - plot_targeting
+  - plot_ipf
+- title: Reliability
+  contents:
+  - RMUreliability
