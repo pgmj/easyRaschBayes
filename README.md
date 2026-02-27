@@ -5,7 +5,7 @@
 
 **easyRaschBayes** provides functions to reproduce classic Rasch analysis
 features using Bayesian item response theory (IRT) models fitted with
-[brms](https://paul-buerkner.github.io/brms/). It supports both dichotomous
+[brms](https://paulbuerkner.com/brms/). It supports both dichotomous
 Rasch models and polytomous partial credit / rating scale models, and exposes
 the full posterior distribution for all output.
 
@@ -61,7 +61,7 @@ q3_statistic(fit)
 
 Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS) with 
 Bayesian Item Response Models. *Journal of Intelligence*, *8*(1). 
-<https://doi.org/10.3390/jintelligence8010005>
+DOI: 10.3390/jintelligence8010005
 
 Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
 Stan. *Journal of Statistical Software*, *100*, 1–54.
