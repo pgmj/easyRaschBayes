@@ -18,7 +18,7 @@
 #'   grouping variable in the model data. Default is \code{id}.
 #' @param center Logical. If \code{TRUE} (the default), item
 #'   locations are mean-centered to zero, matching the convention
-#'   used in \code{\link{plot_pim}}.
+#'   used in \code{\link{plot_targeting}}.
 #' @param prob Numeric in \eqn{(0, 1)}. Width of the credible
 #'   intervals for both loading and location whiskers. Default is
 #'   0.95.
@@ -115,7 +115,7 @@
 #' 1--54. \doi{10.18637/jss.v100.i05}
 #'
 #' @seealso
-#' \code{\link{plot_pim}} for person-item maps,
+#' \code{\link{plot_targeting}} for person-item maps,
 #' \code{\link{plot_ipf}} for item category probability curves,
 #' \code{\link{q3_statistic}} for Q3 residual correlations (another
 #' local dependence / dimensionality diagnostic).
@@ -579,7 +579,7 @@ plot_residual_pca <- function(
 }
 
 
-# ── Internal: extract threshold data (used by plot_pim) ──────────
+# ── Internal: extract threshold data (used by plot_targeting) ──────────
 #' @keywords internal
 .extract_threshold_data <- function(draws, model, unique_items,
                                     item_name, person_name,

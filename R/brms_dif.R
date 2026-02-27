@@ -205,7 +205,7 @@
 #'
 #' @importFrom brms brm bf as_draws_df ndraws
 #' @importFrom rlang enquo as_name .data
-#' @importFrom stats formula quantile sd update interaction
+#' @importFrom stats formula quantile sd update
 #' @importFrom tibble tibble
 #' @export
 dif_statistic <- function(

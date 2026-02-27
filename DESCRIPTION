@@ -4,7 +4,7 @@ Version: 0.1.0
 Authors@R: c(
     person("Magnus", "Johansson",
            role = c("aut", "cre"),
-           email = "magnus.p.johansson@ri.se",
+           email = "pgmj@pm.me",
            comment = c(ORCID = "0000-0003-1669-592X")),
     person("Giacomo", "Bignardi",
            role = "ctb",
@@ -22,7 +22,7 @@ License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1.0)
 Imports:

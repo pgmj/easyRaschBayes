@@ -25,13 +25,13 @@ remotes::install_github("pgmj/easyRaschBayes")
 | `dif_statistic()` | Differential Item Functioning (DIF) analysis |
 | `fit_statistic_pcm()` | Posterior predictive item fit for polytomous models |
 | `fit_statistic_rm()` | Posterior predictive item fit for dichotomous models |
-| `infit_statistic()` | Infit / outfit statistics |
-| `item_restscore_statistic()` | Item–rest score correlations |
+| `infit_statistic()` | Conditional infit / outfit statistics |
+| `item_restscore_statistic()` | Item–rest score associations with Goodman & Kruskal's gamma |
 | `plot_residual_pca()` | Residual PCA contrast plot for dimensionality assessment |
-| `q3_statistic()` | Q3 residual correlations for local dependence |
+| `q3_statistic()` | Yen's Q3 residual correlations for local dependence evaluation |
 | `plot_ipf()` | Item category probability function curves |
 | `plot_targeting()` | Person-item map (Wright map) |
-| `RMUreliability()` | Reliability via Relative Measurement Uncertainty |
+| `RMUreliability()` | Reliability via Relative Measurement Uncertainty (RMU) |
 
 ## Usage
 
@@ -48,7 +48,7 @@ fit <- brm(
 )
 
 # Item fit
-fit_statistic_rm(fit, criterion = "outfit", group = item)
+infit_statistic(fit)
 
 # Person-item map
 plot_targeting(fit)
@@ -58,6 +58,10 @@ q3_statistic(fit)
 ```
 
 ## References
+
+Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS) with 
+Bayesian Item Response Models. *Journal of Intelligence*, *8*(1). 
+<https://doi.org/10.3390/jintelligence8010005>
 
 Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
 Stan. *Journal of Statistical Software*, *100*, 1–54.

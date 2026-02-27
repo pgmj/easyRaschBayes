@@ -75,7 +75,7 @@
 #' reliability(posterior_draws)$hdci
 #' }
 #'
-#'
+#' @importFrom ggdist mean_hdci
 #' @export
 RMUreliability <- function(
     input_draws,

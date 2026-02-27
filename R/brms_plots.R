@@ -513,13 +513,13 @@ plot_ipf <- function(
 #' )
 #'
 #' # Default: centered, mean ± SD, items in data order
-#' plot_pim(fit_pcm)
+#' plot_targeting(fit_pcm)
 #'
 #' # Uncentered (raw brms parameterisation)
-#' plot_pim(fit_pcm, center = FALSE)
+#' plot_targeting(fit_pcm, center = FALSE)
 #'
 #' # Robust: median ± MAD, items sorted by location
-#' plot_pim(fit_pcm, robust = TRUE, sort_items = "location")
+#' plot_targeting(fit_pcm, robust = TRUE, sort_items = "location")
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
@@ -537,7 +537,7 @@ plot_ipf <- function(
 #'   iter   = 2000
 #' )
 #'
-#' plot_pim(fit_rm, sort_items = "location")
+#' plot_targeting(fit_rm, sort_items = "location")
 #' }
 #'
 #' @importFrom brms ranef as_draws_df
