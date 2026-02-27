@@ -45,7 +45,7 @@ fit_statistic_pcm(model, criterion, group, ndraws_use = NULL)
 A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
 the following columns:
 
-- :
+- `group`:
 
   The grouping variable (e.g., item name or person id).
 

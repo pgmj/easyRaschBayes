@@ -103,6 +103,13 @@ fit_stats %>%
     infit_rep = round(mean(infit_rep),3),
     infit_ppp = round(mean(infit_rep > infit),3)
   )
+#> # A tibble: 4 × 4
+#>   item  infit_obs infit_rep infit_ppp
+#>   <chr>     <dbl>     <dbl>     <dbl>
+#> 1 I1        1.04      0.998     0.262
+#> 2 I2        1.08      0.998     0.11 
+#> 3 I3        0.922     0.996     0.856
+#> 4 I4        1.03      0.995     0.312
 ```
 
 `infit_obs` indicates the observed conditional infit, which can be
@@ -126,6 +133,13 @@ rest_stats <- item_restscore_statistic(fit_pcm, ndraws_use = 500)
 
 rest_stats[,1:5] %>% 
   mutate(across(where(is.numeric), ~ round(.x, 3)))
+#> # A tibble: 4 × 5
+#>   item  gamma_obs gamma_rep gamma_diff   ppp
+#>   <chr>     <dbl>     <dbl>      <dbl> <dbl>
+#> 1 I3        0.643     0.532      0.11  0.968
+#> 2 I4        0.535     0.542     -0.007 0.466
+#> 3 I1        0.473     0.543     -0.07  0.1  
+#> 4 I2        0.441     0.548     -0.107 0.032
 ```
 
 The output is limited to columns 1 through 5 in the output above.
@@ -142,6 +156,10 @@ contrast suggest multidimensionality.
 pca <- plot_residual_pca(fit_pcm, ndraws_use = 500)
 pca$plot
 ```
+
+![plot of chunk pca-plot](figures/pca-plot-1.png)
+
+plot of chunk pca-plot
 
 Items with positive loadings cluster on one end, negative loadings on
 the other. If the observed largest eigenvalue is smaller than the
@@ -162,6 +180,13 @@ q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
 
 q3_stats %>% 
   filter(ppp > 0.95)
+#> # A tibble: 1 × 14
+#>   item_1 item_2 q3_obs  q3_rep q3_diff   ppp q3_obs_q025 q3_obs_q975
+#>   <chr>  <chr>   <dbl>   <dbl>   <dbl> <dbl>       <dbl>       <dbl>
+#> 1 I3     I4      0.342 0.00208   0.340     1       0.285       0.393
+#> # ℹ 6 more variables: q3_diff_q025 <dbl>, q3_diff_q975 <dbl>,
+#> #   q3_obs_q005 <dbl>, q3_obs_q995 <dbl>, q3_diff_q005 <dbl>,
+#> #   q3_diff_q995 <dbl>
 ```
 
 Pairs flagged as locally dependent should be examined for substantive
@@ -178,6 +203,10 @@ shown with the shaded area around each line.
 plot_ipf(fit_pcm, theta_range = c(-6,5))
 ```
 
+![plot of chunk ipf-plot](figures/ipf-plot-1.png)
+
+plot of chunk ipf-plot
+
 ## Person–Item Targeting
 
 [`plot_targeting()`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting.md)
@@ -189,6 +218,10 @@ distributions overlap substantially.
 ``` r
 plot_targeting(fit_pcm)
 ```
+
+![plot of chunk targeting](figures/targeting-1.png)
+
+plot of chunk targeting
 
 If the person distribution is systematically above or below the item
 thresholds, the test may be too easy or too hard for the sample.
@@ -210,6 +243,8 @@ person_draws <- fit_pcm %>%
   t()
 rmu <- RMUreliability(person_draws)
 rmu
+#>   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval
+#> 1    0.6728529       0.6132611       0.7265942   0.95   mean      hdci
 ```
 
 RMU values range from 0 to 1, with higher values indicating higher
