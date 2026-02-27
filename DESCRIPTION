@@ -44,4 +44,5 @@ Suggests:
     rmarkdown
 URL: https://github.com/pgmj/easyRaschBayes
 BugReports: https://github.com/pgmj/easyRaschBayes/issues
+VignetteBuilder: knitr
 Config/testthat/edition: 3
