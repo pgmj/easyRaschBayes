@@ -205,7 +205,7 @@
 #'
 #' @importFrom brms brm bf as_draws_df ndraws
 #' @importFrom rlang enquo as_name .data
-#' @importFrom stats formula quantile sd update
+#' @importFrom stats formula quantile sd update family as.formula
 #' @importFrom tibble tibble
 #' @export
 dif_statistic <- function(
@@ -270,7 +270,7 @@ dif_statistic <- function(
   lower_prob <- (1 - prob) / 2
   upper_prob <- 1 - lower_prob
 
-  family_name  <- family(model)$family
+  family_name  <- stats::family(model)$family
   is_ordinal   <- grepl("acat|cumul|sratio|cratio",
                         family_name, ignore.case = TRUE)
   unique_items <- unique(dif_data[[item_name]])
@@ -291,7 +291,7 @@ dif_statistic <- function(
         resp_text, " ~ ", rhs_text, " + ",
         group_name, ":", item_name
       )
-      dif_formula <- brms::bf(as.formula(dif_formula_text))
+      dif_formula <- brms::bf(stats::as.formula(dif_formula_text))
     } else {
       # Non-uniform: create item_group interaction for thres(gr = ...)
       ig_var <- ".item_group_dif"
@@ -304,11 +304,11 @@ dif_statistic <- function(
         resp_var, " | thres(gr = ", ig_var, ") ~ 1 + (1 | ",
         person_name, ")"
       )
-      dif_formula <- brms::bf(as.formula(dif_formula_text))
+      dif_formula <- brms::bf(stats::as.formula(dif_formula_text))
     }
   } else {
     # Dichotomous: always random slope
-    dif_formula <- brms::bf(as.formula(paste0(
+    dif_formula <- brms::bf(stats::as.formula(paste0(
       deparse(base_formula[[2]], width.cutoff = 500),
       " ~ 1 + ", group_name,
       " + (1 + ", group_name, " | ", item_name, ")",
