@@ -4,3 +4,8 @@
 .Ruserdata
 *.Rproj
 .DS_Store
+inst/doc
+docs/
+*.o
+*.so
+*.dll
