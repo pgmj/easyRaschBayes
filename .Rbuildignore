@@ -7,3 +7,5 @@
 ^_pkgdown\.yml$
 ^pkgdown$
 ^vignettes/fits$
+^doc$
+^Meta$

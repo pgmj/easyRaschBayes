@@ -10,3 +10,5 @@ docs/
 *.so
 *.dll
 vignettes/fits/
+/doc/
+/Meta/

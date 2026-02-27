@@ -112,6 +112,7 @@
 #' @importFrom brms as_draws_df
 #' @importFrom rlang enquo as_name
 #' @importFrom stats formula quantile plogis family
+#' @importFrom tidyr as_tibble
 #' @export
 plot_ipf <- function(
     model,
@@ -169,7 +170,7 @@ plot_ipf <- function(
   theta_grid <- seq(theta_range[1], theta_range[2], length.out = n_points)
 
   # --- Extract posterior draws ---
-  draws <- brms::as_draws_df(model)
+  draws <- tidyr::as_tibble(brms::as_draws_df(model))
   n_draws_total <- nrow(draws)
   family_name <- stats::family(model)$family
   is_acat   <- grepl("acat", family_name, ignore.case = TRUE)
@@ -779,7 +780,7 @@ plot_targeting <- function(
     )
   ) +
     ggplot2::geom_errorbarh(
-      height = 0.25, linewidth = 0.5,
+      width = 0.25, linewidth = 0.5,
       position = ggplot2::position_dodge(width = 0.4)
     ) +
     ggplot2::geom_point(

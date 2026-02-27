@@ -18,12 +18,19 @@ EVAL <- file.exists("fits/fit_pcm.rds")
 
 ## Overview
 
-This vignette demonstrates a complete Partial Credit Model (PCM) Rasch analysis
+This vignette demonstrates a Partial Credit Model (PCM) Rasch analysis
 workflow using `easyRaschBayes`. The analysis uses the `eRm::pcmdat2` dataset, a
 small polytomous item response data set included in the `eRm` package.
 
-All functions in this package work with a `brms` model object fitted with the
-`acat` (adjacent categories) family, which parameterises the PCM.
+All functions in this package work with a Bayesian `brms` model object fitted with the
+`acat` (adjacent categories) family, which parameterises the PCM. Dichotomous 
+Rasch models can also be fit using `brms` and analyzed with the functions in
+this package. A code example is available 
+[here](https://pgmj.github.io/reliability.html#rasch-dichotomous-model).
+
+There is brief text explaining the output and interpretation in this vignette.
+For a more extensive treatment of the Rasch analysis steps, please see the
+[`easyRasch` vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html).
 
 ## Data Preparation
 
@@ -68,8 +75,7 @@ fit_pcm <- brm(
   prior   = prior_pcm,
   chains  = 4,
   cores   = 4,
-  iter    = 2000,
-  backend = "cmdstanr"
+  iter    = 2000
 )
 saveRDS(fit_pcm, "fits/fit_pcm.rds")
 ```
@@ -90,23 +96,23 @@ speeds up computation during exploration. For final reporting, use all draws
 (set `ndraws_use = NULL` or omit it).
 
 ```{r infit, eval = EVAL}
-fit_stats <- infit_statistic(fit_pcm, df_pcm, ndraws_use = 500)
+fit_stats <- infit_statistic(fit_pcm, ndraws_use = 500)
 
 # Posterior predictive p-values summarised per item
 fit_stats %>%
   group_by(item) %>%
   summarise(
-    infit_mean  = mean(infit),
-    outfit_mean = mean(outfit),
-    infit_ppp   = mean(infit > 1),
-    outfit_ppp  = mean(outfit > 1),
-    .groups = "drop"
+    infit_obs = round(mean(infit),3),
+    infit_rep = round(mean(infit_rep),3),
+    infit_ppp = round(mean(infit_rep > infit),3)
   )
 ```
 
-Posterior predictive p-values (`*_ppp`) close to 0.5 indicate that the observed
-statistic falls near the centre of the posterior predictive distribution,
-implying good fit. Values near 0 or 1 warrant further investigation.
+`infit_obs` indicates the observed conditional infit, which can be compared to `infit_rep`, 
+which is akin to the model expected value. Posterior predictive p-values (`*_ppp`) 
+close to 0.5 indicate that the observed statistic falls near the centre of the 
+posterior predictive distribution, implying good fit. Values near 0 or 1 warrant 
+further investigation.
 
 ## Item–Rest Score Association
 
@@ -117,54 +123,58 @@ values may indicate redundancy, very low or negative values suggest the item
 does not relate well to the latent trait.
 
 ```{r restscore, eval = EVAL}
-rest_stats <- item_restscore_statistic(fit_pcm, df_pcm, ndraws_use = 500)
+rest_stats <- item_restscore_statistic(fit_pcm, ndraws_use = 500)
 
-rest_stats %>%
-  group_by(item) %>%
-  summarise(
-    gamma_mean = mean(gamma),
-    gamma_ppp  = mean(gamma < 0),
-    .groups = "drop"
-  )
+rest_stats[,1:5] %>% 
+  mutate(across(where(is.numeric), ~ round(.x, 3)))
 ```
+The output is limited to columns 1 through 5 in the output above.
 
 ## Dimensionality: Residual PCA
 
 `plot_residual_pca()` performs a principal components analysis on the
-person-item residuals and plots the loadings on the first contrast. Substantial
-loadings on the first contrast (eigenvalue > 1.5–2 is a common heuristic)
-suggest multidimensionality.
+person-item residuals and plots the loadings on the first contrast together with 
+the item locations and the uncertainty of both. Substantial
+loadings on the first contrast suggest multidimensionality.
 
 ```{r pca-plot, eval = EVAL, fig.width = 6, fig.height = 4}
-plot_residual_pca(fit_pcm, df_pcm)
+pca <- plot_residual_pca(fit_pcm, ndraws_use = 500)
+pca$plot
 ```
 
 Items with positive loadings cluster on one end, negative loadings on the other.
-If the contrast eigenvalue is small the residuals are essentially noise,
-supporting unidimensionality.
+If the observed largest eigenvalue is smaller than the replicated, unidimensionality
+is supported. The ppp should not be close to 1.
 
 ## Local Dependence: Q3 Residual Correlations
 
 `q3_statistic()` computes Yen's Q3 statistic — the correlation between
 person-item residuals for every item pair. After conditioning on the latent
 trait, residuals should be uncorrelated; elevated Q3 values indicate local
-dependence (LD). A common rule of thumb is to flag pairs with Q3 above the
-average Q3 plus 0.2.
+dependence (LD). Our primary metric here is the ppp, that should not be close to 1.
+The output is filtered on ppp values above 0.95.
 
 ```{r q3, eval = EVAL}
-q3_stats <- q3_statistic(fit_pcm, df_pcm, ndraws_use = 500)
+q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
 
-# Mean Q3 baseline (model-expected correlation under Rasch assumptions)
-q3_baseline <- mean(q3_stats$q3_mean, na.rm = TRUE)
-
-# Flag pairs exceeding the baseline by 0.2
-q3_stats %>%
-  filter(q3_mean > q3_baseline + 0.2) %>%
-  arrange(desc(q3_mean))
+q3_stats %>% 
+  filter(ppp > 0.95)
 ```
 
 Pairs flagged as locally dependent should be examined for substantive overlap
 in item content.
+
+## Item Category Probabilities
+
+This plot shows the probability of using a response category on the y axis and
+the latent score on the x axis. The crossover points, where lines meet, are the 
+item category threshold locations. Uncertainty is shown with the shaded area around
+each line.
+
+```{r ipf-plot, eval = EVAL, fig.width = 6, fig.height = 4}
+plot_ipf(fit_pcm, theta_range = c(-6,5))
+```
+
 
 ## Person–Item Targeting
 
@@ -174,7 +184,7 @@ the same logit scale. Good targeting occurs when person and item distributions
 overlap substantially.
 
 ```{r targeting, eval = EVAL, fig.width = 6, fig.height = 5}
-plot_targeting(fit_pcm, df_pcm)
+plot_targeting(fit_pcm)
 ```
 
 If the person distribution is systematically above or below the item thresholds,
@@ -183,17 +193,18 @@ the test may be too easy or too hard for the sample.
 ## Reliability: Relative Measurement Uncertainty
 
 `RMUreliability()` provides a Bayesian reliability estimate via Relative
-Measurement Uncertainty (RMU). It requires a matrix of person location draws
-with dimensions \[persons × draws\].
-
-The `brms::ranef()` function with `summary = FALSE` returns a 3-D array
-\[draws × persons × effects\]; we extract the `Intercept` slice and transpose.
+Measurement Uncertainty (RMU, see Bignardi et al., 2025). It requires a matrix 
+of person location draws with dimensions \[persons × draws\]. The output is a 
+point estimate and lower/upper 95% highest density continuous intervals (HDCI).
 
 ```{r rmu, eval = EVAL}
-person_draws <- brms::ranef(fit_pcm, summary = FALSE)$id[, , "Intercept"]
-rmu <- RMUreliability(t(person_draws))
+person_draws <- fit_pcm %>%
+  as_draws_df() %>%
+  as_tibble() %>% 
+  select(starts_with("r_id")) %>%
+  t()
+rmu <- RMUreliability(person_draws)
 rmu
 ```
 
-RMU values closer to 1 indicate that the measurement error is small relative to
-the variance in person locations, implying high reliability.
+RMU values range from 0 to 1, with higher values indicating higher reliability, similarly to traditional reliability metrics.
