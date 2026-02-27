@@ -3,8 +3,8 @@
 **easyRaschBayes** provides functions to reproduce classic Rasch
 analysis features using Bayesian item response theory (IRT) models
 fitted with [brms](https://paulbuerkner.com/brms/). It supports both
-dichotomous Rasch models and polytomous partial credit / rating scale
-models, and exposes the full posterior distribution for all output.
+dichotomous Rasch models and polytomous partial credit models, and
+exposes the full posterior distribution for all output.
 
 ## Installation
 
