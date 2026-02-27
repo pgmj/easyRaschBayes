@@ -111,7 +111,7 @@
 #'
 #' @importFrom brms as_draws_df
 #' @importFrom rlang enquo as_name
-#' @importFrom stats formula quantile plogis
+#' @importFrom stats formula quantile plogis family
 #' @export
 plot_ipf <- function(
     model,
@@ -171,9 +171,7 @@ plot_ipf <- function(
   # --- Extract posterior draws ---
   draws <- brms::as_draws_df(model)
   n_draws_total <- nrow(draws)
-  family_name <- family(model)$family
-
-  # Determine family type
+  family_name <- stats::family(model)$family
   is_acat   <- grepl("acat", family_name, ignore.case = TRUE)
   is_cumul  <- grepl("cumul", family_name, ignore.case = TRUE)
   is_sratio <- grepl("sratio", family_name, ignore.case = TRUE)
@@ -542,7 +540,7 @@ plot_ipf <- function(
 #'
 #' @importFrom brms ranef as_draws_df
 #' @importFrom rlang enquo as_name .data
-#' @importFrom stats formula quantile median mad sd aggregate
+#' @importFrom stats formula quantile median mad sd aggregate family
 #' @export
 plot_targeting <- function(
     model,
@@ -601,7 +599,7 @@ plot_targeting <- function(
   draws <- brms::as_draws_df(model)
   unique_items_data_order <- unique(model$data[[item_name]])
   unique_items <- sort(unique(model$data[[item_name]]))
-  family_name <- family(model)$family
+  family_name <- stats::family(model)$family
   is_ordinal <- grepl("acat|cumul|sratio|cratio",
                       family_name, ignore.case = TRUE)
 

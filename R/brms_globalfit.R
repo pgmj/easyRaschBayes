@@ -168,7 +168,7 @@
 #'
 #' @importFrom brms posterior_epred posterior_predict ndraws as_draws_df
 #' @importFrom rlang enquo as_name .data
-#' @importFrom stats formula quantile complete.cases aggregate
+#' @importFrom stats formula quantile complete.cases aggregate family
 #' @importFrom tibble tibble
 #' @importFrom grDevices colorRampPalette
 #' @importFrom tidyr as_tibble
@@ -321,7 +321,7 @@ plot_residual_pca <- function(
 
   # --- Item locations with full posterior (draw-level) ---
   draws_df <- tidyr::as_tibble(brms::as_draws_df(model))
-  family_name <- family(model)$family
+  family_name <- stats::family(model)$family
   is_ordinal <- grepl("acat|cumul|sratio|cratio",
                       family_name, ignore.case = TRUE)
 
