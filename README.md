@@ -61,7 +61,7 @@ q3_statistic(fit)
 
 Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS) with 
 Bayesian Item Response Models. *Journal of Intelligence*, *8*(1). 
-DOI: 10.3390/jintelligence8010005
+<doi:10.3390/jintelligence8010005>
 
 Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
 Stan. *Journal of Statistical Software*, *100*, 1–54.
