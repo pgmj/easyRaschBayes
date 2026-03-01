@@ -160,7 +160,7 @@
 #' result_w <- plot_residual_pca(
 #'   fit_pcm,
 #'   density_palette = c("#FEE8C8", "#FDBB84", "#E34A33",
-#'                       "#B30000", "#7F0000", "#4A0000")
+#'                       "#B30000", "#7F0000", "#4A0000"),
 #'   point_color = "#B30000"
 #' )
 #' result_w$plot
@@ -188,18 +188,18 @@ plot_residual_pca <- function(
     point_size = 2.5,
     point_color = "#0072B2"
 ) {
-
+  
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required.", call. = FALSE)
   }
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
-
+  
   style <- match.arg(style)
   item_name   <- rlang::as_name(rlang::enquo(item_var))
   person_name <- rlang::as_name(rlang::enquo(person_var))
-
+  
   if (!item_name %in% names(model$data)) {
     stop("Item variable '", item_name, "' not found in model data.",
          call. = FALSE)
@@ -208,13 +208,13 @@ plot_residual_pca <- function(
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
-
+  
   resp_var <- as.character(formula(model)$formula[[2]])
   if (length(resp_var) > 1) resp_var <- resp_var[2]
-
+  
   lower_prob <- (1 - prob) / 2
   upper_prob <- 1 - lower_prob
-
+  
   # --- Draw subset ---
   if (is.null(ndraws_use)) {
     ndraws_use <- min(brms::ndraws(model), 500)
@@ -222,94 +222,111 @@ plot_residual_pca <- function(
     ndraws_use <- min(as.integer(ndraws_use), brms::ndraws(model))
   }
   draw_ids <- sample(seq_len(brms::ndraws(model)), ndraws_use)
-
+  
   # --- Posterior predictions ---
   epred_array <- brms::posterior_epred(model, draw_ids = draw_ids)
   yrep_mat    <- brms::posterior_predict(model, draw_ids = draw_ids)
-
+  
   n_draws <- dim(epred_array)[1]
   n_obs   <- dim(epred_array)[2]
   obs_response <- model$data[[resp_var]]
-
-  # --- E and Var per draw x observation ---
+  
+  # =================================================================
+  # Compute E_mat and Var_mat — VECTORIZED
+  # =================================================================
   if (length(dim(epred_array)) == 3) {
     n_cat <- dim(epred_array)[3]
     cat_values <- seq_len(n_cat)
-    E_mat <- apply(epred_array, c(1, 2), function(p) sum(cat_values * p))
-    Var_mat <- matrix(NA_real_, nrow = n_draws, ncol = n_obs)
-    for (s in seq_len(n_draws)) {
-      for (n in seq_len(n_obs)) {
-        Var_mat[s, n] <- sum((cat_values - E_mat[s, n])^2 *
-                               epred_array[s, n, ])
-      }
-    }
+    dim_orig <- dim(epred_array)
+    
+    # Reshape [S x N x C] -> [S*N x C], then matrix-multiply by cat_values
+    ep_2d <- matrix(epred_array, nrow = dim_orig[1] * dim_orig[2],
+                    ncol = dim_orig[3])
+    E_vec <- ep_2d %*% cat_values                # [S*N x 1]
+    E_mat <- matrix(E_vec, nrow = n_draws, ncol = n_obs)
+    
+    # Var = sum_c (c - E)^2 * P(c) — fully vectorized
+    E_expanded <- E_vec[, rep(1L, n_cat)]         # [S*N x C]
+    cat_mat <- matrix(cat_values, nrow = nrow(ep_2d), ncol = n_cat,
+                      byrow = TRUE)
+    Var_vec <- rowSums((cat_mat - E_expanded)^2 * ep_2d)
+    Var_mat <- matrix(Var_vec, nrow = n_draws, ncol = n_obs)
   } else {
     E_mat   <- epred_array
     Var_mat <- epred_array * (1 - epred_array)
   }
-
+  
   Var_mat[Var_mat < 1e-12] <- 1e-12
   sd_mat <- sqrt(Var_mat)
-
-  # --- Standardized residuals ---
-  obs_mat    <- matrix(obs_response, nrow = n_draws, ncol = n_obs,
-                       byrow = TRUE)
-  zresid_obs <- (obs_mat - E_mat) / sd_mat
-  zresid_rep <- (yrep_mat - E_mat) / sd_mat
-
-  # --- Person x item mapping ---
+  
+  # =================================================================
+  # Standardized residuals [S x N] — vectorized
+  # =================================================================
+  obs_mat       <- matrix(obs_response, nrow = n_draws, ncol = n_obs,
+                          byrow = TRUE)
+  std_resid_obs <- (obs_mat - E_mat) / sd_mat
+  std_resid_rep <- (yrep_mat - E_mat) / sd_mat
+  
+  # --- Map observations to person x item positions ---
   items   <- model$data[[item_name]]
   persons <- model$data[[person_name]]
   unique_items   <- unique(items)
   unique_persons <- unique(persons)
   k <- length(unique_items)
   n_persons <- length(unique_persons)
-
+  
   person_idx <- match(persons, unique_persons)
   item_idx   <- match(items, unique_items)
-
-  # --- PCA per draw: observed AND replicated ---
+  
+  # Pre-compute linear index for fast scatter into person x item matrix
+  lin_idx <- person_idx + (item_idx - 1L) * n_persons
+  
+  # =================================================================
+  # PCA per draw — vectorized scatter + SVD
+  # =================================================================
   loadings_obs_draws <- matrix(NA_real_, nrow = n_draws, ncol = k)
   eigen_obs_draws    <- rep(NA_real_, n_draws)
   eigen_rep_draws    <- rep(NA_real_, n_draws)
   varexp_obs_draws   <- rep(NA_real_, n_draws)
   varexp_rep_draws   <- rep(NA_real_, n_draws)
-
+  
   for (s in seq_len(n_draws)) {
+    # Scatter residuals into person x item matrix via linear index
     resid_obs_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
     resid_rep_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
-
-    for (obs in seq_len(n_obs)) {
-      resid_obs_wide[person_idx[obs], item_idx[obs]] <- zresid_obs[s, obs]
-      resid_rep_wide[person_idx[obs], item_idx[obs]] <- zresid_rep[s, obs]
-    }
-
-    complete_obs <- complete.cases(resid_obs_wide)
-    complete_rep <- complete.cases(resid_rep_wide)
-    resid_obs_c <- resid_obs_wide[complete_obs, , drop = FALSE]
-    resid_rep_c <- resid_rep_wide[complete_rep, , drop = FALSE]
-
-    if (nrow(resid_obs_c) < 3 || nrow(resid_rep_c) < 3) next
-
-    sv_obs <- svd(resid_obs_c, nu = 0, nv = min(k, 2))
+    resid_obs_wide[lin_idx] <- std_resid_obs[s, ]
+    resid_rep_wide[lin_idx] <- std_resid_rep[s, ]
+    
+    # Drop rows with any NA (persons who didn't answer all items)
+    complete <- stats::complete.cases(resid_obs_wide)
+    if (sum(complete) < 3) next
+    
+    resid_obs_c <- resid_obs_wide[complete, , drop = FALSE]
+    resid_rep_c <- resid_rep_wide[complete, , drop = FALSE]
+    
+    # SVD (nu = 0, nv = 1 for speed — we only need first right singular vector)
+    sv_obs <- svd(resid_obs_c, nu = 0, nv = 1)
+    sv_rep <- svd(resid_rep_c, nu = 0, nv = 1)
+    
     loadings_obs_draws[s, ] <- sv_obs$v[, 1]
     eigen_obs_draws[s] <- sv_obs$d[1]^2 / (nrow(resid_obs_c) - 1)
     total_var_obs <- sum(sv_obs$d^2) / (nrow(resid_obs_c) - 1)
     varexp_obs_draws[s] <- eigen_obs_draws[s] / total_var_obs
-
-    sv_rep <- svd(resid_rep_c, nu = 0, nv = min(k, 2))
+    
     eigen_rep_draws[s] <- sv_rep$d[1]^2 / (nrow(resid_rep_c) - 1)
     total_var_rep <- sum(sv_rep$d^2) / (nrow(resid_rep_c) - 1)
     varexp_rep_draws[s] <- eigen_rep_draws[s] / total_var_rep
   }
-
-  # --- Resolve sign indeterminacy ---
+  
+  # =================================================================
+  # Resolve sign indeterminacy
+  # =================================================================
   ref_idx <- which(!is.na(loadings_obs_draws[, 1]))[1]
   if (is.na(ref_idx)) {
     stop("Could not compute residual PCA for any draw.", call. = FALSE)
   }
   ref_sign <- sign(loadings_obs_draws[ref_idx, ])
-
+  
   for (s in seq_len(n_draws)) {
     if (is.na(loadings_obs_draws[s, 1])) next
     agreement <- sum(sign(loadings_obs_draws[s, ]) == ref_sign,
@@ -318,46 +335,50 @@ plot_residual_pca <- function(
       loadings_obs_draws[s, ] <- -loadings_obs_draws[s, ]
     }
   }
-
-  # --- Item locations with full posterior (draw-level) ---
+  
+  # =================================================================
+  # Item locations with full posterior (draw-level)
+  # =================================================================
   draws_df <- tidyr::as_tibble(brms::as_draws_df(model))
   family_name <- stats::family(model)$family
   is_ordinal <- grepl("acat|cumul|sratio|cratio",
                       family_name, ignore.case = TRUE)
-
+  
   loc_draws_list <- .extract_item_location_draws(
     draws_df, model, unique_items, item_name, person_name, is_ordinal
   )
-
+  
   loc_draws_mat <- matrix(NA_real_, nrow = n_draws, ncol = k)
   for (i in seq_len(k)) {
     loc_draws_mat[, i] <- loc_draws_list[[i]][draw_ids]
   }
-
+  
   if (center) {
     shift_per_draw <- rowMeans(loc_draws_mat, na.rm = TRUE)
     loc_draws_mat <- loc_draws_mat - shift_per_draw
   }
-
+  
   # Summarize locations
   loc_mean  <- colMeans(loc_draws_mat, na.rm = TRUE)
   loc_lower <- apply(loc_draws_mat, 2, stats::quantile,
                      probs = lower_prob, na.rm = TRUE)
   loc_upper <- apply(loc_draws_mat, 2, stats::quantile,
                      probs = upper_prob, na.rm = TRUE)
-
+  
   # --- Summarize loadings ---
   loading_mean  <- colMeans(loadings_obs_draws, na.rm = TRUE)
   loading_lower <- apply(loadings_obs_draws, 2, stats::quantile,
                          probs = lower_prob, na.rm = TRUE)
   loading_upper <- apply(loadings_obs_draws, 2, stats::quantile,
                          probs = upper_prob, na.rm = TRUE)
-
-  # --- Eigenvalue posterior predictive comparison ---
+  
+  # =================================================================
+  # Eigenvalue posterior predictive comparison
+  # =================================================================
   valid <- !is.na(eigen_obs_draws) & !is.na(eigen_rep_draws) &
     eigen_obs_draws > 0 & eigen_rep_draws > 0
   ppp_eigen <- mean(eigen_obs_draws[valid] > eigen_rep_draws[valid])
-
+  
   eigenvalue_summary <- tibble::tibble(
     eigenvalue_obs    = mean(eigen_obs_draws[valid]),
     eigenvalue_rep    = mean(eigen_rep_draws[valid]),
@@ -367,8 +388,10 @@ plot_residual_pca <- function(
     var_explained_obs = mean(varexp_obs_draws[valid]),
     var_explained_rep = mean(varexp_rep_draws[valid])
   )
-
-  # --- Build summary output data ---
+  
+  # =================================================================
+  # Build summary output data
+  # =================================================================
   plot_df <- tibble::tibble(
     item           = unique_items,
     location       = loc_mean,
@@ -378,7 +401,7 @@ plot_residual_pca <- function(
     loading_lower  = loading_lower,
     loading_upper  = loading_upper
   )
-
+  
   # --- Build draw-level long data for density plots ---
   valid_draws <- which(!is.na(loadings_obs_draws[, 1]))
   draws_long_list <- vector("list", k)
@@ -391,10 +414,12 @@ plot_residual_pca <- function(
     )
   }
   draws_long <- do.call(rbind, draws_long_list)
-
-  # --- Density fill palette ---
+  
+  # =================================================================
+  # Density fill palette
+  # =================================================================
   # First value is always transparent (region outside all contours)
-  # Remaining values are the actual contour fills (low → high density)
+  # Remaining values are the actual contour fills (low -> high density)
   if (is.null(density_palette)) {
     contour_colors <- grDevices::colorRampPalette(
       c("#DCEEF8", "#88BEDC", "#3A8EC2", "#0A5C96", "#003560")
@@ -409,10 +434,10 @@ plot_residual_pca <- function(
     }
   }
   fill_values <- c("transparent", contour_colors)
-
-
-
-  # --- Build plot ---
+  
+  # =================================================================
+  # Build plot
+  # =================================================================
   subtitle_text <- paste0(
     "First contrast eigenvalue: observed = ",
     round(eigenvalue_summary$eigenvalue_obs, 2),
@@ -421,10 +446,10 @@ plot_residual_pca <- function(
     ", ppp = ",
     round(eigenvalue_summary$ppp, 3)
   )
-
+  
   p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = .data$location,
                                              y = .data$loading))
-
+  
   # Density layer
   if (style %in% c("density", "both")) {
     p <- p +
@@ -441,8 +466,8 @@ plot_residual_pca <- function(
         guide  = "none"
       )
   }
-
-  # Zero line
+  
+  # Zero lines
   p <- p +
     ggplot2::geom_hline(
       yintercept = 0, linetype = "dashed", colour = "grey50"
@@ -450,54 +475,53 @@ plot_residual_pca <- function(
     ggplot2::geom_vline(
       xintercept = 0, linetype = "dashed", colour = "grey50"
     )
-
+  
   # Crosshair layer
   if (style %in% c("crosshair", "both")) {
-    crosshair_alpha <- 1 #if (style == "both") 0.7 else 0.5
+    crosshair_alpha <- 1
     p <- p +
-      ggplot2::geom_errorbarh(
+      ggplot2::geom_errorbar(
         ggplot2::aes(xmin = .data$location_lower,
                      xmax = .data$location_upper),
-        width = 0, linewidth = 0.4, colour = point_color,
-        alpha = crosshair_alpha
+        height = 0, colour = point_color, alpha = crosshair_alpha,
+        linewidth = 0.4,
+        orientation = "y"
       ) +
-      ggplot2::geom_errorbar(
+      ggplot2::geom_linerange(
         ggplot2::aes(ymin = .data$loading_lower,
                      ymax = .data$loading_upper),
-        width = 0, linewidth = 0.4, colour = point_color,
-        alpha = crosshair_alpha
+        colour = point_color, alpha = crosshair_alpha,
+        linewidth = 0.4
       )
   }
-
-  # Points always shown
+  
+  # Points
   p <- p +
     ggplot2::geom_point(size = point_size, colour = point_color)
-
+  
   # Labels
   if (label_items) {
     if (requireNamespace("ggrepel", quietly = TRUE)) {
-      p <- p + ggrepel::geom_text_repel(
-        ggplot2::aes(label = .data$item),
-        size = 4, colour = "grey30",
-        max.overlaps = Inf,
-        segment.colour = "grey70"
-      )
+      p <- p +
+        ggrepel::geom_text_repel(
+          ggplot2::aes(label = .data$item),
+          size = 3, colour = "grey30",
+          max.overlaps = Inf,
+          seed = 42
+        )
     } else {
-      p <- p + ggplot2::geom_text(
-        ggplot2::aes(label = .data$item),
-        size = 4, colour = "grey30",
-        vjust = -1, hjust = 0.5
-      )
+      p <- p +
+        ggplot2::geom_text(
+          ggplot2::aes(label = .data$item),
+          size = 3, colour = "grey30",
+          nudge_y = 0.02
+        )
     }
   }
-
+  
   p <- p +
     ggplot2::labs(
-      x = if (center) {
-        expression("Centered item location" ~ (delta))
-      } else {
-        expression("Item location" ~ (delta))
-      },
+      x        = "Item location (logits)",
       y        = "Loading on first residual contrast",
       subtitle = subtitle_text
     ) +
@@ -506,11 +530,14 @@ plot_residual_pca <- function(
       panel.background = ggplot2::element_rect(fill = "white"),
       plot.background  = ggplot2::element_rect(fill = "white",
                                                colour = NA),
-      panel.grid.major = ggplot2::element_line(colour = "grey92"),
-      panel.grid.minor = ggplot2::element_blank()
+      legend.position  = "none"
     )
-
-  list(plot = p, data = plot_df, eigenvalue = eigenvalue_summary)
+  
+  list(
+    plot       = p,
+    data       = plot_df,
+    eigenvalue = eigenvalue_summary
+  )
 }
 
 

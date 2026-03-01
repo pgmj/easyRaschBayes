@@ -34,13 +34,13 @@
 #'     higher than replicated).}
 #'   \item{q3_obs_q025, q3_obs_q975}{2.5\% and 97.5\% quantiles
 #'     (95\% credible interval) of the posterior distribution of
-#'     observed Q3.}
-#'   \item{q3_obs_q005, q3_obs_q995}{0.5\% and 99.5\% quantiles
-#'     (99\% credible interval) of the posterior distribution of
-#'     observed Q3.}
+#'     observed Q3 correlations.}
 #'   \item{q3_diff_q025, q3_diff_q975}{2.5\% and 97.5\% quantiles
 #'     (95\% credible interval) of the posterior distribution of
 #'     Q3 differences.}
+#'   \item{q3_obs_q005, q3_obs_q995}{0.5\% and 99.5\% quantiles
+#'     (99\% credible interval) of the posterior distribution of
+#'     observed Q3 correlations.}
 #'   \item{q3_diff_q005, q3_diff_q995}{0.5\% and 99.5\% quantiles
 #'     (99\% credible interval) of the posterior distribution of
 #'     Q3 differences.}
@@ -76,20 +76,17 @@
 #' Yen, W. M. (1984). Effects of local item dependence on the fit and
 #' equating performance of the three-parameter logistic model.
 #' \emph{Applied Psychological Measurement}, \emph{8}(2), 125--145.
-#'
+#' \doi{10.1177/014662168400800201}
+#' 
 #' Christensen, K. B., Makransky, G. & Horton, M. (2017). Critical
 #' values for Yen's Q3: Identification of local dependence in the
 #' Rasch model using residual correlations.
 #' \emph{Applied Psychological Measurement}, \emph{41}(3), 178--194.
 #' \doi{10.1177/0146621616677520}
 #'
-#' Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS)
-#' with Bayesian Item Response Models. \emph{Journal of Intelligence},
-#' \emph{8}(1). \doi{10.3390/jintelligence8010005}
-#'
-#' Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
-#' and Stan. \emph{Journal of Statistical Software}, \emph{100}, 1--54.
-#' \doi{10.18637/jss.v100.i05}
+#' Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
+#' brms and Stan. \emph{Journal of Statistical Software}, \emph{100},
+#' 1--54. \doi{10.18637/jss.v100.i05}
 #'
 #' @seealso
 #' \code{\link{fit_statistic_pcm}} for posterior predictive fit statistics
@@ -156,21 +153,14 @@
 #'   iter   = 2000
 #' )
 #'
-#' q3_rm <- q3_statistic(
-#'   model      = fit_rm,
-#'   item_var   = item,
-#'   person_var = id,
-#'   ndraws_use = 500
-#' )
-#'
+#' q3_rm <- q3_statistic(fit_rm, ndraws_use = 500)
 #' q3_rm %>%
 #'   filter(ppp > 0.95)
 #' }
 #'
 #' @importFrom brms posterior_epred posterior_predict ndraws
-#' @importFrom dplyr group_by summarise arrange filter desc
-#' @importFrom rlang enquo !! .data as_name
-#' @importFrom tibble as_tibble
+#' @importFrom dplyr arrange desc
+#' @importFrom rlang enquo .data as_name
 #' @importFrom stats formula setNames cor quantile
 #' @export
 q3_statistic <- function(model, item_var = item, person_var = id,
@@ -178,12 +168,12 @@ q3_statistic <- function(model, item_var = item, person_var = id,
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
-
+  
   item_quo    <- rlang::enquo(item_var)
   person_quo  <- rlang::enquo(person_var)
   item_name   <- rlang::as_name(item_quo)
   person_name <- rlang::as_name(person_quo)
-
+  
   # --- Extract response variable name ---
   resp_var <- as.character(formula(model)$formula[[2]])
   if (length(resp_var) > 1) {
@@ -201,7 +191,7 @@ q3_statistic <- function(model, item_var = item, person_var = id,
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
-
+  
   # --- Determine posterior draw subset ---
   draw_ids <- NULL
   if (!is.null(ndraws_use)) {
@@ -217,88 +207,121 @@ q3_statistic <- function(model, item_var = item, person_var = id,
     }
     draw_ids <- sample(seq_len(total_draws), ndraws_use)
   }
-
+  
   # --- Posterior predictions ---
   epred_array <- brms::posterior_epred(model, draw_ids = draw_ids)
   yrep_mat    <- brms::posterior_predict(model, draw_ids = draw_ids)
-
+  
   n_draws <- dim(epred_array)[1]
   n_obs   <- dim(epred_array)[2]
   obs_response <- model$data[[resp_var]]
-
-  # --- Compute expected values per draw x observation ---
+  
+  # =================================================================
+  # Compute expected values  E_mat [S x N]  — VECTORIZED
+  # =================================================================
   if (length(dim(epred_array)) == 3) {
     n_cat <- dim(epred_array)[3]
     cat_values <- seq_len(n_cat)
-    E_mat <- apply(epred_array, c(1, 2), function(p) sum(cat_values * p))
+    dim_orig <- dim(epred_array)
+    ep_2d <- matrix(epred_array, nrow = dim_orig[1] * dim_orig[2],
+                    ncol = dim_orig[3])
+    E_vec <- ep_2d %*% cat_values
+    E_mat <- matrix(E_vec, nrow = n_draws, ncol = n_obs)
   } else {
     E_mat <- epred_array
   }
-
-  # --- Compute residuals ---
-  obs_mat   <- matrix(obs_response, nrow = n_draws, ncol = n_obs, byrow = TRUE)
+  
+  # --- Compute residuals [S x N] ---
+  obs_mat   <- matrix(obs_response, nrow = n_draws, ncol = n_obs,
+                      byrow = TRUE)
   resid_obs <- obs_mat - E_mat
   resid_rep <- yrep_mat - E_mat
-
-  # --- Reshape residuals to person x item matrices per draw ---
+  
+  # --- Map observations to person x item positions ---
   items   <- model$data[[item_name]]
   persons <- model$data[[person_name]]
   unique_items   <- sort(unique(items))
   unique_persons <- sort(unique(persons))
   k <- length(unique_items)
   n_persons <- length(unique_persons)
-
+  
   person_idx <- match(persons, unique_persons)
   item_idx   <- match(items, unique_items)
-
-  # Item pair indices
+  
+  # =================================================================
+  # Build a linear index for fast scatter into person x item matrices
+  # lin_idx[obs] = person_idx[obs] + (item_idx[obs] - 1) * n_persons
+  # =================================================================
+  lin_idx <- person_idx + (item_idx - 1L) * n_persons
+  
+  # Item pair indices (upper triangle)
   pair_grid <- expand.grid(j = seq_len(k), i = seq_len(k))
   pair_grid <- pair_grid[pair_grid$i < pair_grid$j, ]
   pair_grid <- pair_grid[order(pair_grid$i, pair_grid$j), ]
   n_pairs <- nrow(pair_grid)
-
+  
+  # =================================================================
+  # Pre-compute per-pair valid person masks and centring denominators
+  # (These are constant across draws since missingness is structural)
+  # =================================================================
+  # Build a logical n_persons x k matrix of which cells are observed
+  has_response <- matrix(FALSE, nrow = n_persons, ncol = k)
+  has_response[lin_idx] <- TRUE
+  
+  pair_i_vec <- pair_grid$i
+  pair_j_vec <- pair_grid$j
+  
+  # For each pair, valid persons = those who answered both items
+  
+  # Pre-compute column indices for each item (obs-level positions)
+  item_obs_idx <- vector("list", k)
+  for (j in seq_len(k)) {
+    item_obs_idx[[j]] <- which(item_idx == j)
+  }
+  
+  # =================================================================
+  # Vectorized Q3 computation per draw
+  # =================================================================
+  # Strategy: for each draw, scatter residuals into person x item
+  # matrices using linear indexing (single vectorized assignment),
+  # then compute all pairwise correlations at once via a correlation
+  # matrix on the person x item residual matrix.
+  # =================================================================
   q3_obs_draws <- matrix(NA_real_, nrow = n_draws, ncol = n_pairs)
   q3_rep_draws <- matrix(NA_real_, nrow = n_draws, ncol = n_pairs)
-
+  
   for (s in seq_len(n_draws)) {
+    # Scatter residuals into person x item matrix in one step
     resid_obs_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
     resid_rep_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
-
-    for (obs in seq_len(n_obs)) {
-      resid_obs_wide[person_idx[obs], item_idx[obs]] <- resid_obs[s, obs]
-      resid_rep_wide[person_idx[obs], item_idx[obs]] <- resid_rep[s, obs]
-    }
-
+    resid_obs_wide[lin_idx] <- resid_obs[s, ]
+    resid_rep_wide[lin_idx] <- resid_rep[s, ]
+    
+    # Compute full k x k correlation matrix (handles NAs pairwise)
+    cor_obs <- stats::cor(resid_obs_wide, use = "pairwise.complete.obs")
+    cor_rep <- stats::cor(resid_rep_wide, use = "pairwise.complete.obs")
+    
+    # Extract upper-triangle pairs
     for (p in seq_len(n_pairs)) {
-      i <- pair_grid$i[p]
-      j <- pair_grid$j[p]
-
-      valid <- !is.na(resid_obs_wide[, i]) & !is.na(resid_obs_wide[, j])
-      if (sum(valid) > 2) {
-        q3_obs_draws[s, p] <- stats::cor(
-          resid_obs_wide[valid, i], resid_obs_wide[valid, j]
-        )
-        q3_rep_draws[s, p] <- stats::cor(
-          resid_rep_wide[valid, i], resid_rep_wide[valid, j]
-        )
-      }
+      q3_obs_draws[s, p] <- cor_obs[pair_i_vec[p], pair_j_vec[p]]
+      q3_rep_draws[s, p] <- cor_rep[pair_i_vec[p], pair_j_vec[p]]
     }
   }
-
+  
   # --- Summarise across draws ---
   q3_diff_draws <- q3_obs_draws - q3_rep_draws
-
+  
   result <- data.frame(
     item_1 = unique_items[pair_grid$i],
     item_2 = unique_items[pair_grid$j],
     stringsAsFactors = FALSE
   )
-
+  
   result$q3_obs  <- colMeans(q3_obs_draws, na.rm = TRUE)
   result$q3_rep  <- colMeans(q3_rep_draws, na.rm = TRUE)
   result$q3_diff <- colMeans(q3_diff_draws, na.rm = TRUE)
   result$ppp     <- colMeans(q3_obs_draws > q3_rep_draws, na.rm = TRUE)
-
+  
   # 95% credible intervals
   result$q3_obs_q025  <- apply(q3_obs_draws, 2, stats::quantile,
                                probs = 0.025, na.rm = TRUE)
@@ -308,7 +331,7 @@ q3_statistic <- function(model, item_var = item, person_var = id,
                                probs = 0.025, na.rm = TRUE)
   result$q3_diff_q975 <- apply(q3_diff_draws, 2, stats::quantile,
                                probs = 0.975, na.rm = TRUE)
-
+  
   # 99% credible intervals
   result$q3_obs_q005  <- apply(q3_obs_draws, 2, stats::quantile,
                                probs = 0.005, na.rm = TRUE)
@@ -318,9 +341,9 @@ q3_statistic <- function(model, item_var = item, person_var = id,
                                probs = 0.005, na.rm = TRUE)
   result$q3_diff_q995 <- apply(q3_diff_draws, 2, stats::quantile,
                                probs = 0.995, na.rm = TRUE)
-
+  
   result <- tibble::as_tibble(result)
   result <- dplyr::arrange(result, dplyr::desc(.data$q3_diff))
-
+  
   result
 }
