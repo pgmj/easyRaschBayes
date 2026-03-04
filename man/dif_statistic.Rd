@@ -151,7 +151,7 @@ evidence of DIF at the specified credibility level.}
 }
 }
 \examples{
-\dontrun{
+\donttest{
 library(brms)
 library(dplyr)
 library(tidyr)

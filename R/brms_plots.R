@@ -72,7 +72,7 @@
 #' \code{\link[mirt]{itemplot}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)
@@ -487,7 +487,7 @@ plot_ipf <- function(
 #' \code{\link[brms]{as_draws_df}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)

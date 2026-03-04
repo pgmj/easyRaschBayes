@@ -75,7 +75,7 @@
 #' \code{\link[brms]{pp_check}} for graphical posterior predictive checks.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)
@@ -351,7 +351,7 @@ fit_statistic_pcm <- function(model, criterion, group, ndraws_use = NULL) {
 #' \code{\link[brms]{pp_check}} for graphical posterior predictive checks.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)
@@ -647,7 +647,7 @@ fit_statistic_rm <- function(model, criterion, group,
 #' \code{\link[brms]{pp_check}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)
@@ -963,7 +963,7 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' \code{\link[brms]{posterior_predict}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)

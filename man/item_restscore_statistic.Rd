@@ -92,7 +92,7 @@ violation of the Rasch assumption). Items with \code{ppp} close to
 0 discriminate less than expected.
 }
 \examples{
-\dontrun{
+\donttest{
 library(brms)
 library(dplyr)
 library(tidyr)

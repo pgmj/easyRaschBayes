@@ -78,7 +78,7 @@ redundancy). Posterior predictive p-values near 0 or 1 indicate
 misfit.
 }
 \examples{
-\dontrun{
+\donttest{
 library(brms)
 library(dplyr)
 library(tidyr)

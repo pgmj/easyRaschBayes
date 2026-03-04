@@ -95,7 +95,7 @@ Bayesian advantage over point-estimate-based plots from packages
 like \pkg{mirt} or \pkg{eRm}.
 }
 \examples{
-\dontrun{
+\donttest{
 library(brms)
 library(dplyr)
 library(tidyr)

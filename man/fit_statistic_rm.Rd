@@ -74,7 +74,7 @@ The standard criterion for binary models is the Bernoulli log-likelihood:
 \deqn{\ell(y, p) = y \log(p) + (1 - y) \log(1 - p).}
 }
 \examples{
-\dontrun{
+\donttest{
 library(brms)
 library(dplyr)
 library(tidyr)
