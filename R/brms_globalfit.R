@@ -121,7 +121,7 @@
 #' local dependence / dimensionality diagnostic).
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)
@@ -160,7 +160,7 @@
 #' result_w <- plot_residual_pca(
 #'   fit_pcm,
 #'   density_palette = c("#FEE8C8", "#FDBB84", "#E34A33",
-#'                       "#B30000", "#7F0000", "#4A0000")
+#'                       "#B30000", "#7F0000", "#4A0000"),
 #'   point_color = "#B30000"
 #' )
 #' result_w$plot

@@ -101,7 +101,7 @@
 #' \code{\link[brms]{posterior_predict}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)

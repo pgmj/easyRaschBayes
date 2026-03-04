@@ -31,9 +31,9 @@
 #' Bignardi, G., Kievit, R., & Bürkner, P. C. (2025). A general method for estimating reliability using Bayesian Measurement Uncertainty. PsyArXiv. \href{https://osf.io/preprints/psyarxiv/h54k8}{doi:10.31234/osf.io/h54k8}
 #'
 #' @examples
-#' \dontrun{
-#' # See https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html 
-#' for more details on this example
+#' \donttest{
+#' # See https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html
+#' # for more details on this example
 #'
 #' # Simulate data
 #'

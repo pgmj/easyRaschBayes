@@ -85,7 +85,7 @@ accounting for parameter uncertainty and the negative bias inherent
 in Q3 (which depends on test length and person ability distribution).
 }
 \examples{
-\dontrun{
+\donttest{
 library(brms)
 library(dplyr)
 library(tidyr)

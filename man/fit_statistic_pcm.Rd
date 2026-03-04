@@ -72,7 +72,7 @@ log-likelihood criterion \code{function(y, p) log(p)}. For binary
 instead.
 }
 \examples{
-\dontrun{
+\donttest{
 library(brms)
 library(dplyr)
 library(tidyr)

@@ -137,7 +137,7 @@
 #' \code{\link[brms]{hypothesis}}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(brms)
 #' library(dplyr)
 #' library(tidyr)

@@ -21,7 +21,7 @@
 
 * The package depends on 'brms', which requires a C++ toolchain for
   Stan model compilation. All examples and the vignette use
-  `\dontrun{}` or pre-computed results to avoid long-running MCMC
+  `\donttest{}` or pre-computed results to avoid long-running MCMC
   sampling during checks.
 
 * The vignette is designed to display code without evaluation on CRAN

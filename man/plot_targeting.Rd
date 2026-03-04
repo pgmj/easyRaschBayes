@@ -115,7 +115,7 @@ zero-centered item difficulty convention used in frequentist CML
 estimation.
 }
 \examples{
-\dontrun{
+\donttest{
 library(brms)
 library(dplyr)
 library(tidyr)

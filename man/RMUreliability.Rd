@@ -36,9 +36,9 @@ For an example of how to apply this function to go/go-no task data using brms, s
 \href{https://www.bignardi.co.uk/8_bayes_reliability/tutorial_calculating_rmu_gonogo.html}{this tutorial}.
 }
 \examples{
-\dontrun{
-# See https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html 
-for more details on this example
+\donttest{
+# See https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html
+# for more details on this example
 
 # Simulate data
 
