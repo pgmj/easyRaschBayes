@@ -140,8 +140,8 @@
 #'   data   = df_pcm,
 #'   family = acat,
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores  = 1, # use more cores if you have
+#'   iter   = 500 # use at least 2000 
 #' )
 #'
 #' # 2D density contours (default)

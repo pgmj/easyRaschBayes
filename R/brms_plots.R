@@ -91,8 +91,8 @@
 #'   data   = df_pcm,
 #'   family = acat,
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores  = 1, # use more cores if you have
+#'   iter   = 500 # use at least 2000 
 #' )
 #'
 #' # Plot all items
@@ -507,8 +507,8 @@ plot_ipf <- function(
 #'   data   = df_pcm,
 #'   family = acat,
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores  = 1, # use more cores if you have
+#'   iter   = 500 # use at least 2000 
 #' )
 #'
 #' # Default: centered, mean ± SD, items in data order
@@ -532,8 +532,8 @@ plot_ipf <- function(
 #'   data   = df_rm,
 #'   family = bernoulli(),
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores  = 1, # use more cores if you have
+#'   iter   = 500 # use at least 2000 
 #' )
 #'
 #' plot_targeting(fit_rm, sort_items = "location")

@@ -37,6 +37,9 @@
 #'
 #' # Simulate data
 #'
+#' library(dplyr)
+#' library(tidyr)
+#' library(brms)
 #' set.seed(1)
 #' N                   = 5000 # number of subjects (mice)
 #' J                   = 3    # number of measurements per subject
@@ -66,19 +69,22 @@
 #'
 #' brms_model = brm(
 #'   measurement ~ 1 + (1 | mouse),
-#'   data    = df
+#'   data    = df, 
+#'   iter = 500,
+#'   warmup = 150
 #' )
 #'
 #' # Extract posterior draws from brms model
 #'
 #' posterior_draws = brms_model %>%
 #'   as_draws_df() %>%
+#'   as_tibble %>% 
 #'   select(starts_with("r_mouse")) %>%
 #'   t()
 #'
 #' # Calculate RMU
 #'
-#' reliability(posterior_draws)$hdci
+#' RMUreliability(posterior_draws)$hdci
 #' }
 #'
 #' @importFrom ggdist mean_hdci

@@ -14,7 +14,16 @@
 
 ## Notes
 
-* This is a first submission.
+* This is a resubmission. In this version I have:
+
+* Fixed unexecutable code in examples for `plot_residual_pca` 
+  (missing comma) and `RMUreliability` (uncommented line).
+* Replaced all `\dontrun{}` with `\donttest{}` in examples, 
+  since they can be executed but take longer than 5 seconds 
+  due to MCMC sampling. I have reduced the sampling in the 
+  examples to reduce their processing time.
+
+* Notes since prior submission:
 
 * "DIF", "Rasch", and "infit" are established psychometric terms,
   not misspellings.

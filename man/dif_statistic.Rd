@@ -175,7 +175,9 @@ fit_base <- brm(
   response ~ 1 + (1 | item) + (1 | id),
   data   = df,
   family = bernoulli(),
-  chains = 4, cores = 4, iter = 2000
+  chains = 4, 
+  cores  = 2, # use more cores if you have
+  iter   = 1000 # use at least 2000 
 )
 
 dif_result <- dif_statistic(
@@ -200,7 +202,9 @@ fit_pcm <- brm(
   response | thres(gr = item) ~ 1 + (1 | id),
   data   = df_pcm,
   family = acat,
-  chains = 4, cores = 4, iter = 2000
+  chains = 4, 
+  cores  = 2, # use more cores if you have
+  iter   = 1000 # use at least 2000 
 )
 
 # Uniform DIF (default): one shift per item

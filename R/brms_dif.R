@@ -161,7 +161,9 @@
 #'   response ~ 1 + (1 | item) + (1 | id),
 #'   data   = df,
 #'   family = bernoulli(),
-#'   chains = 4, cores = 4, iter = 2000
+#'   chains = 4, 
+#'   cores  = 2, # use more cores if you have
+#'   iter   = 1000 # use at least 2000 
 #' )
 #'
 #' dif_result <- dif_statistic(
@@ -186,7 +188,9 @@
 #'   response | thres(gr = item) ~ 1 + (1 | id),
 #'   data   = df_pcm,
 #'   family = acat,
-#'   chains = 4, cores = 4, iter = 2000
+#'   chains = 4, 
+#'   cores  = 2, # use more cores if you have
+#'   iter   = 1000 # use at least 2000 
 #' )
 #'
 #' # Uniform DIF (default): one shift per item
@@ -436,7 +440,7 @@ dif_statistic <- function(
   has_threshold <- "threshold" %in% names(summary_df)
 
   if (has_threshold) {
-    summary_df$label <- paste0(summary_df$item, " [\u03C4",
+    summary_df$label <- paste0(summary_df$item, " [t",
                                summary_df$threshold, "]")
     summary_df$label <- factor(
       summary_df$label,

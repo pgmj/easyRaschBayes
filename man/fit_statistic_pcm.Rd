@@ -92,8 +92,8 @@ fit_pcm <- brm(
   data    = df_pcm,
   family  = acat,
   chains  = 4,
-  cores   = 4,
-  iter    = 2000
+  cores   = 1, # use more cores if you have
+  iter    = 500 # use at least 2000 
 )
 
 # Categorical log-likelihood criterion (for polytomous models)
@@ -104,7 +104,7 @@ item_fit <- fit_statistic_pcm(
   model      = fit_pcm,
   criterion  = ll_categorical,
   group      = item,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 
 # Summarise: posterior predictive p-values per item
@@ -130,7 +130,7 @@ person_fit <- fit_statistic_pcm(
   model      = fit_pcm,
   criterion  = ll_categorical,
   group      = id,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 }
 

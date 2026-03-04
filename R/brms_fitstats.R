@@ -95,8 +95,8 @@
 #'   data    = df_pcm,
 #'   family  = acat,
 #'   chains  = 4,
-#'   cores   = 4,
-#'   iter    = 2000
+#'   cores   = 1, # use more cores if you have
+#'   iter    = 500 # use at least 2000 
 #' )
 #'
 #' # Categorical log-likelihood criterion (for polytomous models)
@@ -107,7 +107,7 @@
 #'   model      = fit_pcm,
 #'   criterion  = ll_categorical,
 #'   group      = item,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'
 #' # Summarise: posterior predictive p-values per item
@@ -133,7 +133,7 @@
 #'   model      = fit_pcm,
 #'   criterion  = ll_categorical,
 #'   group      = id,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'}
 #'
@@ -371,8 +371,8 @@ fit_statistic_pcm <- function(model, criterion, group, ndraws_use = NULL) {
 #'   data   = df_rm,
 #'   family = bernoulli(),
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores   = 1, # use more cores if you have
+#'   iter    = 500 # use at least 2000 
 #' )
 #'
 #' # Bernoulli log-likelihood criterion
@@ -383,7 +383,7 @@ fit_statistic_pcm <- function(model, criterion, group, ndraws_use = NULL) {
 #'   model      = fit_rm,
 #'   criterion  = ll_bernoulli,
 #'   group      = item,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'
 #' # Summarise: posterior predictive p-values per item
@@ -409,7 +409,7 @@ fit_statistic_pcm <- function(model, criterion, group, ndraws_use = NULL) {
 #'   model      = fit_rm,
 #'   criterion  = ll_bernoulli,
 #'   group      = id,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'
 #' person_fit %>%
@@ -428,15 +428,15 @@ fit_statistic_pcm <- function(model, criterion, group, ndraws_use = NULL) {
 #'   data   = df_rm,
 #'   family = bernoulli(),
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores   = 1, # use more cores if you have
+#'   iter    = 500 # use at least 2000 
 #' )
 #'
 #' item_fit_1pl <- fit_statistic_rm(
 #'   model      = fit_1pl,
 #'   criterion  = ll_bernoulli,
 #'   group      = item,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'
 #' item_fit_1pl %>%
@@ -665,16 +665,14 @@ fit_statistic_rm <- function(model, criterion, group,
 #'   data   = df_pcm,
 #'   family = acat,
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores  = 1, # use more cores if you have
+#'   iter   = 500 # use at least 2000 
 #' )
 #'
 #' # Compute infit per item
 #' item_infit <- infit_statistic(
 #'   model      = fit_pcm,
-#'   item_var   = item,
-#'   person_var = id,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'
 #' # Summarise across draws
@@ -698,15 +696,13 @@ fit_statistic_rm <- function(model, criterion, group,
 #'   data   = df_rm,
 #'   family = bernoulli(),
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores  = 1, # use more cores if you have
+#'   iter   = 500 # use at least 2000 
 #' )
 #'
 #' item_infit_rm <- infit_statistic(
 #'   model      = fit_rm,
-#'   item_var   = item,
-#'   person_var = id,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'
 #' item_infit_rm %>%
@@ -981,16 +977,14 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #'   data   = df_pcm,
 #'   family = acat,
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores  = 1, # use more cores if you have
+#'   iter   = 500 # use at least 2000 
 #' )
 #'
 #' # Item-restscore association
 #' irs <- item_restscore_statistic(
 #'   model      = fit_pcm,
-#'   item_var   = item,
-#'   person_var = id,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'
 #' # Flag items with too-strong discrimination (ppp > 0.95)
@@ -1011,15 +1005,13 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #'   data   = df_rm,
 #'   family = bernoulli(),
 #'   chains = 4,
-#'   cores  = 4,
-#'   iter   = 2000
+#'   cores  = 1, # use more cores if you have
+#'   iter   = 500 # use at least 2000 
 #' )
 #'
 #' irs_rm <- item_restscore_statistic(
 #'   model      = fit_rm,
-#'   item_var   = item,
-#'   person_var = id,
-#'   ndraws_use = 500
+#'   ndraws_use = 100 # use at least 500
 #' )
 #'
 #' irs_rm %>%

@@ -96,16 +96,14 @@ fit_pcm <- brm(
   data   = df_pcm,
   family = acat,
   chains = 4,
-  cores  = 4,
-  iter   = 2000
+  cores  = 1, # use more cores if you have
+  iter   = 500 # use at least 2000 
 )
 
 # Compute infit per item
 item_infit <- infit_statistic(
   model      = fit_pcm,
-  item_var   = item,
-  person_var = id,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 
 # Summarise across draws
@@ -129,15 +127,13 @@ fit_rm <- brm(
   data   = df_rm,
   family = bernoulli(),
   chains = 4,
-  cores  = 4,
-  iter   = 2000
+  cores  = 1, # use more cores if you have
+  iter   = 500 # use at least 2000 
 )
 
 item_infit_rm <- infit_statistic(
   model      = fit_rm,
-  item_var   = item,
-  person_var = id,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 
 item_infit_rm \%>\%

@@ -42,6 +42,9 @@ For an example of how to apply this function to go/go-no task data using brms, s
 
 # Simulate data
 
+library(dplyr)
+library(tidyr)
+library(brms)
 set.seed(1)
 N                   = 5000 # number of subjects (mice)
 J                   = 3    # number of measurements per subject
@@ -71,19 +74,22 @@ cor(df_average_lengths$average_measurement, true_scores)^2
 
 brms_model = brm(
   measurement ~ 1 + (1 | mouse),
-  data    = df
+  data    = df, 
+  iter = 500,
+  warmup = 150
 )
 
 # Extract posterior draws from brms model
 
 posterior_draws = brms_model \%>\%
   as_draws_df() \%>\%
+  as_tibble \%>\% 
   select(starts_with("r_mouse")) \%>\%
   t()
 
 # Calculate RMU
 
-reliability(posterior_draws)$hdci
+RMUreliability(posterior_draws)$hdci
 }
 
 }
