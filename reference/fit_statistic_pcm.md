@@ -121,7 +121,7 @@ graphical posterior predictive checks.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(brms)
 library(dplyr)
 library(tidyr)
@@ -144,6 +144,8 @@ fit_pcm <- brm(
   cores   = 4,
   iter    = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Categorical log-likelihood criterion (for polytomous models)
 ll_categorical <- function(y, p) log(p)
@@ -155,6 +157,7 @@ item_fit <- fit_statistic_pcm(
   group      = item,
   ndraws_use = 500
 )
+#> Error: object 'fit_pcm' not found
 
 # Summarise: posterior predictive p-values per item
 item_fit %>%
@@ -164,6 +167,7 @@ item_fit %>%
     replicated = mean(crit_rep),
     ppp        = mean(crit_rep > crit)
   )
+#> Error: object 'item_fit' not found
 
 # Use ggplot2 to make a histogram
 library(ggplot2)
@@ -173,6 +177,7 @@ item_fit %>%
   facet_wrap("item") +
   theme_bw() +
   theme(legend.position = "none")
+#> Error: object 'item_fit' not found
 
 # Compute person fit statistics
 person_fit <- fit_statistic_pcm(
@@ -181,5 +186,6 @@ person_fit <- fit_statistic_pcm(
   group      = id,
   ndraws_use = 500
 )
-} # }
+#> Error: object 'fit_pcm' not found
+# }
 ```

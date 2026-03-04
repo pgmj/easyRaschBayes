@@ -203,9 +203,26 @@ for local dependence,
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(brms)
+#> Loading required package: Rcpp
+#> Loading 'brms' package (version 2.23.0). Useful instructions
+#> can be found by typing help('brms'). A more detailed introduction
+#> to the package is available through vignette('brms_overview').
+#> 
+#> Attaching package: ‘brms’
+#> The following object is masked from ‘package:stats’:
+#> 
+#>     ar
 library(dplyr)
+#> 
+#> Attaching package: ‘dplyr’
+#> The following objects are masked from ‘package:stats’:
+#> 
+#>     filter, lag
+#> The following objects are masked from ‘package:base’:
+#> 
+#>     intersect, setdiff, setequal, union
 library(tidyr)
 library(tibble)
 
@@ -229,15 +246,20 @@ fit_base <- brm(
   family = bernoulli(),
   chains = 4, cores = 4, iter = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 dif_result <- dif_statistic(
   model     = fit_base,
   group_var = gender,
   data      = df
 )
+#> Error: object 'fit_base' not found
 
 dif_result$summary
+#> Error: object 'dif_result' not found
 dif_result$plot
+#> Error: object 'dif_result' not found
 
 # --- Partial Credit Model: uniform DIF ---
 
@@ -254,15 +276,22 @@ fit_pcm <- brm(
   family = acat,
   chains = 4, cores = 4, iter = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Uniform DIF (default): one shift per item
 dif_uni <- dif_statistic(fit_pcm, group_var = gender, data = df_pcm)
+#> Error: object 'fit_pcm' not found
 dif_uni$plot
+#> Error: object 'dif_uni' not found
 
 # Non-uniform DIF: threshold-level effects
 dif_nu <- dif_statistic(fit_pcm, group_var = gender, data = df_pcm,
                          dif_type = "non-uniform")
+#> Error: object 'fit_pcm' not found
 dif_nu$summary
+#> Error: object 'dif_nu' not found
 dif_nu$plot
-} # }
+#> Error: object 'dif_nu' not found
+# }
 ```

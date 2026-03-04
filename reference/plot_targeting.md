@@ -149,7 +149,7 @@ for item category probability curves,
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(brms)
 library(dplyr)
 library(tidyr)
@@ -172,15 +172,20 @@ fit_pcm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Default: centered, mean ± SD, items in data order
 plot_targeting(fit_pcm)
+#> Error: object 'fit_pcm' not found
 
 # Uncentered (raw brms parameterisation)
 plot_targeting(fit_pcm, center = FALSE)
+#> Error: object 'fit_pcm' not found
 
 # Robust: median ± MAD, items sorted by location
 plot_targeting(fit_pcm, robust = TRUE, sort_items = "location")
+#> Error: object 'fit_pcm' not found
 
 # --- Dichotomous Rasch Model ---
 
@@ -188,6 +193,7 @@ df_rm <- eRm::rainger %>%
   as.data.frame() %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
+#> Error: 'rainger' is not an exported object from 'namespace:eRm'
 
 fit_rm <- brm(
   response ~ 1 + (1 | item) + (1 | id),
@@ -197,7 +203,9 @@ fit_rm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Error: object 'df_rm' not found
 
 plot_targeting(fit_rm, sort_items = "location")
-} # }
+#> Error: object 'fit_rm' not found
+# }
 ```

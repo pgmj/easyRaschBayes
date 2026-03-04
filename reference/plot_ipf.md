@@ -130,7 +130,7 @@ and Stan. *Journal of Statistical Software*, *100*, 1–54.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(brms)
 library(dplyr)
 library(tidyr)
@@ -152,18 +152,23 @@ fit_pcm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Plot all items
 plot_ipf(fit_pcm, item_var = item, person_var = id)
+#> Error: object 'fit_pcm' not found
 
 # Plot a subset of items
 plot_ipf(fit_pcm, item_var = item, person_var = id,
          items = c("I1", "I2", "I3"))
+#> Error: object 'fit_pcm' not found
 
 # Customise appearance
 plot_ipf(fit_pcm, item_var = item, person_var = id,
          theta_range = c(-6, 6), ncol = 3, prob = 0.90) +
   theme_minimal() +
   labs(title = "Item Category Probability Functions")
-} # }
+#> Error: object 'fit_pcm' not found
+# }
 ```

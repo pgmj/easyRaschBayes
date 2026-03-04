@@ -156,7 +156,7 @@ for Bayesian Q3 residual correlations,
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(brms)
 library(dplyr)
 library(tidyr)
@@ -177,6 +177,8 @@ fit_pcm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Item-restscore association
 irs <- item_restscore_statistic(
@@ -185,12 +187,15 @@ irs <- item_restscore_statistic(
   person_var = id,
   ndraws_use = 500
 )
+#> Error: object 'fit_pcm' not found
 
 # Flag items with too-strong discrimination (ppp > 0.95)
 irs %>% filter(ppp > 0.95)
+#> Error: object 'irs' not found
 
 # Flag items with too-weak discrimination (ppp < 0.05)
 irs %>% filter(ppp < 0.05)
+#> Error: object 'irs' not found
 
 # --- Dichotomous Rasch Model ---
 
@@ -198,6 +203,7 @@ df_rm <- eRm::rainger %>%
   as.data.frame() %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
+#> Error: 'rainger' is not an exported object from 'namespace:eRm'
 
 fit_rm <- brm(
   response ~ 1 + (1 | item) + (1 | id),
@@ -207,6 +213,7 @@ fit_rm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Error: object 'df_rm' not found
 
 irs_rm <- item_restscore_statistic(
   model      = fit_rm,
@@ -214,8 +221,10 @@ irs_rm <- item_restscore_statistic(
   person_var = id,
   ndraws_use = 500
 )
+#> Error: object 'fit_rm' not found
 
 irs_rm %>%
   arrange(ppp)
-} # }
+#> Error: object 'irs_rm' not found
+# }
 ```

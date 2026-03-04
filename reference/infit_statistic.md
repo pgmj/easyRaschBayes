@@ -143,7 +143,7 @@ user-supplied criterion functions,
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(brms)
 library(dplyr)
 library(tidyr)
@@ -164,6 +164,8 @@ fit_pcm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Compute infit per item
 item_infit <- infit_statistic(
@@ -172,6 +174,7 @@ item_infit <- infit_statistic(
   person_var = id,
   ndraws_use = 500
 )
+#> Error: object 'fit_pcm' not found
 
 # Summarise across draws
 item_infit %>%
@@ -181,6 +184,7 @@ item_infit %>%
     infit_rep = mean(infit_rep),
     infit_ppp = mean(infit_rep > infit)
   )
+#> Error: object 'item_infit' not found
 
 # --- Dichotomous Rasch Model ---
 
@@ -197,6 +201,8 @@ fit_rm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 item_infit_rm <- infit_statistic(
   model      = fit_rm,
@@ -204,6 +210,7 @@ item_infit_rm <- infit_statistic(
   person_var = id,
   ndraws_use = 500
 )
+#> Error: object 'fit_rm' not found
 
 item_infit_rm %>%
   group_by(item) %>%
@@ -212,5 +219,6 @@ item_infit_rm %>%
     infit_rep = mean(infit_rep),
     infit_ppp = mean(infit_rep > infit)
   )
-} # }
+#> Error: object 'item_infit_rm' not found
+# }
 ```

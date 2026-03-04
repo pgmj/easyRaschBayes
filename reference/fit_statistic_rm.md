@@ -124,7 +124,7 @@ graphical posterior predictive checks.
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(brms)
 library(dplyr)
 library(tidyr)
@@ -147,6 +147,8 @@ fit_rm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Bernoulli log-likelihood criterion
 ll_bernoulli <- function(y, p) y * log(p) + (1 - y) * log(1 - p)
@@ -158,6 +160,7 @@ item_fit <- fit_statistic_rm(
   group      = item,
   ndraws_use = 500
 )
+#> Error: object 'fit_rm' not found
 
 # Summarise: posterior predictive p-values per item
 item_fit %>%
@@ -167,6 +170,7 @@ item_fit %>%
     replicated = mean(crit_rep),
     ppp        = mean(crit_rep > crit)
   )
+#> Error: object 'item_fit' not found
 
 # Use ggplot2 to make a histogram
 library(ggplot2)
@@ -176,6 +180,7 @@ item_fit %>%
   facet_wrap("item") +
   theme_bw() +
   theme(legend.position = "none")
+#> Error: object 'item_fit' not found
 
 # Compute person fit statistics
 person_fit <- fit_statistic_rm(
@@ -184,6 +189,7 @@ person_fit <- fit_statistic_rm(
   group      = id,
   ndraws_use = 500
 )
+#> Error: object 'fit_rm' not found
 
 person_fit %>%
   group_by(id) %>%
@@ -192,6 +198,7 @@ person_fit %>%
     replicated = mean(crit_rep),
     ppp        = mean(crit_rep > crit)
   )
+#> Error: object 'person_fit' not found
 
 # --- 1PL model with item-specific intercepts ---
 
@@ -204,6 +211,8 @@ fit_1pl <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 item_fit_1pl <- fit_statistic_rm(
   model      = fit_1pl,
@@ -211,6 +220,7 @@ item_fit_1pl <- fit_statistic_rm(
   group      = item,
   ndraws_use = 500
 )
+#> Error: object 'fit_1pl' not found
 
 item_fit_1pl %>%
   group_by(item) %>%
@@ -219,5 +229,6 @@ item_fit_1pl %>%
     replicated = mean(crit_rep),
     ppp        = mean(crit_rep > crit)
   )
-} # }
+#> Error: object 'item_fit_1pl' not found
+# }
 ```

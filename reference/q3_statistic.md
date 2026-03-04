@@ -150,7 +150,7 @@ for Bayesian infit/outfit,
 ## Examples
 
 ``` r
-if (FALSE) { # \dontrun{
+# \donttest{
 library(brms)
 library(dplyr)
 library(tidyr)
@@ -171,6 +171,8 @@ fit_pcm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Q3 residual correlations
 q3_results <- q3_statistic(
@@ -179,15 +181,18 @@ q3_results <- q3_statistic(
   person_var = id,
   ndraws_use = 500
 )
+#> Error: object 'fit_pcm' not found
 
 # Flag item pairs with ppp > 0.95 as locally dependent
 q3_results %>%
   filter(ppp > 0.95) %>%
   arrange(desc(q3_diff))
+#> Error: object 'q3_results' not found
 
 # Inspect 99% credible intervals for Q3 differences
 q3_results %>%
   filter(q3_diff_q005 > 0)
+#> Error: object 'q3_results' not found
 
 # --- Dichotomous Rasch Model ---
 
@@ -204,6 +209,8 @@ fit_rm <- brm(
   cores  = 4,
   iter   = 2000
 )
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 q3_rm <- q3_statistic(
   model      = fit_rm,
@@ -211,8 +218,10 @@ q3_rm <- q3_statistic(
   person_var = id,
   ndraws_use = 500
 )
+#> Error: object 'fit_rm' not found
 
 q3_rm %>%
   filter(ppp > 0.95)
-} # }
+#> Error: object 'q3_rm' not found
+# }
 ```

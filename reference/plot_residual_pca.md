@@ -191,3 +191,60 @@ for Q3 residual correlations (another local dependence / dimensionality
 diagnostic).
 
 ## Examples
+
+``` r
+# \donttest{
+library(brms)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(ggplot2)
+
+# --- Partial Credit Model ---
+
+df_pcm <- eRm::pcmdat2 %>%
+  mutate(across(everything(), ~ .x + 1)) %>%
+  rownames_to_column("id") %>%
+  pivot_longer(!id, names_to = "item", values_to = "response")
+
+fit_pcm <- brm(
+  response | thres(gr = item) ~ 1 + (1 | id),
+  data   = df_pcm,
+  family = acat,
+  chains = 4,
+  cores  = 4,
+  iter   = 2000
+)
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
+
+# 2D density contours (default)
+result <- plot_residual_pca(fit_pcm)
+#> Error: object 'fit_pcm' not found
+result$plot
+#> Error: object 'result' not found
+
+# Crosshair style
+result_c <- plot_residual_pca(fit_pcm, style = "crosshair")
+#> Error: object 'fit_pcm' not found
+result_c$plot
+#> Error: object 'result_c' not found
+
+# Both combined
+result_b <- plot_residual_pca(fit_pcm, style = "both")
+#> Error: object 'fit_pcm' not found
+result_b$plot
+#> Error: object 'result_b' not found
+
+# Custom warm palette
+result_w <- plot_residual_pca(
+  fit_pcm,
+  density_palette = c("#FEE8C8", "#FDBB84", "#E34A33",
+                      "#B30000", "#7F0000", "#4A0000"),
+  point_color = "#B30000"
+)
+#> Error: object 'fit_pcm' not found
+result_w$plot
+#> Error: object 'result_w' not found
+# }
+```
