@@ -144,8 +144,8 @@ fit_rm <- brm(
   data   = df_rm,
   family = bernoulli(),
   chains = 4,
-  cores  = 4,
-  iter   = 2000
+  cores   = 1, # use more cores if you have
+  iter    = 500 # use at least 2000 
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
@@ -158,7 +158,7 @@ item_fit <- fit_statistic_rm(
   model      = fit_rm,
   criterion  = ll_bernoulli,
   group      = item,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 #> Error: object 'fit_rm' not found
 
@@ -187,7 +187,7 @@ person_fit <- fit_statistic_rm(
   model      = fit_rm,
   criterion  = ll_bernoulli,
   group      = id,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 #> Error: object 'fit_rm' not found
 
@@ -208,8 +208,8 @@ fit_1pl <- brm(
   data   = df_rm,
   family = bernoulli(),
   chains = 4,
-  cores  = 4,
-  iter   = 2000
+  cores   = 1, # use more cores if you have
+  iter    = 500 # use at least 2000 
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
@@ -218,7 +218,7 @@ item_fit_1pl <- fit_statistic_rm(
   model      = fit_1pl,
   criterion  = ll_bernoulli,
   group      = item,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 #> Error: object 'fit_1pl' not found
 

@@ -68,6 +68,26 @@ estimating reliability using Bayesian Measurement Uncertainty. PsyArXiv.
 
 # Simulate data
 
+library(dplyr)
+#> 
+#> Attaching package: ‘dplyr’
+#> The following objects are masked from ‘package:stats’:
+#> 
+#>     filter, lag
+#> The following objects are masked from ‘package:base’:
+#> 
+#>     intersect, setdiff, setequal, union
+library(tidyr)
+library(brms)
+#> Loading required package: Rcpp
+#> Loading 'brms' package (version 2.23.0). Useful instructions
+#> can be found by typing help('brms'). A more detailed introduction
+#> to the package is available through vignette('brms_overview').
+#> 
+#> Attaching package: ‘brms’
+#> The following object is masked from ‘package:stats’:
+#> 
+#>     ar
 set.seed(1)
 N                   = 5000 # number of subjects (mice)
 J                   = 3    # number of measurements per subject
@@ -84,7 +104,6 @@ df$measurement = true_scores[df$mouse] + measurement_error
 df_average_lengths = df %>%
   group_by(mouse) %>%
   summarise(average_measurement = mean(measurement))
-#> Error in df %>% group_by(mouse) %>% summarise(average_measurement = mean(measurement)): could not find function "%>%"
 
 # Reliability should equal this:
 
@@ -94,27 +113,31 @@ true_score_variance/(true_score_variance+error_variance/J)
 # Approximately the same as:
 
 cor(df_average_lengths$average_measurement, true_scores)^2
-#> Error: object 'df_average_lengths' not found
+#> [1] 0.2414736
 
 # Fit model and calculate RMU
 
 brms_model = brm(
   measurement ~ 1 + (1 | mouse),
-  data    = df
+  data    = df, 
+  iter = 500,
+  warmup = 150
 )
-#> Error in brm(measurement ~ 1 + (1 | mouse), data = df): could not find function "brm"
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Extract posterior draws from brms model
 
 posterior_draws = brms_model %>%
   as_draws_df() %>%
+  as_tibble %>% 
   select(starts_with("r_mouse")) %>%
   t()
-#> Error in brms_model %>% as_draws_df() %>% select(starts_with("r_mouse")) %>%     t(): could not find function "%>%"
+#> Error: object 'brms_model' not found
 
 # Calculate RMU
 
-reliability(posterior_draws)$hdci
-#> Error in reliability(posterior_draws): could not find function "reliability"
+RMUreliability(posterior_draws)$hdci
+#> Error: object 'posterior_draws' not found
 # }
 ```

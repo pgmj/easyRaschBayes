@@ -208,8 +208,8 @@ brms and Stan. <em>Journal of Statistical Software</em>, <em>100</em>,
 <span class="r-in"><span>  data   <span class="op">=</span> <span class="va">df_pcm</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="va">acat</span>,</span></span>
 <span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  cores  <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  iter   <span class="op">=</span> <span class="fl">2000</span></span></span>
+<span class="r-in"><span>  cores  <span class="op">=</span> <span class="fl">1</span>, <span class="co"># use more cores if you have</span></span></span>
+<span class="r-in"><span>  iter   <span class="op">=</span> <span class="fl">500</span> <span class="co"># use at least 2000 </span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
@@ -217,9 +217,7 @@ brms and Stan. <em>Journal of Statistical Software</em>, <em>100</em>,
 <span class="r-in"><span><span class="co"># Item-restscore association</span></span></span>
 <span class="r-in"><span><span class="va">irs</span> <span class="op">&lt;-</span> <span class="fu">item_restscore_statistic</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  model      <span class="op">=</span> <span class="va">fit_pcm</span>,</span></span>
-<span class="r-in"><span>  item_var   <span class="op">=</span> <span class="va">item</span>,</span></span>
-<span class="r-in"><span>  person_var <span class="op">=</span> <span class="va">id</span>,</span></span>
-<span class="r-in"><span>  ndraws_use <span class="op">=</span> <span class="fl">500</span></span></span>
+<span class="r-in"><span>  ndraws_use <span class="op">=</span> <span class="fl">100</span> <span class="co"># use at least 500</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_pcm' not found</span>
 <span class="r-in"><span></span></span>
@@ -244,16 +242,14 @@ brms and Stan. <em>Journal of Statistical Software</em>, <em>100</em>,
 <span class="r-in"><span>  data   <span class="op">=</span> <span class="va">df_rm</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsfamily.html" class="external-link">bernoulli</a></span><span class="op">(</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  cores  <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  iter   <span class="op">=</span> <span class="fl">2000</span></span></span>
+<span class="r-in"><span>  cores  <span class="op">=</span> <span class="fl">1</span>, <span class="co"># use more cores if you have</span></span></span>
+<span class="r-in"><span>  iter   <span class="op">=</span> <span class="fl">500</span> <span class="co"># use at least 2000 </span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'df_rm' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">irs_rm</span> <span class="op">&lt;-</span> <span class="fu">item_restscore_statistic</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  model      <span class="op">=</span> <span class="va">fit_rm</span>,</span></span>
-<span class="r-in"><span>  item_var   <span class="op">=</span> <span class="va">item</span>,</span></span>
-<span class="r-in"><span>  person_var <span class="op">=</span> <span class="va">id</span>,</span></span>
-<span class="r-in"><span>  ndraws_use <span class="op">=</span> <span class="fl">500</span></span></span>
+<span class="r-in"><span>  ndraws_use <span class="op">=</span> <span class="fl">100</span> <span class="co"># use at least 500</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_rm' not found</span>
 <span class="r-in"><span></span></span>

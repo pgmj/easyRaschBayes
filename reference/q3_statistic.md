@@ -168,8 +168,8 @@ fit_pcm <- brm(
   data   = df_pcm,
   family = acat,
   chains = 4,
-  cores  = 4,
-  iter   = 2000
+  cores  = 1, # use more cores if you have
+  iter   = 500 # use at least 2000 
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
@@ -177,9 +177,7 @@ fit_pcm <- brm(
 # Q3 residual correlations
 q3_results <- q3_statistic(
   model      = fit_pcm,
-  item_var   = item,
-  person_var = id,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 #> Error: object 'fit_pcm' not found
 
@@ -206,17 +204,15 @@ fit_rm <- brm(
   data   = df_rm,
   family = bernoulli(),
   chains = 4,
-  cores  = 4,
-  iter   = 2000
+  cores  = 1, # use more cores if you have
+  iter   = 500 # use at least 2000 
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 q3_rm <- q3_statistic(
   model      = fit_rm,
-  item_var   = item,
-  person_var = id,
-  ndraws_use = 500
+  ndraws_use = 100 # use at least 500
 )
 #> Error: object 'fit_rm' not found
 

@@ -89,6 +89,26 @@ using brms, see
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Simulate data</span></span></span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching package: ‘dplyr’</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:stats’:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     filter, lag</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following objects are masked from ‘package:base’:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     intersect, setdiff, setequal, union</span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/paul-buerkner/brms" class="external-link">brms</a></span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading required package: Rcpp</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Loading 'brms' package (version 2.23.0). Useful instructions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> can be found by typing help('brms'). A more detailed introduction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> to the package is available through vignette('brms_overview').</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Attaching package: ‘brms’</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> The following object is masked from ‘package:stats’:</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     ar</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">N</span>                   <span class="op">=</span> <span class="fl">5000</span> <span class="co"># number of subjects (mice)</span></span></span>
 <span class="r-in"><span><span class="va">J</span>                   <span class="op">=</span> <span class="fl">3</span>    <span class="co"># number of measurements per subject</span></span></span>
@@ -102,10 +122,9 @@ using brms, see
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">df</span><span class="op">$</span><span class="va">measurement</span> <span class="op">=</span> <span class="va">true_scores</span><span class="op">[</span><span class="va">df</span><span class="op">$</span><span class="va">mouse</span><span class="op">]</span> <span class="op">+</span> <span class="va">measurement_error</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">df_average_lengths</span> <span class="op">=</span> <span class="va">df</span> <span class="op">%&gt;%</span></span></span>
-<span class="r-in"><span>  <span class="fu">group_by</span><span class="op">(</span><span class="va">mouse</span><span class="op">)</span> <span class="op">%&gt;%</span></span></span>
-<span class="r-in"><span>  <span class="fu">summarise</span><span class="op">(</span>average_measurement <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">measurement</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in df %&gt;% group_by(mouse) %&gt;% summarise(average_measurement = mean(measurement)):</span> could not find function "%&gt;%"</span>
+<span class="r-in"><span><span class="va">df_average_lengths</span> <span class="op">=</span> <span class="va">df</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">mouse</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span>average_measurement <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">measurement</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Reliability should equal this:</span></span></span>
 <span class="r-in"><span></span></span>
@@ -115,28 +134,32 @@ using brms, see
 <span class="r-in"><span><span class="co"># Approximately the same as:</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/cor.html" class="external-link">cor</a></span><span class="op">(</span><span class="va">df_average_lengths</span><span class="op">$</span><span class="va">average_measurement</span>, <span class="va">true_scores</span><span class="op">)</span><span class="op">^</span><span class="fl">2</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'df_average_lengths' not found</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> [1] 0.2414736</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Fit model and calculate RMU</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="va">brms_model</span> <span class="op">=</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/brm.html" class="external-link">brm</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  <span class="va">measurement</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">mouse</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  data    <span class="op">=</span> <span class="va">df</span></span></span>
+<span class="r-in"><span>  data    <span class="op">=</span> <span class="va">df</span>, </span></span>
+<span class="r-in"><span>  iter <span class="op">=</span> <span class="fl">500</span>,</span></span>
+<span class="r-in"><span>  warmup <span class="op">=</span> <span class="fl">150</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in brm(measurement ~ 1 + (1 | mouse), data = df):</span> could not find function "brm"</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Extract posterior draws from brms model</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">posterior_draws</span> <span class="op">=</span> <span class="va">brms_model</span> <span class="op">%&gt;%</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://mc-stan.org/posterior/reference/draws_df.html" class="external-link">as_draws_df</a></span><span class="op">(</span><span class="op">)</span> <span class="op">%&gt;%</span></span></span>
-<span class="r-in"><span>  <span class="fu">select</span><span class="op">(</span><span class="fu">starts_with</span><span class="op">(</span><span class="st">"r_mouse"</span><span class="op">)</span><span class="op">)</span> <span class="op">%&gt;%</span></span></span>
+<span class="r-in"><span><span class="va">posterior_draws</span> <span class="op">=</span> <span class="va">brms_model</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://mc-stan.org/posterior/reference/draws_df.html" class="external-link">as_draws_df</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
+<span class="r-in"><span>  <span class="va">as_tibble</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span></span>
+<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">"r_mouse"</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/t.html" class="external-link">t</a></span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in brms_model %&gt;% as_draws_df() %&gt;% select(starts_with("r_mouse")) %&gt;%     t():</span> could not find function "%&gt;%"</span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'brms_model' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Calculate RMU</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="fu">reliability</span><span class="op">(</span><span class="va">posterior_draws</span><span class="op">)</span><span class="op">$</span><span class="va">hdci</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in reliability(posterior_draws):</span> could not find function "reliability"</span>
+<span class="r-in"><span><span class="fu">RMUreliability</span><span class="op">(</span><span class="va">posterior_draws</span><span class="op">)</span><span class="op">$</span><span class="va">hdci</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'posterior_draws' not found</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
