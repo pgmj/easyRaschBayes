@@ -120,16 +120,14 @@
 #' # Item-restscore association
 #' irs <- item_restscore_statistic(
 #'   model      = fit_pcm,
-#'   item_var   = item,
-#'   person_var = id,
 #'   ndraws_use = 500
 #' )
 #'
 #' # Flag items with too-strong discrimination (ppp > 0.95)
-#' irs %>% filter(ppp > 0.95)
+#' irs$result %>% filter(ppp > 0.95)
 #'
 #' # Flag items with too-weak discrimination (ppp < 0.05)
-#' irs %>% filter(ppp < 0.05)
+#' irs$result %>% filter(ppp < 0.05)
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
@@ -149,12 +147,10 @@
 #'
 #' irs_rm <- item_restscore_statistic(
 #'   model      = fit_rm,
-#'   item_var   = item,
-#'   person_var = id,
 #'   ndraws_use = 500
 #' )
 #'
-#' irs_rm %>%
+#' irs_rm$result %>%
 #'   arrange(ppp)
 #' }
 #'
@@ -169,12 +165,12 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
-  
+
   item_quo    <- rlang::enquo(item_var)
   person_quo  <- rlang::enquo(person_var)
   item_name   <- rlang::as_name(item_quo)
   person_name <- rlang::as_name(person_quo)
-  
+
   # --- Extract response variable name ---
   resp_var <- as.character(formula(model)$formula[[2]])
   if (length(resp_var) > 1) {
@@ -192,7 +188,7 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
-  
+
   # --- Determine posterior draw subset ---
   draw_ids <- NULL
   if (!is.null(ndraws_use)) {
@@ -208,14 +204,14 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
     }
     draw_ids <- sample(seq_len(total_draws), ndraws_use)
   }
-  
+
   # --- Posterior predicted responses ---
   yrep_mat <- brms::posterior_predict(model, draw_ids = draw_ids)
-  
+
   n_draws <- nrow(yrep_mat)
   n_obs   <- ncol(yrep_mat)
   obs_response <- model$data[[resp_var]]
-  
+
   # --- Map observations to person x item structure ---
   items   <- model$data[[item_name]]
   persons <- model$data[[person_name]]
@@ -223,18 +219,18 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
   unique_persons <- sort(unique(persons))
   k <- length(unique_items)
   n_persons <- length(unique_persons)
-  
+
   person_idx <- match(persons, unique_persons)
   item_idx   <- match(items, unique_items)
-  
+
   # Pre-compute linear index for vectorized wide-matrix construction
   lin_idx <- (item_idx - 1L) * n_persons + person_idx
-  
+
   # --- Build observed wide matrix (person x item) ONCE ---
   obs_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
   obs_wide[lin_idx] <- obs_response
   obs_total <- rowSums(obs_wide, na.rm = TRUE)
-  
+
   # --- Compute observed gamma ONCE (constant across draws) ---
   gamma_obs <- numeric(k)
   for (i in seq_len(k)) {
@@ -248,19 +244,19 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
       gamma_obs[i] <- NA_real_
     }
   }
-  
+
   # Broadcast observed gamma to a draws x items matrix (for summary stats)
   gamma_obs_draws <- matrix(gamma_obs, nrow = n_draws, ncol = k, byrow = TRUE)
-  
+
   # --- Compute replicated gamma for each draw ---
   gamma_rep_draws <- matrix(NA_real_, nrow = n_draws, ncol = k)
-  
+
   for (s in seq_len(n_draws)) {
     # Vectorized wide-matrix construction
     rep_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
     rep_wide[lin_idx] <- yrep_mat[s, ]
     rep_total <- rowSums(rep_wide, na.rm = TRUE)
-    
+
     for (i in seq_len(k)) {
       item_score_rep <- rep_wide[, i]
       rest_score_rep <- rep_total - item_score_rep
@@ -271,22 +267,22 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
       }
     }
   }
-  
+
   # --- Summarise across draws ---
   gamma_diff_draws <- gamma_obs_draws - gamma_rep_draws
-  
+
   result <- data.frame(
     item = unique_items,
     stringsAsFactors = FALSE
   )
   names(result)[1] <- item_name
-  
+
   result$gamma_obs  <- gamma_obs
   result$gamma_rep  <- colMeans(gamma_rep_draws, na.rm = TRUE)
   result$gamma_diff <- colMeans(gamma_diff_draws, na.rm = TRUE)
   result$ppp        <- colMeans(gamma_obs_draws > gamma_rep_draws,
                                 na.rm = TRUE)
-  
+
   # 95% credible intervals
   result$gamma_obs_q025  <- apply(gamma_obs_draws, 2, stats::quantile,
                                   probs = 0.025, na.rm = TRUE)
@@ -296,7 +292,7 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
                                   probs = 0.025, na.rm = TRUE)
   result$gamma_diff_q975 <- apply(gamma_diff_draws, 2, stats::quantile,
                                   probs = 0.975, na.rm = TRUE)
-  
+
   # 99% credible intervals
   result$gamma_obs_q005  <- apply(gamma_obs_draws, 2, stats::quantile,
                                   probs = 0.005, na.rm = TRUE)
@@ -306,10 +302,25 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
                                   probs = 0.005, na.rm = TRUE)
   result$gamma_diff_q995 <- apply(gamma_diff_draws, 2, stats::quantile,
                                   probs = 0.995, na.rm = TRUE)
-  
+
   result <- tibble::as_tibble(result)
   result <- dplyr::arrange(result, dplyr::desc(.data$gamma_diff))
-  
-  result
+
+  gamma_rep_draws_df <- gamma_rep_draws %>%
+    as.data.frame() %>%
+    tidyr::pivot_longer(everything(), names_to = "item", values_to = "gamma_rep")
+  gamma_obs_draws_df <- gamma_obs_draws %>%
+    as.data.frame() %>%
+    tidyr::pivot_longer(everything(), names_to = "item", values_to = "gamma_obs")
+
+  gamma_draws_df <- dplyr::bind_cols(
+    gamma_rep_draws_df,
+    gamma = gamma_obs_draws_df$gamma_obs
+  )
+
+  list(
+    result = result,
+    draws = tidyr::as_tibble(gamma_draws_df)
+  )
 }
 

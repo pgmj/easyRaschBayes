@@ -779,9 +779,10 @@ plot_targeting <- function(
       xmax   = .data$upper
     )
   ) +
-    ggplot2::geom_errorbarh(
+    ggplot2::geom_errorbar(
       width = 0.25, linewidth = 0.5,
-      position = ggplot2::position_dodge(width = 0.4)
+      position = ggplot2::position_dodge(width = 0.4),
+      orientation = "y"
     ) +
     ggplot2::geom_point(
       size = 2.5,
