@@ -1,0 +1,43 @@
+# Package index
+
+## Item Fit
+
+- [`fit_statistic_pcm()`](https://pgmj.github.io/easyRaschBayes/dev/reference/fit_statistic_pcm.md)
+  : Posterior Predictive Item Fit Statistic for Bayesian IRT Models
+- [`fit_statistic_rm()`](https://pgmj.github.io/easyRaschBayes/dev/reference/fit_statistic_rm.md)
+  : Posterior Predictive Item Fit Statistic for Binary Bayesian IRT
+  Models
+- [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic.md)
+  : Posterior Predictive Infit Statistic for Bayesian IRT Models
+- [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md)
+  : Posterior Predictive Item-Restscore Association for Bayesian IRT
+  Models
+
+## Local Dependence
+
+- [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/q3_statistic.md)
+  : Posterior Predictive Q3 Residual Correlations for Bayesian IRT
+  Models
+
+## Dimensionality
+
+- [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_residual_pca.md)
+  : Residual PCA Contrast Plot for Bayesian IRT Models
+
+## Differential Item Functioning
+
+- [`dif_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/dif_statistic.md)
+  : Differential Item Functioning (DIF) Analysis for Bayesian IRT Models
+
+## Plots
+
+- [`plot_targeting()`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_targeting.md)
+  : Person-Item Map (Targeting Plot) for Bayesian IRT Models
+- [`plot_ipf()`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_ipf.md)
+  : Item Category Probability Function Curves for Polytomous IRT Models
+
+## Reliability
+
+- [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/dev/reference/RMUreliability.md)
+  : Estimate reliability (Relative Measurement Uncertainty) from
+  Bayesian measurement models
