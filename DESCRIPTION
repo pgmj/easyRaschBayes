@@ -43,7 +43,7 @@ Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
-URL: https://github.com/pgmj/easyRaschBayes
+URL: https://github.com/pgmj/easyRaschBayes, https://pgmj.github.io/easyRaschBayes/
 BugReports: https://github.com/pgmj/easyRaschBayes/issues
 VignetteBuilder: knitr
 Config/testthat/edition: 3

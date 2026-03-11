@@ -1,6 +1,8 @@
 # easyRaschBayes
 
 <!-- badges: start -->
+[![CRAN Version](https://www.r-pkg.org/badges/version/easyRaschBayes)](https://cran.r-project.org/package=easyRaschBayes)
+[![Downloads](https://cranlogs.r-pkg.org/badges/easyRaschBayes?color=brightgreen)](https://CRAN.R-project.org/package=easyRaschBayes)
 <!-- badges: end -->
 
 **easyRaschBayes** provides functions to reproduce classic Rasch analysis
@@ -11,10 +13,16 @@ the full posterior distribution for all output.
 
 ## Installation
 
-Install the development version from GitHub:
+Install the stable version from CRAN:
 
 ```r
-# install.packages("remotes")
+install.packages("easyRaschBayes")
+```
+
+Or install the development version from GitHub:
+
+```r
+install.packages("remotes") # if you don't have `remotes` installed
 remotes::install_github("pgmj/easyRaschBayes")
 ```
 
