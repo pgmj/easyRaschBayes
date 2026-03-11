@@ -8,10 +8,16 @@ exposes the full posterior distribution for all output.
 
 ## Installation
 
-Install the development version from GitHub:
+Install the stable version from CRAN:
 
 ``` r
-# install.packages("remotes")
+install.packages("easyRaschBayes")
+```
+
+Or install the development version from GitHub:
+
+``` r
+install.packages("remotes") # if you don't have `remotes` installed
 remotes::install_github("pgmj/easyRaschBayes")
 ```
 
