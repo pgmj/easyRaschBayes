@@ -1,3 +1,3 @@
-## easyRaschBayes 0.1.0
+# easyRaschBayes 0.1.0
 
 - Initial release.

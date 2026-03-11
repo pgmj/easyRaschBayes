@@ -12,6 +12,7 @@ Reproduces classic Rasch psychometric analysis features using Bayesian item resp
 Useful links:
 \itemize{
   \item \url{https://github.com/pgmj/easyRaschBayes}
+  \item \url{https://pgmj.github.io/easyRaschBayes/}
   \item Report bugs at \url{https://github.com/pgmj/easyRaschBayes/issues}
 }
 
