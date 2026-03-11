@@ -21,6 +21,8 @@ Useful links:
 
 - <https://github.com/pgmj/easyRaschBayes>
 
+- <https://pgmj.github.io/easyRaschBayes/>
+
 - Report bugs at <https://github.com/pgmj/easyRaschBayes/issues>
 
 ## Author
