@@ -33,10 +33,13 @@ reference:
   - fit_statistic_pcm
   - fit_statistic_rm
   - infit_statistic
+  - infit_post
   - item_restscore_statistic
+  - item_restscore_post
 - title: Local Dependence
   contents:
   - q3_statistic
+  - q3_post
 - title: Dimensionality
   contents:
   - plot_residual_pca
