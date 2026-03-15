@@ -570,6 +570,10 @@ fit_statistic_rm <- function(model, criterion, group,
 #' @param ndraws_use Optional positive integer. If specified, a random subset
 #'   of posterior draws of this size is used. If \code{NULL} (the default),
 #'   all draws are used.
+#' @param outfit Logical. If \code{TRUE}, outfit statistics are computed
+#'   alongside infit. Default is \code{FALSE} (infit only), since outfit
+#'   is highly sensitive to outliers and rarely recommended for Rasch
+#'   diagnostics.
 #'
 #' @return A \code{\link[tibble]{tibble}} with the following columns:
 #' \describe{
@@ -578,9 +582,10 @@ fit_statistic_rm <- function(model, criterion, group,
 #'   \item{infit}{The observed infit statistic for that item and draw.}
 #'   \item{infit_rep}{The replicated infit statistic (based on posterior
 #'     predicted data) for that item and draw.}
-#'   \item{outfit}{The observed outfit statistic for that item and draw.}
-#'   \item{outfit_rep}{The replicated outfit statistic for that item and
-#'     draw.}
+#'   \item{outfit}{(Only if \code{outfit = TRUE}) The observed outfit
+#'     statistic for that item and draw.}
+#'   \item{outfit_rep}{(Only if \code{outfit = TRUE}) The replicated
+#'     outfit statistic for that item and draw.}
 #' }
 #' The output is grouped by the item variable. Posterior predictive
 #' p-values can be obtained by computing, e.g.,
@@ -588,8 +593,8 @@ fit_statistic_rm <- function(model, criterion, group,
 #'
 #' @details
 #' The procedure adapts the conditional infit/outfit statistics
-#' (Christensen et al., 2013; Kreiner & Christensen, 2011; Müller, 2020) to the
-#' Bayesian framework:
+#' (Christensen et al., 2013; Kreiner & Christensen, 2011; Müller, 2020)
+#' to the Bayesian framework:
 #'
 #' \enumerate{
 #'   \item For each posterior draw \eqn{s}, category probabilities
@@ -602,30 +607,14 @@ fit_statistic_rm <- function(model, criterion, group,
 #'       P^{(s)}(X_{vi} = c)}
 #'   \item Standardised squared residuals are:
 #'     \deqn{Z^{2(s)}_{vi} = (X_{vi} - E^{(s)}_{vi})^2 / Var^{(s)}_{vi}}
-#'   \item \strong{Outfit} is the unweighted mean of \eqn{Z^{2}_{vi}}
-#'     across persons within each item.
-#'   \item \strong{Infit} is the variance-weighted mean:
-#'     \deqn{Infit^{(s)}_i = \frac{\sum_v Var^{(s)}_{vi} \cdot
-#'       Z^{2(s)}_{vi}}{\sum_v Var^{(s)}_{vi}}}
-#'   \item The same computations are repeated for replicated data
-#'     \eqn{Y^{rep}} drawn via \code{\link[brms]{posterior_predict}}.
+#'   \item The infit statistic for item \eqn{i} is the variance-weighted
+#'     mean of \eqn{Z^2} across persons:
+#'     \deqn{Infit_i^{(s)} = \frac{\sum_v Var_{vi}^{(s)} Z^{2(s)}_{vi}}
+#'       {\sum_v Var_{vi}^{(s)}}}
+#'   \item If requested, the outfit is the unweighted mean of \eqn{Z^2}.
 #' }
 #'
-#' Under perfect fit, both infit and outfit have an expected value of 1.
-#' Values substantially above 1 indicate underfit (too much noise),
-#' values below 1 indicate overfit (too little variation, e.g.,
-#' redundancy). Posterior predictive p-values near 0 or 1 indicate
-#' misfit.
-#'
 #' @references
-#' Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS)
-#' with Bayesian Item Response Models. \emph{Journal of Intelligence},
-#' \emph{8}(1). \doi{10.3390/jintelligence8010005}
-#'
-#' Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
-#' Stan. \emph{Journal of Statistical Software}, \emph{100}, 1--54.
-#' \doi{10.18637/jss.v100.i05}
-#'
 #' Christensen, K. B., Kreiner, S. & Mesbah, M. (Eds.) (2013).
 #' \emph{Rasch Models in Health}. Iste and Wiley, pp. 86--90.
 #'
@@ -633,8 +622,9 @@ fit_statistic_rm <- function(model, criterion, group,
 #' Rasch model residuals. \emph{Advances in Mathematics Research}, 12,
 #' 19--40.
 #'
-#' Müller, M. (2020). Item fit statistics for Rasch analysis: can we trust them?
-#' \emph{Journal of Statistical Distributions and Applications}, \emph{7}(1).
+#' Müller, M. (2020). Item fit statistics for Rasch analysis: can we
+#' trust them? \emph{Journal of Statistical Distributions and
+#' Applications}, \emph{7}(1).
 #' \doi{10.1186/s40488-020-00108-7}
 #'
 #' @seealso
@@ -643,8 +633,7 @@ fit_statistic_rm <- function(model, criterion, group,
 #' \code{\link{fit_statistic_rm}} for a general-purpose posterior predictive
 #' fit statistic with user-supplied criterion functions,
 #' \code{\link[brms]{posterior_epred}},
-#' \code{\link[brms]{posterior_predict}},
-#' \code{\link[brms]{pp_check}}.
+#' \code{\link[brms]{posterior_predict}}.
 #'
 #' @examples
 #' \donttest{
@@ -675,14 +664,11 @@ fit_statistic_rm <- function(model, criterion, group,
 #'   ndraws_use = 100 # use at least 500
 #' )
 #'
-#' # Summarise across draws
-#' item_infit %>%
-#'   group_by(item) %>%
-#'   summarise(
-#'     infit_obs = mean(infit),
-#'     infit_rep = mean(infit_rep),
-#'     infit_ppp = mean(infit_rep > infit)
-#'   )
+#' # Post-process draws
+#' infit_results <- infit_post(item_infit)
+#' infit_results$summary
+#' infit_results$hdi
+#' infit_results$plot
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
@@ -704,14 +690,13 @@ fit_statistic_rm <- function(model, criterion, group,
 #'   model      = fit_rm,
 #'   ndraws_use = 100 # use at least 500
 #' )
-#'
-#' item_infit_rm %>%
-#'   group_by(item) %>%
-#'   summarise(
-#'     infit_obs = mean(infit),
-#'     infit_rep = mean(infit_rep),
-#'     infit_ppp = mean(infit_rep > infit)
-#'   )
+#' 
+#' # Post-process draws
+#' infit_results <- infit_post(item_infit_rm)
+#' infit_results$summary
+#' infit_results$hdi
+#' infit_results$plot
+#' 
 #' }
 #'
 #' @importFrom brms posterior_epred posterior_predict ndraws
@@ -721,16 +706,16 @@ fit_statistic_rm <- function(model, criterion, group,
 #' @importFrom stats formula setNames
 #' @export
 infit_statistic <- function(model, item_var = item, person_var = id,
-                            ndraws_use = NULL) {
+                            ndraws_use = NULL, outfit = FALSE) {
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
-
+  
   item_quo   <- rlang::enquo(item_var)
   person_quo <- rlang::enquo(person_var)
   item_name   <- rlang::as_name(item_quo)
   person_name <- rlang::as_name(person_quo)
-
+  
   # --- Extract response variable name from model formula ---
   resp_var <- as.character(formula(model)$formula[[2]])
   if (length(resp_var) > 1) {
@@ -748,7 +733,7 @@ infit_statistic <- function(model, item_var = item, person_var = id,
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
-
+  
   # --- Determine posterior draw subset ---
   draw_ids <- NULL
   if (!is.null(ndraws_use)) {
@@ -764,96 +749,134 @@ infit_statistic <- function(model, item_var = item, person_var = id,
     }
     draw_ids <- sample(seq_len(total_draws), ndraws_use)
   }
-
+  
   # --- Posterior predictions ---
   epred_array <- brms::posterior_epred(model, draw_ids = draw_ids)
   yrep_mat    <- brms::posterior_predict(model, draw_ids = draw_ids)
-
+  
   n_draws <- dim(epred_array)[1]
   n_obs   <- dim(epred_array)[2]
   obs_response <- model$data[[resp_var]]
-
-  # --- Compute E, Var, and Z^2 per draw and observation ---
+  
+  # =================================================================
+  # Compute E_mat [S x N] and Var_mat [S x N]  — VECTORIZED
+  # =================================================================
   if (length(dim(epred_array)) == 3) {
-    # Ordinal/categorical: S x N x C array of category probabilities
+    # Ordinal/categorical: epred_array is S x N x C
     n_cat <- dim(epred_array)[3]
-    cat_values <- seq_len(n_cat)
-
-    # E[X | params] = sum_c  c * P(X = c)     [S x N]
-    E_mat <- apply(epred_array, c(1, 2), function(p) sum(cat_values * p))
-
-    # Var[X | params] = sum_c (c - E)^2 * P(X = c)   [S x N]
-    Var_mat <- matrix(NA_real_, nrow = n_draws, ncol = n_obs)
-    for (s in seq_len(n_draws)) {
-      for (n in seq_len(n_obs)) {
-        Var_mat[s, n] <- sum((cat_values - E_mat[s, n])^2 *
-                               epred_array[s, n, ])
-      }
-    }
+    cat_values <- seq_len(n_cat)  # 1, 2, ..., C
+    
+    # E[X | params] = sum_c  c * P(X=c)
+    # Reshape epred to (S*N) x C, multiply by cat_values, reshape back
+    dim_orig <- dim(epred_array)
+    ep_2d <- matrix(epred_array, nrow = dim_orig[1] * dim_orig[2],
+                    ncol = dim_orig[3])
+    E_vec <- ep_2d %*% cat_values          # (S*N) x 1
+    E_mat <- matrix(E_vec, nrow = n_draws, ncol = n_obs)
+    
+    # Var[X | params] = sum_c (c - E)^2 * P(X=c)
+    #                 = sum_c c^2 * P(X=c) - E^2   (computational formula)
+    E2_vec <- ep_2d %*% (cat_values^2)     # (S*N) x 1
+    Var_vec <- E2_vec - E_vec^2
+    Var_mat <- matrix(Var_vec, nrow = n_draws, ncol = n_obs)
   } else {
     # Binary: S x N matrix with P(Y = 1)
-    # E = p, Var = p * (1 - p) for Bernoulli
     E_mat   <- epred_array
     Var_mat <- epred_array * (1 - epred_array)
   }
-
+  
   # Clamp variance to avoid division by zero
   Var_mat[Var_mat < 1e-12] <- 1e-12
-
-  # Standardised squared residuals for observed data: Z^2_vi
+  
+  # =================================================================
+  # Squared residuals: (X - E)^2  — compute once, divide later
+  # =================================================================
   obs_mat <- matrix(obs_response, nrow = n_draws, ncol = n_obs, byrow = TRUE)
-  Z2_obs <- (obs_mat - E_mat)^2 / Var_mat
-
-  # Standardised squared residuals for replicated data
-  Z2_rep <- (yrep_mat - E_mat)^2 / Var_mat
-
-  # --- Retrieve item and person identifiers per observation ---
-  items   <- model$data[[item_name]]
-  persons <- model$data[[person_name]]
+  resid2_obs <- (obs_mat - E_mat)^2
+  resid2_rep <- (yrep_mat - E_mat)^2
+  
+  # Z^2 = resid^2 / Var  (only needed for outfit)
+  # Infit numerator = sum(Var * Z^2) = sum(resid^2)  — no division needed!
+  # Infit denominator = sum(Var)
+  
+  # --- Retrieve item identifiers and pre-compute indices ---
+  items <- model$data[[item_name]]
   unique_items <- unique(items)
-
-  # --- Compute infit and outfit per item per draw ---
-  result_list <- vector("list", length(unique_items))
-
-  for (idx in seq_along(unique_items)) {
-    item_label <- unique_items[idx]
-    obs_idx <- which(items == item_label)
-
-    # Extract submatrices for this item [S x n_i]
-    Z2_obs_i <- Z2_obs[, obs_idx, drop = FALSE]
-    Z2_rep_i <- Z2_rep[, obs_idx, drop = FALSE]
-    Var_i    <- Var_mat[, obs_idx, drop = FALSE]
-
-    # Outfit = unweighted mean of Z^2 across persons
-    outfit_obs <- rowMeans(Z2_obs_i, na.rm = TRUE)
-    outfit_rep <- rowMeans(Z2_rep_i, na.rm = TRUE)
-
-    # Infit = variance-weighted mean: sum(Var * Z^2) / sum(Var)
-    sum_var <- rowSums(Var_i, na.rm = TRUE)
+  k <- length(unique_items)
+  
+  # Pre-compute column indices for each item (avoids repeated which())
+  item_col_idx <- vector("list", k)
+  for (idx in seq_len(k)) {
+    item_col_idx[[idx]] <- which(items == unique_items[idx])
+  }
+  
+  # =================================================================
+  # Compute infit (and optionally outfit) per item per draw
+  # =================================================================
+  # Pre-allocate output matrices: rows = draws, cols = items
+  infit_obs_mat <- matrix(NA_real_, nrow = n_draws, ncol = k)
+  infit_rep_mat <- matrix(NA_real_, nrow = n_draws, ncol = k)
+  if (outfit) {
+    outfit_obs_mat <- matrix(NA_real_, nrow = n_draws, ncol = k)
+    outfit_rep_mat <- matrix(NA_real_, nrow = n_draws, ncol = k)
+  }
+  
+  for (idx in seq_len(k)) {
+    cols <- item_col_idx[[idx]]
+    
+    # Infit = sum(resid^2) / sum(Var)
+    #       = sum(Var * Z^2) / sum(Var)    [algebraically identical]
+    # This avoids computing Z^2 entirely for infit!
+    sum_var <- rowSums(Var_mat[, cols, drop = FALSE])
     sum_var[sum_var < 1e-12] <- 1e-12
-    infit_obs <- rowSums(Var_i * Z2_obs_i, na.rm = TRUE) / sum_var
-    infit_rep <- rowSums(Var_i * Z2_rep_i, na.rm = TRUE) / sum_var
-
-    result_list[[idx]] <- data.frame(
-      item       = item_label,
-      draw       = seq_len(n_draws),
-      infit      = infit_obs,
-      infit_rep  = infit_rep,
-      outfit     = outfit_obs,
-      outfit_rep = outfit_rep,
-      stringsAsFactors = FALSE
+    
+    infit_obs_mat[, idx] <- rowSums(resid2_obs[, cols, drop = FALSE]) /
+      sum_var
+    infit_rep_mat[, idx] <- rowSums(resid2_rep[, cols, drop = FALSE]) /
+      sum_var
+    
+    if (outfit) {
+      # Outfit = mean(Z^2) = mean(resid^2 / Var)
+      Z2_obs_i <- resid2_obs[, cols, drop = FALSE] /
+        Var_mat[, cols, drop = FALSE]
+      Z2_rep_i <- resid2_rep[, cols, drop = FALSE] /
+        Var_mat[, cols, drop = FALSE]
+      outfit_obs_mat[, idx] <- rowMeans(Z2_obs_i, na.rm = TRUE)
+      outfit_rep_mat[, idx] <- rowMeans(Z2_rep_i, na.rm = TRUE)
+    }
+  }
+  
+  # =================================================================
+  # Assemble output tibble
+  # =================================================================
+  draw_seq <- seq_len(n_draws)
+  item_rep <- rep(unique_items, each = n_draws)
+  draw_rep <- rep(draw_seq, times = k)
+  
+  if (outfit) {
+    result <- tibble::tibble(
+      item       = item_rep,
+      draw       = draw_rep,
+      infit      = as.vector(infit_obs_mat),
+      infit_rep  = as.vector(infit_rep_mat),
+      outfit     = as.vector(outfit_obs_mat),
+      outfit_rep = as.vector(outfit_rep_mat)
+    )
+  } else {
+    result <- tibble::tibble(
+      item      = item_rep,
+      draw      = draw_rep,
+      infit     = as.vector(infit_obs_mat),
+      infit_rep = as.vector(infit_rep_mat)
     )
   }
-
-  result <- do.call(rbind, result_list)
-
+  
   # Rename the item column to match the user's variable name
   names(result)[names(result) == "item"] <- item_name
-
-  result <- tibble::as_tibble(result)
+  
   result <- dplyr::group_by(result, .data[[item_name]])
   result <- dplyr::arrange(result, .data[[item_name]], .data$draw)
-
+  
   result
 }
 
@@ -943,10 +966,6 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' cross classifications. \emph{Journal of the American Statistical
 #' Association}, \emph{49}(268), 732--764.
 #'
-#' Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices
-#' (SPM-LS) with Bayesian Item Response Models. \emph{Journal of
-#' Intelligence}, \emph{8}(1). \doi{10.3390/jintelligence8010005}
-#'
 #' Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
 #' brms and Stan. \emph{Journal of Statistical Software}, \emph{100},
 #' 1--54. \doi{10.18637/jss.v100.i05}
@@ -986,16 +1005,15 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #'   model      = fit_pcm,
 #'   ndraws_use = 100 # use at least 500
 #' )
-#'
-#' # Flag items with too-strong discrimination (ppp > 0.95)
-#' irs %>% filter(ppp > 0.95)
-#'
-#' # Flag items with too-weak discrimination (ppp < 0.05)
-#' irs %>% filter(ppp < 0.05)
+#' 
+#' # Post-process draws
+#' irs_results <- item_restscore_post(irs)
+#' irs_results$summary
+#' irs_results$plot
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
-#' df_rm <- eRm::rainger %>%
+#' df_rm <- eRm::raschdat3 %>%
 #'   as.data.frame() %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -1014,12 +1032,14 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #'   ndraws_use = 100 # use at least 500
 #' )
 #'
-#' irs_rm %>%
-#'   arrange(ppp)
+#' # Post-process draws
+#' irs_results <- item_restscore_post(irs_rm)
+#' irs_results$summary
+#' irs_results$plot
 #' }
 #'
 #' @importFrom brms posterior_predict ndraws
-#' @importFrom dplyr arrange desc filter
+#' @importFrom dplyr arrange desc filter everything
 #' @importFrom rlang enquo !! .data as_name
 #' @importFrom tibble as_tibble
 #' @importFrom stats formula quantile
@@ -1029,12 +1049,12 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
-
+  
   item_quo    <- rlang::enquo(item_var)
   person_quo  <- rlang::enquo(person_var)
   item_name   <- rlang::as_name(item_quo)
   person_name <- rlang::as_name(person_quo)
-
+  
   # --- Extract response variable name ---
   resp_var <- as.character(formula(model)$formula[[2]])
   if (length(resp_var) > 1) {
@@ -1052,7 +1072,7 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
-
+  
   # --- Determine posterior draw subset ---
   draw_ids <- NULL
   if (!is.null(ndraws_use)) {
@@ -1068,14 +1088,14 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
     }
     draw_ids <- sample(seq_len(total_draws), ndraws_use)
   }
-
+  
   # --- Posterior predicted responses ---
   yrep_mat <- brms::posterior_predict(model, draw_ids = draw_ids)
-
+  
   n_draws <- nrow(yrep_mat)
   n_obs   <- ncol(yrep_mat)
   obs_response <- model$data[[resp_var]]
-
+  
   # --- Map observations to person x item structure ---
   items   <- model$data[[item_name]]
   persons <- model$data[[person_name]]
@@ -1083,69 +1103,70 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
   unique_persons <- sort(unique(persons))
   k <- length(unique_items)
   n_persons <- length(unique_persons)
-
+  
   person_idx <- match(persons, unique_persons)
   item_idx   <- match(items, unique_items)
-
-  # --- Build observed wide matrix (person x item) ---
+  
+  # Pre-compute linear index for vectorized wide-matrix construction
+  lin_idx <- (item_idx - 1L) * n_persons + person_idx
+  
+  # --- Build observed wide matrix (person x item) ONCE ---
   obs_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
-  for (obs in seq_len(n_obs)) {
-    obs_wide[person_idx[obs], item_idx[obs]] <- obs_response[obs]
-  }
-
-  # Observed rest-scores: for item i, rest = rowSum - item_i
+  obs_wide[lin_idx] <- obs_response
   obs_total <- rowSums(obs_wide, na.rm = TRUE)
-
-  # --- Compute gamma for each item and draw ---
-  gamma_obs_draws <- matrix(NA_real_, nrow = n_draws, ncol = k)
-  gamma_rep_draws <- matrix(NA_real_, nrow = n_draws, ncol = k)
-
-  for (s in seq_len(n_draws)) {
-    # Build replicated wide matrix for draw s
-    rep_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
-    for (obs in seq_len(n_obs)) {
-      rep_wide[person_idx[obs], item_idx[obs]] <- yrep_mat[s, obs]
+  
+  # --- Compute observed gamma ONCE (constant across draws) ---
+  gamma_obs <- numeric(k)
+  for (i in seq_len(k)) {
+    item_score_obs <- obs_wide[, i]
+    rest_score_obs <- obs_total - item_score_obs
+    valid_obs <- !is.na(item_score_obs)
+    if (sum(valid_obs) > 2L) {
+      gamma_obs[i] <- gk_gamma_vec(item_score_obs[valid_obs],
+                                   rest_score_obs[valid_obs])
+    } else {
+      gamma_obs[i] <- NA_real_
     }
+  }
+  
+  # Broadcast observed gamma to a draws x items matrix (for summary stats)
+  gamma_obs_draws <- matrix(gamma_obs, nrow = n_draws, ncol = k, byrow = TRUE)
+  
+  # --- Compute replicated gamma for each draw ---
+  gamma_rep_draws <- matrix(NA_real_, nrow = n_draws, ncol = k)
+  
+  for (s in seq_len(n_draws)) {
+    # Vectorized wide-matrix construction
+    rep_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
+    rep_wide[lin_idx] <- yrep_mat[s, ]
     rep_total <- rowSums(rep_wide, na.rm = TRUE)
-
+    
     for (i in seq_len(k)) {
-      # Observed: item score vs rest-score
-      item_score_obs <- obs_wide[, i]
-      rest_score_obs <- obs_total - item_score_obs
-
-      valid_obs <- !is.na(item_score_obs)
-      if (sum(valid_obs) > 2) {
-        tab_obs <- table(item_score_obs[valid_obs], rest_score_obs[valid_obs])
-        gamma_obs_draws[s, i] <- gk_gamma(tab_obs)
-      }
-
-      # Replicated: item score vs rest-score
       item_score_rep <- rep_wide[, i]
       rest_score_rep <- rep_total - item_score_rep
-
       valid_rep <- !is.na(item_score_rep)
-      if (sum(valid_rep) > 2) {
-        tab_rep <- table(item_score_rep[valid_rep], rest_score_rep[valid_rep])
-        gamma_rep_draws[s, i] <- gk_gamma(tab_rep)
+      if (sum(valid_rep) > 2L) {
+        gamma_rep_draws[s, i] <- gk_gamma_vec(item_score_rep[valid_rep],
+                                              rest_score_rep[valid_rep])
       }
     }
   }
-
+  
   # --- Summarise across draws ---
   gamma_diff_draws <- gamma_obs_draws - gamma_rep_draws
-
+  
   result <- data.frame(
     item = unique_items,
     stringsAsFactors = FALSE
   )
   names(result)[1] <- item_name
-
-  result$gamma_obs  <- colMeans(gamma_obs_draws, na.rm = TRUE)
+  
+  result$gamma_obs  <- gamma_obs
   result$gamma_rep  <- colMeans(gamma_rep_draws, na.rm = TRUE)
   result$gamma_diff <- colMeans(gamma_diff_draws, na.rm = TRUE)
   result$ppp        <- colMeans(gamma_obs_draws > gamma_rep_draws,
                                 na.rm = TRUE)
-
+  
   # 95% credible intervals
   result$gamma_obs_q025  <- apply(gamma_obs_draws, 2, stats::quantile,
                                   probs = 0.025, na.rm = TRUE)
@@ -1155,7 +1176,7 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
                                   probs = 0.025, na.rm = TRUE)
   result$gamma_diff_q975 <- apply(gamma_diff_draws, 2, stats::quantile,
                                   probs = 0.975, na.rm = TRUE)
-
+  
   # 99% credible intervals
   result$gamma_obs_q005  <- apply(gamma_obs_draws, 2, stats::quantile,
                                   probs = 0.005, na.rm = TRUE)
@@ -1165,67 +1186,25 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
                                   probs = 0.005, na.rm = TRUE)
   result$gamma_diff_q995 <- apply(gamma_diff_draws, 2, stats::quantile,
                                   probs = 0.995, na.rm = TRUE)
-
+  
   result <- tibble::as_tibble(result)
   result <- dplyr::arrange(result, dplyr::desc(.data$gamma_diff))
-
-  result
+  
+  gamma_rep_draws_df <- gamma_rep_draws |>
+    as.data.frame() |>
+    tidyr::pivot_longer(dplyr::everything(), names_to = "item", values_to = "gamma_rep")
+  gamma_obs_draws_df <- gamma_obs_draws |>
+    as.data.frame() |>
+    tidyr::pivot_longer(dplyr::everything(), names_to = "item", values_to = "gamma_obs")
+  
+  gamma_draws_df <- dplyr::bind_cols(
+    gamma_rep_draws_df,
+    gamma = gamma_obs_draws_df$gamma_obs
+  )
+  
+  list(
+    result = result,
+    draws = tidyr::as_tibble(gamma_draws_df)
+  )
 }
 
-
-#' Goodman-Kruskal Gamma from a Contingency Table
-#'
-#' Computes the Goodman-Kruskal gamma coefficient for an ordinal
-#' contingency table. This is an internal helper function.
-#'
-#' @param tab A matrix or table representing a contingency table with
-#'   rows and columns in ordinal order.
-#'
-#' @return A scalar: the gamma coefficient in \eqn{[-1, 1]}.
-#'
-#' @details
-#' Gamma is defined as \eqn{(C - D) / (C + D)}, where \eqn{C} is the
-#' number of concordant pairs and \eqn{D} is the number of discordant
-#' pairs. For a contingency table, concordant pairs arise when both
-#' variables increase together, and discordant pairs when one increases
-#' while the other decreases.
-#'
-#' @references
-#' Goodman, L. A. & Kruskal, W. H. (1954). Measures of association for
-#' cross classifications. \emph{Journal of the American Statistical
-#' Association}, \emph{49}(268), 732--764.
-#'
-#' @keywords internal
-gk_gamma <- function(tab) {
-  tab <- as.matrix(tab)
-  nr <- nrow(tab)
-  nc <- ncol(tab)
-
-  if (nr < 2 || nc < 2) {
-    return(NA_real_)
-  }
-
-  C <- 0  # concordant pairs
-  D <- 0  # discordant pairs
-
-  for (i in seq_len(nr)) {
-    for (j in seq_len(nc)) {
-      if (tab[i, j] == 0) next
-      # Concordant: cells below-right
-      if (i < nr && j < nc) {
-        C <- C + tab[i, j] * sum(tab[(i + 1):nr, (j + 1):nc, drop = FALSE])
-      }
-      # Discordant: cells below-left
-      if (i < nr && j > 1) {
-        D <- D + tab[i, j] * sum(tab[(i + 1):nr, 1:(j - 1), drop = FALSE])
-      }
-    }
-  }
-
-  denom <- C + D
-  if (denom == 0) {
-    return(NA_real_)
-  }
-
-  (C - D) / denom
-}

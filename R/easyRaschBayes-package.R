@@ -5,4 +5,4 @@
 ## usethis namespace: end
 NULL
 
-utils::globalVariables(c("item", "id"))
+utils::globalVariables(c("item", "id","level"))

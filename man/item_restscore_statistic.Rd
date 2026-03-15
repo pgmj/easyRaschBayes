@@ -120,15 +120,14 @@ irs <- item_restscore_statistic(
   ndraws_use = 100 # use at least 500
 )
 
-# Flag items with too-strong discrimination (ppp > 0.95)
-irs \%>\% filter(ppp > 0.95)
-
-# Flag items with too-weak discrimination (ppp < 0.05)
-irs \%>\% filter(ppp < 0.05)
+# Post-process draws
+irs_results <- item_restscore_post(irs)
+irs_results$summary
+irs_results$plot
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::rainger \%>\%
+df_rm <- eRm::raschdat3 \%>\%
   as.data.frame() \%>\%
   rownames_to_column("id") \%>\%
   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -147,8 +146,10 @@ irs_rm <- item_restscore_statistic(
   ndraws_use = 100 # use at least 500
 )
 
-irs_rm \%>\%
-  arrange(ppp)
+# Post-process draws
+irs_results <- item_restscore_post(irs_rm)
+irs_results$summary
+irs_results$plot
 }
 
 }
@@ -160,10 +161,6 @@ models. \emph{Applied Psychological Measurement}, \emph{35}(7),
 Goodman, L. A. & Kruskal, W. H. (1954). Measures of association for
 cross classifications. \emph{Journal of the American Statistical
 Association}, \emph{49}(268), 732--764.
-
-Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices
-(SPM-LS) with Bayesian Item Response Models. \emph{Journal of
-Intelligence}, \emph{8}(1). \doi{10.3390/jintelligence8010005}
 
 Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
 brms and Stan. \emph{Journal of Statistical Software}, \emph{100},

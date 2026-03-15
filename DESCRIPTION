@@ -1,6 +1,6 @@
 Package: easyRaschBayes
 Title: Bayesian Rasch Analysis Using 'brms'
-Version: 0.1.0.9000
+Version: 0.1.1
 Authors@R: c(
     person("Magnus", "Johansson",
            role = c("aut", "cre"),
@@ -34,9 +34,10 @@ Imports:
     tibble (>= 3.0.0),
     ggdist,
     stats,
-    grDevices
-Suggests:
+    grDevices,
     ggplot2 (>= 3.4.0),
+    forcats
+Suggests:
     ggrepel,
     patchwork,
     eRm,

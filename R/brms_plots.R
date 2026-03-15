@@ -522,7 +522,7 @@ plot_ipf <- function(
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
-#' df_rm <- eRm::rainger %>%
+#' df_rm <- eRm::raschdat3 %>%
 #'   as.data.frame() %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")

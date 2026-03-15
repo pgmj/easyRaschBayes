@@ -4,7 +4,13 @@
 \alias{infit_statistic}
 \title{Posterior Predictive Infit Statistic for Bayesian IRT Models}
 \usage{
-infit_statistic(model, item_var = item, person_var = id, ndraws_use = NULL)
+infit_statistic(
+  model,
+  item_var = item,
+  person_var = id,
+  ndraws_use = NULL,
+  outfit = FALSE
+)
 }
 \arguments{
 \item{model}{A fitted \code{\link[brms]{brmsfit}} object from an ordinal
@@ -20,6 +26,11 @@ grouping variable in the model data (e.g., \code{id}).}
 \item{ndraws_use}{Optional positive integer. If specified, a random subset
 of posterior draws of this size is used. If \code{NULL} (the default),
 all draws are used.}
+
+\item{outfit}{Logical. If \code{TRUE}, outfit statistics are computed
+alongside infit. Default is \code{FALSE} (infit only), since outfit
+is highly sensitive to outliers and rarely recommended for Rasch
+diagnostics.}
 }
 \value{
 A \code{\link[tibble]{tibble}} with the following columns:
@@ -29,9 +40,10 @@ A \code{\link[tibble]{tibble}} with the following columns:
 \item{infit}{The observed infit statistic for that item and draw.}
 \item{infit_rep}{The replicated infit statistic (based on posterior
 predicted data) for that item and draw.}
-\item{outfit}{The observed outfit statistic for that item and draw.}
-\item{outfit_rep}{The replicated outfit statistic for that item and
-draw.}
+\item{outfit}{(Only if \code{outfit = TRUE}) The observed outfit
+statistic for that item and draw.}
+\item{outfit_rep}{(Only if \code{outfit = TRUE}) The replicated
+outfit statistic for that item and draw.}
 }
 The output is grouped by the item variable. Posterior predictive
 p-values can be obtained by computing, e.g.,
@@ -48,8 +60,8 @@ can be summarised into posterior predictive p-values to assess item fit.
 }
 \details{
 The procedure adapts the conditional infit/outfit statistics
-(Christensen et al., 2013; Kreiner & Christensen, 2011; Müller, 2020) to the
-Bayesian framework:
+(Christensen et al., 2013; Kreiner & Christensen, 2011; Müller, 2020)
+to the Bayesian framework:
 
 \enumerate{
 \item For each posterior draw \eqn{s}, category probabilities
@@ -62,20 +74,12 @@ observation are computed as:
       P^{(s)}(X_{vi} = c)}
 \item Standardised squared residuals are:
 \deqn{Z^{2(s)}_{vi} = (X_{vi} - E^{(s)}_{vi})^2 / Var^{(s)}_{vi}}
-\item \strong{Outfit} is the unweighted mean of \eqn{Z^{2}_{vi}}
-across persons within each item.
-\item \strong{Infit} is the variance-weighted mean:
-\deqn{Infit^{(s)}_i = \frac{\sum_v Var^{(s)}_{vi} \cdot
-      Z^{2(s)}_{vi}}{\sum_v Var^{(s)}_{vi}}}
-\item The same computations are repeated for replicated data
-\eqn{Y^{rep}} drawn via \code{\link[brms]{posterior_predict}}.
+\item The infit statistic for item \eqn{i} is the variance-weighted
+mean of \eqn{Z^2} across persons:
+\deqn{Infit_i^{(s)} = \frac{\sum_v Var_{vi}^{(s)} Z^{2(s)}_{vi}}
+      {\sum_v Var_{vi}^{(s)}}}
+\item If requested, the outfit is the unweighted mean of \eqn{Z^2}.
 }
-
-Under perfect fit, both infit and outfit have an expected value of 1.
-Values substantially above 1 indicate underfit (too much noise),
-values below 1 indicate overfit (too little variation, e.g.,
-redundancy). Posterior predictive p-values near 0 or 1 indicate
-misfit.
 }
 \examples{
 \donttest{
@@ -106,14 +110,11 @@ item_infit <- infit_statistic(
   ndraws_use = 100 # use at least 500
 )
 
-# Summarise across draws
-item_infit \%>\%
-  group_by(item) \%>\%
-  summarise(
-    infit_obs = mean(infit),
-    infit_rep = mean(infit_rep),
-    infit_ppp = mean(infit_rep > infit)
-  )
+# Post-process draws
+infit_results <- infit_post(item_infit)
+infit_results$summary
+infit_results$hdi
+infit_results$plot
 
 # --- Dichotomous Rasch Model ---
 
@@ -136,25 +137,16 @@ item_infit_rm <- infit_statistic(
   ndraws_use = 100 # use at least 500
 )
 
-item_infit_rm \%>\%
-  group_by(item) \%>\%
-  summarise(
-    infit_obs = mean(infit),
-    infit_rep = mean(infit_rep),
-    infit_ppp = mean(infit_rep > infit)
-  )
+# Post-process draws
+infit_results <- infit_post(item_infit_rm)
+infit_results$summary
+infit_results$hdi
+infit_results$plot
+
 }
 
 }
 \references{
-Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS)
-with Bayesian Item Response Models. \emph{Journal of Intelligence},
-\emph{8}(1). \doi{10.3390/jintelligence8010005}
-
-Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
-Stan. \emph{Journal of Statistical Software}, \emph{100}, 1--54.
-\doi{10.18637/jss.v100.i05}
-
 Christensen, K. B., Kreiner, S. & Mesbah, M. (Eds.) (2013).
 \emph{Rasch Models in Health}. Iste and Wiley, pp. 86--90.
 
@@ -162,8 +154,9 @@ Kreiner, S. & Christensen, K. B. (2011). Exact evaluation of Bias in
 Rasch model residuals. \emph{Advances in Mathematics Research}, 12,
 19--40.
 
-Müller, M. (2020). Item fit statistics for Rasch analysis: can we trust them?
-\emph{Journal of Statistical Distributions and Applications}, \emph{7}(1).
+Müller, M. (2020). Item fit statistics for Rasch analysis: can we
+trust them? \emph{Journal of Statistical Distributions and
+Applications}, \emph{7}(1).
 \doi{10.1186/s40488-020-00108-7}
 }
 \seealso{
@@ -172,6 +165,5 @@ fit statistic with user-supplied criterion functions,
 \code{\link{fit_statistic_rm}} for a general-purpose posterior predictive
 fit statistic with user-supplied criterion functions,
 \code{\link[brms]{posterior_epred}},
-\code{\link[brms]{posterior_predict}},
-\code{\link[brms]{pp_check}}.
+\code{\link[brms]{posterior_predict}}.
 }

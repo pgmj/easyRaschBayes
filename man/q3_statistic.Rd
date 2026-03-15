@@ -12,51 +12,39 @@ ordinal IRT model (e.g., \code{family = acat} for a partial credit
 model) or a dichotomous model (\code{family = bernoulli()}).}
 
 \item{item_var}{An unquoted variable name identifying the item grouping
-variable in the model data (e.g., \code{item}).}
+variable in the model data. Default is \code{item}.}
 
 \item{person_var}{An unquoted variable name identifying the person
-grouping variable in the model data (e.g., \code{id}).}
+grouping variable in the model data. Default is \code{id}.}
 
 \item{ndraws_use}{Optional positive integer. If specified, a random
 subset of posterior draws of this size is used. If \code{NULL} (the
 default), all draws are used.}
 }
 \value{
-A \code{\link[tibble]{tibble}} with the following columns:
+A \code{\link[tibble]{tibble}} in long format with one row
+per draw per item pair, containing:
 \describe{
+\item{draw}{Integer draw index.}
+\item{item_pair}{Character label of the item pair
+(\code{"item1 : item2"}).}
 \item{item_1}{First item in the pair.}
 \item{item_2}{Second item in the pair.}
-\item{q3_obs}{Posterior mean of the observed Q3 residual correlation.}
-\item{q3_rep}{Posterior mean of the replicated Q3 residual
-correlation.}
-\item{q3_diff}{Posterior mean of \code{q3_obs - q3_rep}. Large
-positive values indicate that the observed residual correlation
-exceeds what the model expects.}
-\item{ppp}{Posterior predictive p-value:
-\code{mean(q3_obs > q3_rep)} across draws. Values close to 1
-indicate local dependence (observed correlation systematically
-higher than replicated).}
-\item{q3_obs_q025, q3_obs_q975}{2.5\\% and 97.5\\% quantiles
-(95\\% credible interval) of the posterior distribution of
-observed Q3.}
-\item{q3_obs_q005, q3_obs_q995}{0.5\\% and 99.5\\% quantiles
-(99\\% credible interval) of the posterior distribution of
-observed Q3.}
-\item{q3_diff_q025, q3_diff_q975}{2.5\\% and 97.5\\% quantiles
-(95\\% credible interval) of the posterior distribution of
-Q3 differences.}
-\item{q3_diff_q005, q3_diff_q995}{0.5\\% and 99.5\\% quantiles
-(99\\% credible interval) of the posterior distribution of
-Q3 differences.}
+\item{q3}{Observed Q3 residual correlation for this draw.}
+\item{q3_rep}{Replicated Q3 residual correlation for this draw.}
 }
+
+This long-format output parallels the structure of
+\code{\link{infit_statistic}} and can be passed directly to
+\code{\link{q3_post}} for summary tables and plots.
 }
 \description{
 Computes a Bayesian analogue of Yen's Q3 statistic (Yen, 1984) for
 detecting local dependence between item pairs in Rasch-family models
 fitted with \pkg{brms}. For each posterior draw, residual correlations
-are computed for both observed and replicated data, yielding a
-posterior predictive p-value for each item pair that is automatically
-calibrated without requiring knowledge of the sampling distribution.
+are computed for both observed and replicated data, yielding draw-level
+Q3 values that can be summarized and visualized via
+\code{\link{q3_post}}.
 }
 \details{
 The procedure works as follows for each posterior draw \eqn{s}:
@@ -75,14 +63,7 @@ via \code{\link[brms]{posterior_predict}}.
 \item For each item pair \eqn{(i, j)}, compute Q3 as the Pearson
 correlation of residuals across all persons who responded to
 both items.
-\item Aggregate across draws to obtain posterior means, quantiles,
-and posterior predictive p-values.
 }
-
-The key advantage over parametric bootstrapping is that the reference
-distribution is obtained directly from the posterior, automatically
-accounting for parameter uncertainty and the negative bias inherent
-in Q3 (which depends on test length and person ability distribution).
 }
 \examples{
 \donttest{
@@ -108,19 +89,13 @@ fit_pcm <- brm(
 )
 
 # Q3 residual correlations
-q3_results <- q3_statistic(
-  model      = fit_pcm,
-  ndraws_use = 100 # use at least 500
-)
+q3_draws <- q3_statistic(fit_pcm, ndraws_use = 500)
 
-# Flag item pairs with ppp > 0.95 as locally dependent
-q3_results \%>\%
-  filter(ppp > 0.95) \%>\%
-  arrange(desc(q3_diff))
-
-# Inspect 99\% credible intervals for Q3 differences
-q3_results \%>\%
-  filter(q3_diff_q005 > 0)
+# Postprocess
+result <- q3_post(q3_draws)
+result$summary
+result$hdi
+result$plot
 
 # --- Dichotomous Rasch Model ---
 
@@ -138,13 +113,13 @@ fit_rm <- brm(
   iter   = 500 # use at least 2000 
 )
 
-q3_rm <- q3_statistic(
-  model      = fit_rm,
-  ndraws_use = 100 # use at least 500
-)
+q3_draws <- q3_statistic(fit_rm, ndraws_use = 500)
 
-q3_rm \%>\%
-  filter(ppp > 0.95)
+# Postprocess
+result <- q3_post(q3_draws)
+result$summary
+result$hdi
+result$plot
 }
 
 }
@@ -152,6 +127,7 @@ q3_rm \%>\%
 Yen, W. M. (1984). Effects of local item dependence on the fit and
 equating performance of the three-parameter logistic model.
 \emph{Applied Psychological Measurement}, \emph{8}(2), 125--145.
+\doi{10.1177/014662168400800201}
 
 Christensen, K. B., Makransky, G. & Horton, M. (2017). Critical
 values for Yen's Q3: Identification of local dependence in the
@@ -159,19 +135,12 @@ Rasch model using residual correlations.
 \emph{Applied Psychological Measurement}, \emph{41}(3), 178--194.
 \doi{10.1177/0146621616677520}
 
-Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS)
-with Bayesian Item Response Models. \emph{Journal of Intelligence},
-\emph{8}(1). \doi{10.3390/jintelligence8010005}
-
-Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
-and Stan. \emph{Journal of Statistical Software}, \emph{100}, 1--54.
-\doi{10.18637/jss.v100.i05}
+Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
+brms and Stan. \emph{Journal of Statistical Software}, \emph{100},
+1--54. \doi{10.18637/jss.v100.i05}
 }
 \seealso{
-\code{\link{fit_statistic_pcm}} for posterior predictive fit statistics
-with user-supplied criterion functions,
-\code{\link{fit_statistic_rm}} for posterior predictive fit statistics
-with user-supplied criterion functions,
+\code{\link{q3_post}} for postprocessing summaries and plots,
 \code{\link{infit_statistic}} for Bayesian infit/outfit,
 \code{\link[brms]{posterior_epred}},
 \code{\link[brms]{posterior_predict}}.

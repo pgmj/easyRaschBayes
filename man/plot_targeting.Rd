@@ -150,7 +150,7 @@ plot_targeting(fit_pcm, robust = TRUE, sort_items = "location")
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::rainger \%>\%
+df_rm <- eRm::raschdat3 \%>\%
   as.data.frame() \%>\%
   rownames_to_column("id") \%>\%
   pivot_longer(!id, names_to = "item", values_to = "response")

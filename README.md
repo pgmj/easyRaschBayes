@@ -11,6 +11,10 @@ features using Bayesian item response theory (IRT) models fitted with
 Rasch models and polytomous partial credit models, and exposes
 the full posterior distribution for all output.
 
+For more materials on Rasch analysis, see the 
+[vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html) for my 
+(frequentist) package [`easyRasch`](https://pgmj.github.io/easyRasch/).
+
 ## Installation
 
 Install the stable version from CRAN:
@@ -30,15 +34,15 @@ remotes::install_github("pgmj/easyRaschBayes")
 
 | Function | Description |
 |---|---|
-| `dif_statistic()` | Differential Item Functioning (DIF) analysis |
-| `fit_statistic_pcm()` | Posterior predictive item fit for polytomous models |
-| `fit_statistic_rm()` | Posterior predictive item fit for dichotomous models |
 | `infit_statistic()` | Conditional infit / outfit statistics |
 | `item_restscore_statistic()` | Item–rest score associations with Goodman & Kruskal's gamma |
 | `plot_residual_pca()` | Residual PCA contrast plot for dimensionality assessment |
 | `q3_statistic()` | Yen's Q3 residual correlations for local dependence evaluation |
 | `plot_ipf()` | Item category probability function curves |
 | `plot_targeting()` | Person-item map (Wright map) |
+| `dif_statistic()` | Differential Item Functioning (DIF) analysis |
+| `fit_statistic_pcm()` | Posterior predictive item fit for polytomous models |
+| `fit_statistic_rm()` | Posterior predictive item fit for dichotomous models |
 | `RMUreliability()` | Reliability via Relative Measurement Uncertainty (RMU) |
 
 ## Usage
@@ -55,14 +59,19 @@ fit <- brm(
   chains = 4, cores = 4
 )
 
-# Item fit
-infit_statistic(fit)
+# Conditional item infit
+infit <- infit_statistic(fit)
+infit_post(infit)
+
+# Local dependence with Yen's Q3
+q3_results <- q3_statistic(fit)
+q3_post(q3_results)
+
+# Response category functioning
+plot_ipf(fit)
 
 # Person-item map
 plot_targeting(fit)
-
-# Local dependence
-q3_statistic(fit)
 ```
 
 ## References

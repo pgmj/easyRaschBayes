@@ -14,19 +14,13 @@
 
 ## Notes
 
-* This is a resubmission. In this version I have:
+* Update version 0.1.0 -> 0.1.1. 
 
-* Fixed unexecutable code in examples for `plot_residual_pca` 
-  (missing comma) and `RMUreliability` (uncommented line).
-* Replaced all `\dontrun{}` with `\donttest{}` in examples, 
-  since they can be executed but take longer than 5 seconds 
-  due to MCMC sampling. I have reduced the sampling in the 
-  examples to reduce their processing time.
+* Improved performance in 4 of the main functions and harmonized the output to be more 
+  similar across functions.
+* Added 3 post-processing functions
 
 * Notes since prior submission:
-
-* "DIF", "Rasch", and "infit" are established psychometric terms,
-  not misspellings.
 
 * The package depends on 'brms', which requires a C++ toolchain for
   Stan model compilation. All examples and the vignette use
