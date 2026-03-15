@@ -154,21 +154,21 @@ it).</p>
 <span><span class="co">#&gt; # A tibble: 4 × 4</span></span>
 <span><span class="co">#&gt;   item  infit_obs infit_rep infit_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        1.04      0.995     0.252</span></span>
-<span><span class="co">#&gt; 2 I2        1.08      1.00      0.144</span></span>
-<span><span class="co">#&gt; 3 I3        0.921     0.998     0.862</span></span>
-<span><span class="co">#&gt; 4 I4        1.04      0.995     0.314</span></span>
+<span><span class="co">#&gt; 1 I1        1.04      0.994     0.248</span></span>
+<span><span class="co">#&gt; 2 I2        1.08      0.998     0.142</span></span>
+<span><span class="co">#&gt; 3 I3        0.916     1.00      0.922</span></span>
+<span><span class="co">#&gt; 4 I4        1.03      1.00      0.336</span></span>
 <span><span class="va">infit_results</span><span class="op">$</span><span class="va">hdi</span></span>
 <span><span class="co">#&gt; # A tibble: 4 × 3</span></span>
 <span><span class="co">#&gt;   item  underfit overfit</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;    &lt;dbl&gt;   &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1       0.206   0.012</span></span>
-<span><span class="co">#&gt; 2 I2       0.388   0.004</span></span>
-<span><span class="co">#&gt; 3 I3       0.01    0.258</span></span>
-<span><span class="co">#&gt; 4 I4       0.176   0.008</span></span>
+<span><span class="co">#&gt; 1 I1       0.226   0.012</span></span>
+<span><span class="co">#&gt; 2 I2       0.446   0.006</span></span>
+<span><span class="co">#&gt; 3 I3       0.002   0.426</span></span>
+<span><span class="co">#&gt; 4 I4       0.156   0.016</span></span>
 <span><span class="va">infit_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="articles/figures/pcm-infit-1.png" alt="plot of chunk infit" width="100%"><p class="caption">
+<img src="figures/pcm-infit-1.png" alt="plot of chunk infit" width="100%"><p class="caption">
 plot of chunk infit
 </p>
 </div>
@@ -196,13 +196,13 @@ latent trait.</p>
 <span><span class="co">#&gt; # A tibble: 4 × 5</span></span>
 <span><span class="co">#&gt;   item  gamma_obs gamma_rep gamma_diff   ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        0.473     0.539     -0.066 0.124</span></span>
-<span><span class="co">#&gt; 2 I2        0.441     0.547     -0.106 0.042</span></span>
-<span><span class="co">#&gt; 3 I3        0.643     0.537      0.105 0.958</span></span>
-<span><span class="co">#&gt; 4 I4        0.535     0.538     -0.003 0.47</span></span>
+<span><span class="co">#&gt; 1 I1        0.473     0.544     -0.071 0.106</span></span>
+<span><span class="co">#&gt; 2 I2        0.441     0.548     -0.106 0.044</span></span>
+<span><span class="co">#&gt; 3 I3        0.643     0.537      0.106 0.96 </span></span>
+<span><span class="co">#&gt; 4 I4        0.535     0.539     -0.004 0.476</span></span>
 <span><span class="va">rest_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="articles/figures/pcm-restscore-1.png" alt="plot of chunk restscore" width="100%"><p class="caption">
+<img src="figures/pcm-restscore-1.png" alt="plot of chunk restscore" width="100%"><p class="caption">
 plot of chunk restscore
 </p>
 </div>
@@ -219,7 +219,7 @@ locations and the uncertainty of both.</p>
 <span><span class="va">pca</span><span class="op">$</span><span class="va">plot</span></span>
 <span><span class="co">#&gt; `height` was translated to `width`.</span></span></code></pre></div>
 <div class="figure">
-<img src="articles/figures/pcm-pca-plot-1.png" alt="plot of chunk pca-plot" width="100%"><p class="caption">
+<img src="figures/pcm-pca-plot-1.png" alt="plot of chunk pca-plot" width="100%"><p class="caption">
 plot of chunk pca-plot
 </p>
 </div>
@@ -245,25 +245,25 @@ on ppp values above 0.95.</p>
 <span><span class="co">#&gt; # A tibble: 6 × 7</span></span>
 <span><span class="co">#&gt;   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.341  0.004   0.337  1    </span></span>
-<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.103  0.001   0.102  0.994</span></span>
-<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.069  0.002  -0.071  0.018</span></span>
-<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.086 -0.002  -0.084  0.002</span></span>
-<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.129 -0.002  -0.127  0    </span></span>
-<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.162 -0.002  -0.16   0</span></span>
+<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.342 -0.002   0.344  1    </span></span>
+<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.104  0.005   0.099  0.994</span></span>
+<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.068 -0.004  -0.064  0.042</span></span>
+<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.084 -0.001  -0.083  0.002</span></span>
+<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.129  0.001  -0.13   0    </span></span>
+<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.16  -0.004  -0.156  0</span></span>
 <span><span class="va">q3_results</span><span class="op">$</span><span class="va">hdi</span></span>
 <span><span class="co">#&gt; # A tibble: 6 × 5</span></span>
 <span><span class="co">#&gt;   item_pair item_1 item_2    ld    lr</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I3 : I4   I3     I4      1    0    </span></span>
-<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.67 0    </span></span>
-<span><span class="co">#&gt; 3 I1 : I3   I1     I3      0    0.384</span></span>
-<span><span class="co">#&gt; 4 I1 : I4   I1     I4      0    0.914</span></span>
-<span><span class="co">#&gt; 5 I2 : I3   I2     I3      0    0.562</span></span>
-<span><span class="co">#&gt; 6 I2 : I4   I2     I4      0    0.964</span></span>
+<span><span class="co">#&gt; 1 I3 : I4   I3     I4     1     0    </span></span>
+<span><span class="co">#&gt; 2 I1 : I2   I1     I2     0.756 0    </span></span>
+<span><span class="co">#&gt; 3 I1 : I3   I1     I3     0     0.272</span></span>
+<span><span class="co">#&gt; 4 I1 : I4   I1     I4     0     0.878</span></span>
+<span><span class="co">#&gt; 5 I2 : I3   I2     I3     0     0.524</span></span>
+<span><span class="co">#&gt; 6 I2 : I4   I2     I4     0     0.996</span></span>
 <span><span class="va">q3_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="articles/figures/pcm-q3-1.png" alt="plot of chunk q3" width="100%"><p class="caption">
+<img src="figures/pcm-q3-1.png" alt="plot of chunk q3" width="100%"><p class="caption">
 plot of chunk q3
 </p>
 </div>
@@ -278,7 +278,7 @@ shown with the shaded area around each line.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ipf.html">plot_ipf</a></span><span class="op">(</span><span class="va">fit_pcm</span>, theta_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">6</span>,<span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="articles/figures/pcm-ipf-plot-1.png" alt="plot of chunk ipf-plot" width="100%"><p class="caption">
+<img src="figures/pcm-ipf-plot-1.png" alt="plot of chunk ipf-plot" width="100%"><p class="caption">
 plot of chunk ipf-plot
 </p>
 </div>
@@ -293,7 +293,7 @@ occurs when person and item distributions overlap substantially.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_targeting.html">plot_targeting</a></span><span class="op">(</span><span class="va">fit_pcm</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="articles/figures/pcm-targeting-1.png" alt="plot of chunk targeting" width="100%"><p class="caption">
+<img src="figures/pcm-targeting-1.png" alt="plot of chunk targeting" width="100%"><p class="caption">
 plot of chunk targeting
 </p>
 </div>
@@ -316,7 +316,7 @@ continuous intervals (HDCI).</p>
 <span><span class="va">rmu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RMUreliability.html">RMUreliability</a></span><span class="op">(</span><span class="va">person_draws</span><span class="op">)</span></span>
 <span><span class="va">rmu</span></span>
 <span><span class="co">#&gt;   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval</span></span>
-<span><span class="co">#&gt; 1    0.6723775       0.6105315       0.7301193   0.95   mean      hdci</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    0.6732676       0.6166992       0.7322603   0.95   mean      hdci</span></span></code></pre></div>
 <p>RMU values range from 0 to 1, with higher values indicating higher
 reliability, similarly to traditional reliability metrics such as
 Cronbach’s alpha.</p>

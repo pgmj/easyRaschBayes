@@ -101,22 +101,22 @@ infit_results$summary
 #> # A tibble: 4 × 4
 #>   item  infit_obs infit_rep infit_ppp
 #>   <chr>     <dbl>     <dbl>     <dbl>
-#> 1 I1        1.04      0.995     0.252
-#> 2 I2        1.08      1.00      0.144
-#> 3 I3        0.921     0.998     0.862
-#> 4 I4        1.04      0.995     0.314
+#> 1 I1        1.04      0.994     0.248
+#> 2 I2        1.08      0.998     0.142
+#> 3 I3        0.916     1.00      0.922
+#> 4 I4        1.03      1.00      0.336
 infit_results$hdi
 #> # A tibble: 4 × 3
 #>   item  underfit overfit
 #>   <chr>    <dbl>   <dbl>
-#> 1 I1       0.206   0.012
-#> 2 I2       0.388   0.004
-#> 3 I3       0.01    0.258
-#> 4 I4       0.176   0.008
+#> 1 I1       0.226   0.012
+#> 2 I2       0.446   0.006
+#> 3 I3       0.002   0.426
+#> 4 I4       0.156   0.016
 infit_results$plot
 ```
 
-![plot of chunk infit](articles/figures/pcm-infit-1.png)
+![plot of chunk infit](figures/pcm-infit-1.png)
 
 plot of chunk infit
 
@@ -144,14 +144,14 @@ rest_results$summary
 #> # A tibble: 4 × 5
 #>   item  gamma_obs gamma_rep gamma_diff   ppp
 #>   <chr>     <dbl>     <dbl>      <dbl> <dbl>
-#> 1 I1        0.473     0.539     -0.066 0.124
-#> 2 I2        0.441     0.547     -0.106 0.042
-#> 3 I3        0.643     0.537      0.105 0.958
-#> 4 I4        0.535     0.538     -0.003 0.47
+#> 1 I1        0.473     0.544     -0.071 0.106
+#> 2 I2        0.441     0.548     -0.106 0.044
+#> 3 I3        0.643     0.537      0.106 0.96 
+#> 4 I4        0.535     0.539     -0.004 0.476
 rest_results$plot
 ```
 
-![plot of chunk restscore](articles/figures/pcm-restscore-1.png)
+![plot of chunk restscore](figures/pcm-restscore-1.png)
 
 plot of chunk restscore
 
@@ -168,7 +168,7 @@ pca$plot
 #> `height` was translated to `width`.
 ```
 
-![plot of chunk pca-plot](articles/figures/pcm-pca-plot-1.png)
+![plot of chunk pca-plot](figures/pcm-pca-plot-1.png)
 
 plot of chunk pca-plot
 
@@ -194,26 +194,26 @@ q3_results$summary
 #> # A tibble: 6 × 7
 #>   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp
 #>   <chr>     <chr>  <chr>   <dbl>  <dbl>   <dbl>  <dbl>
-#> 1 I3 : I4   I3     I4      0.341  0.004   0.337  1    
-#> 2 I1 : I2   I1     I2      0.103  0.001   0.102  0.994
-#> 3 I1 : I3   I1     I3     -0.069  0.002  -0.071  0.018
-#> 4 I2 : I3   I2     I3     -0.086 -0.002  -0.084  0.002
-#> 5 I1 : I4   I1     I4     -0.129 -0.002  -0.127  0    
-#> 6 I2 : I4   I2     I4     -0.162 -0.002  -0.16   0
+#> 1 I3 : I4   I3     I4      0.342 -0.002   0.344  1    
+#> 2 I1 : I2   I1     I2      0.104  0.005   0.099  0.994
+#> 3 I1 : I3   I1     I3     -0.068 -0.004  -0.064  0.042
+#> 4 I2 : I3   I2     I3     -0.084 -0.001  -0.083  0.002
+#> 5 I1 : I4   I1     I4     -0.129  0.001  -0.13   0    
+#> 6 I2 : I4   I2     I4     -0.16  -0.004  -0.156  0
 q3_results$hdi
 #> # A tibble: 6 × 5
 #>   item_pair item_1 item_2    ld    lr
 #>   <chr>     <chr>  <chr>  <dbl> <dbl>
-#> 1 I3 : I4   I3     I4      1    0    
-#> 2 I1 : I2   I1     I2      0.67 0    
-#> 3 I1 : I3   I1     I3      0    0.384
-#> 4 I1 : I4   I1     I4      0    0.914
-#> 5 I2 : I3   I2     I3      0    0.562
-#> 6 I2 : I4   I2     I4      0    0.964
+#> 1 I3 : I4   I3     I4     1     0    
+#> 2 I1 : I2   I1     I2     0.756 0    
+#> 3 I1 : I3   I1     I3     0     0.272
+#> 4 I1 : I4   I1     I4     0     0.878
+#> 5 I2 : I3   I2     I3     0     0.524
+#> 6 I2 : I4   I2     I4     0     0.996
 q3_results$plot
 ```
 
-![plot of chunk q3](articles/figures/pcm-q3-1.png)
+![plot of chunk q3](figures/pcm-q3-1.png)
 
 plot of chunk q3
 
@@ -228,7 +228,7 @@ shown with the shaded area around each line.
 plot_ipf(fit_pcm, theta_range = c(-6,5))
 ```
 
-![plot of chunk ipf-plot](articles/figures/pcm-ipf-plot-1.png)
+![plot of chunk ipf-plot](figures/pcm-ipf-plot-1.png)
 
 plot of chunk ipf-plot
 
@@ -244,7 +244,7 @@ distributions overlap substantially.
 plot_targeting(fit_pcm)
 ```
 
-![plot of chunk targeting](articles/figures/pcm-targeting-1.png)
+![plot of chunk targeting](figures/pcm-targeting-1.png)
 
 plot of chunk targeting
 
@@ -266,7 +266,7 @@ person_draws <- fit_pcm %>%
 rmu <- RMUreliability(person_draws)
 rmu
 #>   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval
-#> 1    0.6723775       0.6105315       0.7301193   0.95   mean      hdci
+#> 1    0.6732676       0.6166992       0.7322603   0.95   mean      hdci
 ```
 
 RMU values range from 0 to 1, with higher values indicating higher
