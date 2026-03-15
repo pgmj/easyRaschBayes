@@ -95,22 +95,30 @@ all draws (set `ndraws_use = NULL` or omit it).
 ``` r
 fit_stats <- infit_statistic(fit_pcm, ndraws_use = 500)
 
-# Posterior predictive p-values summarised per item
-fit_stats %>%
-  group_by(item) %>%
-  summarise(
-    infit_obs = round(mean(infit),3),
-    infit_rep = round(mean(infit_rep),3),
-    infit_ppp = round(mean(infit_rep > infit),3)
-  )
+# Post-process infit
+infit_results <- infit_post(fit_stats)
+infit_results$summary
 #> # A tibble: 4 × 4
 #>   item  infit_obs infit_rep infit_ppp
 #>   <chr>     <dbl>     <dbl>     <dbl>
-#> 1 I1        1.04      0.998     0.262
-#> 2 I2        1.08      0.998     0.11 
-#> 3 I3        0.922     0.996     0.856
-#> 4 I4        1.03      0.995     0.312
+#> 1 I1        1.04      0.995     0.252
+#> 2 I2        1.08      1.00      0.144
+#> 3 I3        0.921     0.998     0.862
+#> 4 I4        1.04      0.995     0.314
+infit_results$hdi
+#> # A tibble: 4 × 3
+#>   item  underfit overfit
+#>   <chr>    <dbl>   <dbl>
+#> 1 I1       0.206   0.012
+#> 2 I2       0.388   0.004
+#> 3 I3       0.01    0.258
+#> 4 I4       0.176   0.008
+infit_results$plot
 ```
+
+![plot of chunk infit](articles/figures/pcm-infit-1.png)
+
+plot of chunk infit
 
 `infit_obs` indicates the observed conditional infit, which can be
 compared to `infit_rep`, which is akin to the model expected value.
@@ -131,33 +139,36 @@ not relate well to the latent trait.
 ``` r
 rest_stats <- item_restscore_statistic(fit_pcm, ndraws_use = 500)
 
-rest_stats[,1:5] %>% 
-  mutate(across(where(is.numeric), ~ round(.x, 3)))
+rest_results <- item_restscore_post(rest_stats)
+rest_results$summary
 #> # A tibble: 4 × 5
 #>   item  gamma_obs gamma_rep gamma_diff   ppp
 #>   <chr>     <dbl>     <dbl>      <dbl> <dbl>
-#> 1 I3        0.643     0.532      0.11  0.968
-#> 2 I4        0.535     0.542     -0.007 0.466
-#> 3 I1        0.473     0.543     -0.07  0.1  
-#> 4 I2        0.441     0.548     -0.107 0.032
+#> 1 I1        0.473     0.539     -0.066 0.124
+#> 2 I2        0.441     0.547     -0.106 0.042
+#> 3 I3        0.643     0.537      0.105 0.958
+#> 4 I4        0.535     0.538     -0.003 0.47
+rest_results$plot
 ```
 
-The output is limited to columns 1 through 5 in the output above.
+![plot of chunk restscore](articles/figures/pcm-restscore-1.png)
+
+plot of chunk restscore
 
 ## Dimensionality: Residual PCA
 
 [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/reference/plot_residual_pca.md)
 performs a principal components analysis on the person-item residuals
-and plots the loadings on the first contrast together with the item
-locations and the uncertainty of both. Substantial loadings on the first
-contrast suggest multidimensionality.
+and plots the standardized loadings on the first residual contrast
+factor together with item locations and the uncertainty of both.
 
 ``` r
 pca <- plot_residual_pca(fit_pcm, ndraws_use = 500)
 pca$plot
+#> `height` was translated to `width`.
 ```
 
-![plot of chunk pca-plot](figures/pca-plot-1.png)
+![plot of chunk pca-plot](articles/figures/pcm-pca-plot-1.png)
 
 plot of chunk pca-plot
 
@@ -178,19 +189,33 @@ close to 1. The output is filtered on ppp values above 0.95.
 ``` r
 q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
 
-q3_stats %>% 
-  filter(ppp > 0.95)
-#> # A tibble: 1 × 14
-#>   item_1 item_2 q3_obs  q3_rep q3_diff   ppp q3_obs_q025 q3_obs_q975
-#>   <chr>  <chr>   <dbl>   <dbl>   <dbl> <dbl>       <dbl>       <dbl>
-#> 1 I3     I4      0.342 0.00208   0.340     1       0.285       0.393
-#> # ℹ 6 more variables: q3_diff_q025 <dbl>, q3_diff_q975 <dbl>,
-#> #   q3_obs_q005 <dbl>, q3_obs_q995 <dbl>, q3_diff_q005 <dbl>,
-#> #   q3_diff_q995 <dbl>
+q3_results <- q3_post(q3_stats)
+q3_results$summary
+#> # A tibble: 6 × 7
+#>   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp
+#>   <chr>     <chr>  <chr>   <dbl>  <dbl>   <dbl>  <dbl>
+#> 1 I3 : I4   I3     I4      0.341  0.004   0.337  1    
+#> 2 I1 : I2   I1     I2      0.103  0.001   0.102  0.994
+#> 3 I1 : I3   I1     I3     -0.069  0.002  -0.071  0.018
+#> 4 I2 : I3   I2     I3     -0.086 -0.002  -0.084  0.002
+#> 5 I1 : I4   I1     I4     -0.129 -0.002  -0.127  0    
+#> 6 I2 : I4   I2     I4     -0.162 -0.002  -0.16   0
+q3_results$hdi
+#> # A tibble: 6 × 5
+#>   item_pair item_1 item_2    ld    lr
+#>   <chr>     <chr>  <chr>  <dbl> <dbl>
+#> 1 I3 : I4   I3     I4      1    0    
+#> 2 I1 : I2   I1     I2      0.67 0    
+#> 3 I1 : I3   I1     I3      0    0.384
+#> 4 I1 : I4   I1     I4      0    0.914
+#> 5 I2 : I3   I2     I3      0    0.562
+#> 6 I2 : I4   I2     I4      0    0.964
+q3_results$plot
 ```
 
-Pairs flagged as locally dependent should be examined for substantive
-overlap in item content.
+![plot of chunk q3](articles/figures/pcm-q3-1.png)
+
+plot of chunk q3
 
 ## Item Category Probabilities
 
@@ -203,7 +228,7 @@ shown with the shaded area around each line.
 plot_ipf(fit_pcm, theta_range = c(-6,5))
 ```
 
-![plot of chunk ipf-plot](figures/ipf-plot-1.png)
+![plot of chunk ipf-plot](articles/figures/pcm-ipf-plot-1.png)
 
 plot of chunk ipf-plot
 
@@ -219,12 +244,9 @@ distributions overlap substantially.
 plot_targeting(fit_pcm)
 ```
 
-![plot of chunk targeting](figures/targeting-1.png)
+![plot of chunk targeting](articles/figures/pcm-targeting-1.png)
 
 plot of chunk targeting
-
-If the person distribution is systematically above or below the item
-thresholds, the test may be too easy or too hard for the sample.
 
 ## Reliability: Relative Measurement Uncertainty
 
@@ -244,8 +266,9 @@ person_draws <- fit_pcm %>%
 rmu <- RMUreliability(person_draws)
 rmu
 #>   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval
-#> 1    0.6728529       0.6132611       0.7265942   0.95   mean      hdci
+#> 1    0.6723775       0.6105315       0.7301193   0.95   mean      hdci
 ```
 
 RMU values range from 0 to 1, with higher values indicating higher
-reliability, similarly to traditional reliability metrics.
+reliability, similarly to traditional reliability metrics such as
+Cronbach’s alpha.

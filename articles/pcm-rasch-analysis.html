@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -148,21 +148,30 @@ it).</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/infit_statistic.html">infit_statistic</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Posterior predictive p-values summarised per item</span></span>
-<span><span class="va">fit_stats</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">item</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
-<span>    infit_obs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span>,</span>
-<span>    infit_rep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit_rep</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span>,</span>
-<span>    infit_ppp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit_rep</span> <span class="op">&gt;</span> <span class="va">infit</span><span class="op">)</span>,<span class="fl">3</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="co"># Post-process infit</span></span>
+<span><span class="va">infit_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/infit_post.html">infit_post</a></span><span class="op">(</span><span class="va">fit_stats</span><span class="op">)</span></span>
+<span><span class="va">infit_results</span><span class="op">$</span><span class="va">summary</span></span>
 <span><span class="co">#&gt; # A tibble: 4 × 4</span></span>
 <span><span class="co">#&gt;   item  infit_obs infit_rep infit_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        1.04      0.998     0.262</span></span>
-<span><span class="co">#&gt; 2 I2        1.08      0.998     0.11 </span></span>
-<span><span class="co">#&gt; 3 I3        0.922     0.996     0.856</span></span>
-<span><span class="co">#&gt; 4 I4        1.03      0.995     0.312</span></span></code></pre></div>
+<span><span class="co">#&gt; 1 I1        1.04      0.995     0.252</span></span>
+<span><span class="co">#&gt; 2 I2        1.08      1.00      0.144</span></span>
+<span><span class="co">#&gt; 3 I3        0.921     0.998     0.862</span></span>
+<span><span class="co">#&gt; 4 I4        1.04      0.995     0.314</span></span>
+<span><span class="va">infit_results</span><span class="op">$</span><span class="va">hdi</span></span>
+<span><span class="co">#&gt; # A tibble: 4 × 3</span></span>
+<span><span class="co">#&gt;   item  underfit overfit</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;    &lt;dbl&gt;   &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 I1       0.206   0.012</span></span>
+<span><span class="co">#&gt; 2 I2       0.388   0.004</span></span>
+<span><span class="co">#&gt; 3 I3       0.01    0.258</span></span>
+<span><span class="co">#&gt; 4 I4       0.176   0.008</span></span>
+<span><span class="va">infit_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
+<div class="figure">
+<img src="articles/figures/pcm-infit-1.png" alt="plot of chunk infit" width="100%"><p class="caption">
+plot of chunk infit
+</p>
+</div>
 <p><code>infit_obs</code> indicates the observed conditional infit,
 which can be compared to <code>infit_rep</code>, which is akin to the
 model expected value. Posterior predictive p-values (<code>*_ppp</code>)
@@ -182,30 +191,35 @@ latent trait.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rest_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_restscore_statistic.html">item_restscore_statistic</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">rest_stats</span><span class="op">[</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">5</span><span class="op">]</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/where.html" class="external-link">where</a></span><span class="op">(</span><span class="va">is.numeric</span><span class="op">)</span>, <span class="op">~</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">.x</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">rest_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_restscore_post.html">item_restscore_post</a></span><span class="op">(</span><span class="va">rest_stats</span><span class="op">)</span></span>
+<span><span class="va">rest_results</span><span class="op">$</span><span class="va">summary</span></span>
 <span><span class="co">#&gt; # A tibble: 4 × 5</span></span>
 <span><span class="co">#&gt;   item  gamma_obs gamma_rep gamma_diff   ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I3        0.643     0.532      0.11  0.968</span></span>
-<span><span class="co">#&gt; 2 I4        0.535     0.542     -0.007 0.466</span></span>
-<span><span class="co">#&gt; 3 I1        0.473     0.543     -0.07  0.1  </span></span>
-<span><span class="co">#&gt; 4 I2        0.441     0.548     -0.107 0.032</span></span></code></pre></div>
-<p>The output is limited to columns 1 through 5 in the output above.</p>
+<span><span class="co">#&gt; 1 I1        0.473     0.539     -0.066 0.124</span></span>
+<span><span class="co">#&gt; 2 I2        0.441     0.547     -0.106 0.042</span></span>
+<span><span class="co">#&gt; 3 I3        0.643     0.537      0.105 0.958</span></span>
+<span><span class="co">#&gt; 4 I4        0.535     0.538     -0.003 0.47</span></span>
+<span><span class="va">rest_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
+<div class="figure">
+<img src="articles/figures/pcm-restscore-1.png" alt="plot of chunk restscore" width="100%"><p class="caption">
+plot of chunk restscore
+</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="dimensionality-residual-pca">Dimensionality: Residual PCA<a class="anchor" aria-label="anchor" href="#dimensionality-residual-pca"></a>
 </h2>
 <p><code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> performs a principal components
-analysis on the person-item residuals and plots the loadings on the
-first contrast together with the item locations and the uncertainty of
-both. Substantial loadings on the first contrast suggest
-multidimensionality.</p>
+analysis on the person-item residuals and plots the standardized
+loadings on the first residual contrast factor together with item
+locations and the uncertainty of both.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pca</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_residual_pca.html">plot_residual_pca</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
-<span><span class="va">pca</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
+<span><span class="va">pca</span><span class="op">$</span><span class="va">plot</span></span>
+<span><span class="co">#&gt; `height` was translated to `width`.</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pca-plot-1.png" alt="plot of chunk pca-plot" width="100%"><p class="caption">
+<img src="articles/figures/pcm-pca-plot-1.png" alt="plot of chunk pca-plot" width="100%"><p class="caption">
 plot of chunk pca-plot
 </p>
 </div>
@@ -226,17 +240,33 @@ on ppp values above 0.95.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">q3_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/q3_statistic.html">q3_statistic</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">q3_stats</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">ppp</span> <span class="op">&gt;</span> <span class="fl">0.95</span><span class="op">)</span></span>
-<span><span class="co">#&gt; # A tibble: 1 × 14</span></span>
-<span><span class="co">#&gt;   item_1 item_2 q3_obs  q3_rep q3_diff   ppp q3_obs_q025 q3_obs_q975</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;   &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;       &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I3     I4      0.342 0.00208   0.340     1       0.285       0.393</span></span>
-<span><span class="co">#&gt; # ℹ 6 more variables: q3_diff_q025 &lt;dbl&gt;, q3_diff_q975 &lt;dbl&gt;,</span></span>
-<span><span class="co">#&gt; #   q3_obs_q005 &lt;dbl&gt;, q3_obs_q995 &lt;dbl&gt;, q3_diff_q005 &lt;dbl&gt;,</span></span>
-<span><span class="co">#&gt; #   q3_diff_q995 &lt;dbl&gt;</span></span></code></pre></div>
-<p>Pairs flagged as locally dependent should be examined for substantive
-overlap in item content.</p>
+<span><span class="va">q3_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/q3_post.html">q3_post</a></span><span class="op">(</span><span class="va">q3_stats</span><span class="op">)</span></span>
+<span><span class="va">q3_results</span><span class="op">$</span><span class="va">summary</span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 7</span></span>
+<span><span class="co">#&gt;   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.341  0.004   0.337  1    </span></span>
+<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.103  0.001   0.102  0.994</span></span>
+<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.069  0.002  -0.071  0.018</span></span>
+<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.086 -0.002  -0.084  0.002</span></span>
+<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.129 -0.002  -0.127  0    </span></span>
+<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.162 -0.002  -0.16   0</span></span>
+<span><span class="va">q3_results</span><span class="op">$</span><span class="va">hdi</span></span>
+<span><span class="co">#&gt; # A tibble: 6 × 5</span></span>
+<span><span class="co">#&gt;   item_pair item_1 item_2    ld    lr</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 I3 : I4   I3     I4      1    0    </span></span>
+<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.67 0    </span></span>
+<span><span class="co">#&gt; 3 I1 : I3   I1     I3      0    0.384</span></span>
+<span><span class="co">#&gt; 4 I1 : I4   I1     I4      0    0.914</span></span>
+<span><span class="co">#&gt; 5 I2 : I3   I2     I3      0    0.562</span></span>
+<span><span class="co">#&gt; 6 I2 : I4   I2     I4      0    0.964</span></span>
+<span><span class="va">q3_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
+<div class="figure">
+<img src="articles/figures/pcm-q3-1.png" alt="plot of chunk q3" width="100%"><p class="caption">
+plot of chunk q3
+</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="item-category-probabilities">Item Category Probabilities<a class="anchor" aria-label="anchor" href="#item-category-probabilities"></a>
@@ -248,7 +278,7 @@ shown with the shaded area around each line.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ipf.html">plot_ipf</a></span><span class="op">(</span><span class="va">fit_pcm</span>, theta_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">6</span>,<span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/ipf-plot-1.png" alt="plot of chunk ipf-plot" width="100%"><p class="caption">
+<img src="articles/figures/pcm-ipf-plot-1.png" alt="plot of chunk ipf-plot" width="100%"><p class="caption">
 plot of chunk ipf-plot
 </p>
 </div>
@@ -263,12 +293,10 @@ occurs when person and item distributions overlap substantially.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_targeting.html">plot_targeting</a></span><span class="op">(</span><span class="va">fit_pcm</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/targeting-1.png" alt="plot of chunk targeting" width="100%"><p class="caption">
+<img src="articles/figures/pcm-targeting-1.png" alt="plot of chunk targeting" width="100%"><p class="caption">
 plot of chunk targeting
 </p>
 </div>
-<p>If the person distribution is systematically above or below the item
-thresholds, the test may be too easy or too hard for the sample.</p>
 </div>
 <div class="section level2">
 <h2 id="reliability-relative-measurement-uncertainty">Reliability: Relative Measurement Uncertainty<a class="anchor" aria-label="anchor" href="#reliability-relative-measurement-uncertainty"></a>
@@ -288,9 +316,10 @@ continuous intervals (HDCI).</p>
 <span><span class="va">rmu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RMUreliability.html">RMUreliability</a></span><span class="op">(</span><span class="va">person_draws</span><span class="op">)</span></span>
 <span><span class="va">rmu</span></span>
 <span><span class="co">#&gt;   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval</span></span>
-<span><span class="co">#&gt; 1    0.6728529       0.6132611       0.7265942   0.95   mean      hdci</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    0.6723775       0.6105315       0.7301193   0.95   mean      hdci</span></span></code></pre></div>
 <p>RMU values range from 0 to 1, with higher values indicating higher
-reliability, similarly to traditional reliability metrics.</p>
+reliability, similarly to traditional reliability metrics such as
+Cronbach’s alpha.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

@@ -19,7 +19,7 @@ can be summarised into posterior predictive p-values to assess item fit."></head
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -59,7 +59,13 @@ can be summarised into posterior predictive p-values to assess item fit.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">infit_statistic</span><span class="op">(</span><span class="va">model</span>, item_var <span class="op">=</span> <span class="va">item</span>, person_var <span class="op">=</span> <span class="va">id</span>, ndraws_use <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">infit_statistic</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  item_var <span class="op">=</span> <span class="va">item</span>,</span>
+<span>  person_var <span class="op">=</span> <span class="va">id</span>,</span>
+<span>  ndraws_use <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  outfit <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -87,6 +93,13 @@ grouping variable in the model data (e.g., <code>id</code>).</p></dd>
 of posterior draws of this size is used. If <code>NULL</code> (the default),
 all draws are used.</p></dd>
 
+
+<dt id="arg-outfit">outfit<a class="anchor" aria-label="anchor" href="#arg-outfit"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, outfit statistics are computed
+alongside infit. Default is <code>FALSE</code> (infit only), since outfit
+is highly sensitive to outliers and rarely recommended for Rasch
+diagnostics.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -104,11 +117,12 @@ all draws are used.</p></dd>
 predicted data) for that item and draw.</p></dd>
 
 <dt>outfit</dt>
-<dd><p>The observed outfit statistic for that item and draw.</p></dd>
+<dd><p>(Only if <code>outfit = TRUE</code>) The observed outfit
+statistic for that item and draw.</p></dd>
 
 <dt>outfit_rep</dt>
-<dd><p>The replicated outfit statistic for that item and
-draw.</p></dd>
+<dd><p>(Only if <code>outfit = TRUE</code>) The replicated
+outfit statistic for that item and draw.</p></dd>
 
 
 </dl><p>The output is grouped by the item variable. Posterior predictive
@@ -118,8 +132,8 @@ p-values can be obtained by computing, e.g.,
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The procedure adapts the conditional infit/outfit statistics
-(Christensen et al., 2013; Kreiner &amp; Christensen, 2011; Müller, 2020) to the
-Bayesian framework:</p>
+(Christensen et al., 2013; Kreiner &amp; Christensen, 2011; Müller, 2020)
+to the Bayesian framework:</p>
 <ol><li><p>For each posterior draw \(s\), category probabilities
 \(P^{(s)}(X_{vi} = c)\) are obtained from
 <code><a href="https://mc-stan.org/rstantools/reference/posterior_epred.html" class="external-link">posterior_epred</a></code>.</p></li>
@@ -130,34 +144,22 @@ $$Var^{(s)}_{vi} = \sum_c (c - E^{(s)}_{vi})^2 \cdot
       P^{(s)}(X_{vi} = c)$$</p></li>
 <li><p>Standardised squared residuals are:
 $$Z^{2(s)}_{vi} = (X_{vi} - E^{(s)}_{vi})^2 / Var^{(s)}_{vi}$$</p></li>
-<li><p><strong>Outfit</strong> is the unweighted mean of \(Z^{2}_{vi}\)
-across persons within each item.</p></li>
-<li><p><strong>Infit</strong> is the variance-weighted mean:
-$$Infit^{(s)}_i = \frac{\sum_v Var^{(s)}_{vi} \cdot
-      Z^{2(s)}_{vi}}{\sum_v Var^{(s)}_{vi}}$$</p></li>
-<li><p>The same computations are repeated for replicated data
-\(Y^{rep}\) drawn via <code><a href="https://mc-stan.org/rstantools/reference/posterior_predict.html" class="external-link">posterior_predict</a></code>.</p></li>
-</ol><p>Under perfect fit, both infit and outfit have an expected value of 1.
-Values substantially above 1 indicate underfit (too much noise),
-values below 1 indicate overfit (too little variation, e.g.,
-redundancy). Posterior predictive p-values near 0 or 1 indicate
-misfit.</p>
-    </div>
+<li><p>The infit statistic for item \(i\) is the variance-weighted
+mean of \(Z^2\) across persons:
+$$Infit_i^{(s)} = \frac{\sum_v Var_{vi}^{(s)} Z^{2(s)}_{vi}}
+      {\sum_v Var_{vi}^{(s)}}$$</p></li>
+<li><p>If requested, the outfit is the unweighted mean of \(Z^2\).</p></li>
+</ol></div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS)
-with Bayesian Item Response Models. <em>Journal of Intelligence</em>,
-<em>8</em>(1). <a href="https://doi.org/10.3390/jintelligence8010005" class="external-link">doi:10.3390/jintelligence8010005</a></p>
-<p>Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
-Stan. <em>Journal of Statistical Software</em>, <em>100</em>, 1–54.
-<a href="https://doi.org/10.18637/jss.v100.i05" class="external-link">doi:10.18637/jss.v100.i05</a></p>
-<p>Christensen, K. B., Kreiner, S. &amp; Mesbah, M. (Eds.) (2013).
+    <p>Christensen, K. B., Kreiner, S. &amp; Mesbah, M. (Eds.) (2013).
 <em>Rasch Models in Health</em>. Iste and Wiley, pp. 86–90.</p>
 <p>Kreiner, S. &amp; Christensen, K. B. (2011). Exact evaluation of Bias in
 Rasch model residuals. <em>Advances in Mathematics Research</em>, 12,
 19–40.</p>
-<p>Müller, M. (2020). Item fit statistics for Rasch analysis: can we trust them?
-<em>Journal of Statistical Distributions and Applications</em>, <em>7</em>(1).
+<p>Müller, M. (2020). Item fit statistics for Rasch analysis: can we
+trust them? <em>Journal of Statistical Distributions and
+Applications</em>, <em>7</em>(1).
 <a href="https://doi.org/10.1186/s40488-020-00108-7" class="external-link">doi:10.1186/s40488-020-00108-7</a></p>
     </div>
     <div class="section level2">
@@ -167,8 +169,7 @@ fit statistic with user-supplied criterion functions,
 <code><a href="fit_statistic_rm.html">fit_statistic_rm</a></code> for a general-purpose posterior predictive
 fit statistic with user-supplied criterion functions,
 <code><a href="https://mc-stan.org/rstantools/reference/posterior_epred.html" class="external-link">posterior_epred</a></code>,
-<code><a href="https://mc-stan.org/rstantools/reference/posterior_predict.html" class="external-link">posterior_predict</a></code>,
-<code><a href="https://mc-stan.org/bayesplot/reference/pp_check.html" class="external-link">pp_check</a></code>.</p></div>
+<code><a href="https://mc-stan.org/rstantools/reference/posterior_predict.html" class="external-link">posterior_predict</a></code>.</p></div>
     </div>
 
     <div class="section level2">
@@ -204,15 +205,15 @@ fit statistic with user-supplied criterion functions,
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_pcm' not found</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Summarise across draws</span></span></span>
-<span class="r-in"><span><span class="va">item_infit</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">item</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    infit_obs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    infit_rep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit_rep</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    infit_ppp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit_rep</span> <span class="op">&gt;</span> <span class="va">infit</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Post-process draws</span></span></span>
+<span class="r-in"><span><span class="va">infit_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="infit_post.html">infit_post</a></span><span class="op">(</span><span class="va">item_infit</span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'item_infit' not found</span>
+<span class="r-in"><span><span class="va">infit_results</span><span class="op">$</span><span class="va">summary</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'infit_results' not found</span>
+<span class="r-in"><span><span class="va">infit_results</span><span class="op">$</span><span class="va">hdi</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'infit_results' not found</span>
+<span class="r-in"><span><span class="va">infit_results</span><span class="op">$</span><span class="va">plot</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'infit_results' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># --- Dichotomous Rasch Model ---</span></span></span>
 <span class="r-in"><span></span></span>
@@ -238,14 +239,16 @@ fit statistic with user-supplied criterion functions,
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_rm' not found</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">item_infit_rm</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">item</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span></span>
-<span class="r-in"><span>    infit_obs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    infit_rep <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit_rep</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>    infit_ppp <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">infit_rep</span> <span class="op">&gt;</span> <span class="va">infit</span><span class="op">)</span></span></span>
-<span class="r-in"><span>  <span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Post-process draws</span></span></span>
+<span class="r-in"><span><span class="va">infit_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="infit_post.html">infit_post</a></span><span class="op">(</span><span class="va">item_infit_rm</span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'item_infit_rm' not found</span>
+<span class="r-in"><span><span class="va">infit_results</span><span class="op">$</span><span class="va">summary</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'infit_results' not found</span>
+<span class="r-in"><span><span class="va">infit_results</span><span class="op">$</span><span class="va">hdi</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'infit_results' not found</span>
+<span class="r-in"><span><span class="va">infit_results</span><span class="op">$</span><span class="va">plot</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'infit_results' not found</span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

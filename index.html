@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,6 +55,7 @@
 <!-- badges: start -->
 
 <p><strong>easyRaschBayes</strong> provides functions to reproduce classic Rasch analysis features using Bayesian item response theory (IRT) models fitted with <a href="https://paulbuerkner.com/brms/" class="external-link">brms</a>. It supports both dichotomous Rasch models and polytomous partial credit models, and exposes the full posterior distribution for all output.</p>
+<p>For more materials on Rasch analysis, see the <a href="https://pgmj.github.io/raschrvignette/RaschRvign.html" class="external-link">vignette</a> for my (frequentist) package <a href="https://pgmj.github.io/easyRasch/" class="external-link"><code>easyRasch</code></a>.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -80,6 +81,30 @@
 </tr></thead>
 <tbody>
 <tr class="odd">
+<td><code><a href="reference/infit_statistic.html">infit_statistic()</a></code></td>
+<td>Conditional infit / outfit statistics</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/item_restscore_statistic.html">item_restscore_statistic()</a></code></td>
+<td>Item–rest score associations with Goodman &amp; Kruskal’s gamma</td>
+</tr>
+<tr class="odd">
+<td><code><a href="reference/plot_residual_pca.html">plot_residual_pca()</a></code></td>
+<td>Residual PCA contrast plot for dimensionality assessment</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/q3_statistic.html">q3_statistic()</a></code></td>
+<td>Yen’s Q3 residual correlations for local dependence evaluation</td>
+</tr>
+<tr class="odd">
+<td><code><a href="reference/plot_ipf.html">plot_ipf()</a></code></td>
+<td>Item category probability function curves</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/plot_targeting.html">plot_targeting()</a></code></td>
+<td>Person-item map (Wright map)</td>
+</tr>
+<tr class="odd">
 <td><code><a href="reference/dif_statistic.html">dif_statistic()</a></code></td>
 <td>Differential Item Functioning (DIF) analysis</td>
 </tr>
@@ -90,30 +115,6 @@
 <tr class="odd">
 <td><code><a href="reference/fit_statistic_rm.html">fit_statistic_rm()</a></code></td>
 <td>Posterior predictive item fit for dichotomous models</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/infit_statistic.html">infit_statistic()</a></code></td>
-<td>Conditional infit / outfit statistics</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/item_restscore_statistic.html">item_restscore_statistic()</a></code></td>
-<td>Item–rest score associations with Goodman &amp; Kruskal’s gamma</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/plot_residual_pca.html">plot_residual_pca()</a></code></td>
-<td>Residual PCA contrast plot for dimensionality assessment</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/q3_statistic.html">q3_statistic()</a></code></td>
-<td>Yen’s Q3 residual correlations for local dependence evaluation</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/plot_ipf.html">plot_ipf()</a></code></td>
-<td>Item category probability function curves</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/plot_targeting.html">plot_targeting()</a></code></td>
-<td>Person-item map (Wright map)</td>
 </tr>
 <tr class="even">
 <td><code><a href="reference/RMUreliability.html">RMUreliability()</a></code></td>
@@ -137,14 +138,19 @@
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, cores <span class="op">=</span> <span class="fl">4</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Item fit</span></span>
-<span><span class="fu"><a href="reference/infit_statistic.html">infit_statistic</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="co"># Conditional item infit</span></span>
+<span><span class="va">infit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/infit_statistic.html">infit_statistic</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/infit_post.html">infit_post</a></span><span class="op">(</span><span class="va">infit</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Local dependence with Yen's Q3</span></span>
+<span><span class="va">q3_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/q3_statistic.html">q3_statistic</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/q3_post.html">q3_post</a></span><span class="op">(</span><span class="va">q3_results</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Response category functioning</span></span>
+<span><span class="fu"><a href="reference/plot_ipf.html">plot_ipf</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Person-item map</span></span>
-<span><span class="fu"><a href="reference/plot_targeting.html">plot_targeting</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Local dependence</span></span>
-<span><span class="fu"><a href="reference/q3_statistic.html">q3_statistic</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/plot_targeting.html">plot_targeting</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>

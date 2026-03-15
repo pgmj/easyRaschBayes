@@ -12,7 +12,13 @@ posterior predictive p-values to assess item fit.
 ## Usage
 
 ``` r
-infit_statistic(model, item_var = item, person_var = id, ndraws_use = NULL)
+infit_statistic(
+  model,
+  item_var = item,
+  person_var = id,
+  ndraws_use = NULL,
+  outfit = FALSE
+)
 ```
 
 ## Arguments
@@ -40,6 +46,12 @@ infit_statistic(model, item_var = item, person_var = id, ndraws_use = NULL)
   draws of this size is used. If `NULL` (the default), all draws are
   used.
 
+- outfit:
+
+  Logical. If `TRUE`, outfit statistics are computed alongside infit.
+  Default is `FALSE` (infit only), since outfit is highly sensitive to
+  outliers and rarely recommended for Rasch diagnostics.
+
 ## Value
 
 A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
@@ -64,11 +76,13 @@ the following columns:
 
 - outfit:
 
-  The observed outfit statistic for that item and draw.
+  (Only if `outfit = TRUE`) The observed outfit statistic for that item
+  and draw.
 
 - outfit_rep:
 
-  The replicated outfit statistic for that item and draw.
+  (Only if `outfit = TRUE`) The replicated outfit statistic for that
+  item and draw.
 
 The output is grouped by the item variable. Posterior predictive
 p-values can be obtained by computing, e.g., `mean(infit_rep > infit)`
@@ -92,31 +106,13 @@ the Bayesian framework:
 3.  Standardised squared residuals are: \$\$Z^{2(s)}\_{vi} = (X\_{vi} -
     E^{(s)}\_{vi})^2 / Var^{(s)}\_{vi}\$\$
 
-4.  **Outfit** is the unweighted mean of \\Z^{2}\_{vi}\\ across persons
-    within each item.
+4.  The infit statistic for item \\i\\ is the variance-weighted mean of
+    \\Z^2\\ across persons: \$\$Infit_i^{(s)} = \frac{\sum_v
+    Var\_{vi}^{(s)} Z^{2(s)}\_{vi}} {\sum_v Var\_{vi}^{(s)}}\$\$
 
-5.  **Infit** is the variance-weighted mean: \$\$Infit^{(s)}\_i =
-    \frac{\sum_v Var^{(s)}\_{vi} \cdot Z^{2(s)}\_{vi}}{\sum_v
-    Var^{(s)}\_{vi}}\$\$
-
-6.  The same computations are repeated for replicated data \\Y^{rep}\\
-    drawn via
-    [`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
-
-Under perfect fit, both infit and outfit have an expected value of 1.
-Values substantially above 1 indicate underfit (too much noise), values
-below 1 indicate overfit (too little variation, e.g., redundancy).
-Posterior predictive p-values near 0 or 1 indicate misfit.
+5.  If requested, the outfit is the unweighted mean of \\Z^2\\.
 
 ## References
-
-Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS)
-with Bayesian Item Response Models. *Journal of Intelligence*, *8*(1).
-[doi:10.3390/jintelligence8010005](https://doi.org/10.3390/jintelligence8010005)
-
-Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
-and Stan. *Journal of Statistical Software*, *100*, 1–54.
-[doi:10.18637/jss.v100.i05](https://doi.org/10.18637/jss.v100.i05)
 
 Christensen, K. B., Kreiner, S. & Mesbah, M. (Eds.) (2013). *Rasch
 Models in Health*. Iste and Wiley, pp. 86–90.
@@ -137,8 +133,7 @@ user-supplied criterion functions,
 for a general-purpose posterior predictive fit statistic with
 user-supplied criterion functions,
 [`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html),
-[`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html),
-[`pp_check`](https://mc-stan.org/bayesplot/reference/pp_check.html).
+[`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
 
 ## Examples
 
@@ -174,15 +169,15 @@ item_infit <- infit_statistic(
 )
 #> Error: object 'fit_pcm' not found
 
-# Summarise across draws
-item_infit %>%
-  group_by(item) %>%
-  summarise(
-    infit_obs = mean(infit),
-    infit_rep = mean(infit_rep),
-    infit_ppp = mean(infit_rep > infit)
-  )
+# Post-process draws
+infit_results <- infit_post(item_infit)
 #> Error: object 'item_infit' not found
+infit_results$summary
+#> Error: object 'infit_results' not found
+infit_results$hdi
+#> Error: object 'infit_results' not found
+infit_results$plot
+#> Error: object 'infit_results' not found
 
 # --- Dichotomous Rasch Model ---
 
@@ -208,13 +203,15 @@ item_infit_rm <- infit_statistic(
 )
 #> Error: object 'fit_rm' not found
 
-item_infit_rm %>%
-  group_by(item) %>%
-  summarise(
-    infit_obs = mean(infit),
-    infit_rep = mean(infit_rep),
-    infit_ppp = mean(infit_rep > infit)
-  )
+# Post-process draws
+infit_results <- infit_post(item_infit_rm)
 #> Error: object 'item_infit_rm' not found
+infit_results$summary
+#> Error: object 'infit_results' not found
+infit_results$hdi
+#> Error: object 'infit_results' not found
+infit_results$plot
+#> Error: object 'infit_results' not found
+
 # }
 ```

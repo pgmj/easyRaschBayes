@@ -193,7 +193,7 @@ diagnostic).
 ## Examples
 
 ``` r
-# \donttest{
+if (FALSE) { # \dontrun{
 library(brms)
 library(dplyr)
 library(tidyr)
@@ -212,29 +212,21 @@ fit_pcm <- brm(
   data   = df_pcm,
   family = acat,
   chains = 4,
-  cores  = 1, # use more cores if you have
-  iter   = 500 # use at least 2000 
+  cores  = 4,
+  iter   = 2000
 )
-#> Compiling Stan program...
-#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # 2D density contours (default)
 result <- plot_residual_pca(fit_pcm)
-#> Error: object 'fit_pcm' not found
 result$plot
-#> Error: object 'result' not found
 
 # Crosshair style
 result_c <- plot_residual_pca(fit_pcm, style = "crosshair")
-#> Error: object 'fit_pcm' not found
 result_c$plot
-#> Error: object 'result_c' not found
 
 # Both combined
 result_b <- plot_residual_pca(fit_pcm, style = "both")
-#> Error: object 'fit_pcm' not found
 result_b$plot
-#> Error: object 'result_b' not found
 
 # Custom warm palette
 result_w <- plot_residual_pca(
@@ -243,8 +235,6 @@ result_w <- plot_residual_pca(
                       "#B30000", "#7F0000", "#4A0000"),
   point_color = "#B30000"
 )
-#> Error: object 'fit_pcm' not found
 result_w$plot
-#> Error: object 'result_w' not found
-# }
+} # }
 ```

@@ -9,7 +9,7 @@ contingency table. This is an internal helper function."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,7 +33,7 @@ contingency table. This is an internal helper function."></head><body>
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Goodman-Kruskal Gamma from a Contingency Table</h1>
-      <small class="dont-index">Source: <a href="https://github.com/pgmj/easyRaschBayes/blob/main/R/brms_fitstats.R" class="external-link"><code>R/brms_fitstats.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/pgmj/easyRaschBayes/blob/main/R/gk_gamma_helpers.R" class="external-link"><code>R/gk_gamma_helpers.R</code></a></small>
       <div class="d-none name"><code>gk_gamma.Rd</code></div>
     </div>
 
@@ -64,9 +64,8 @@ rows and columns in ordinal order.</p></dd>
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Gamma is defined as \((C - D) / (C + D)\), where \(C\) is the
 number of concordant pairs and \(D\) is the number of discordant
-pairs. For a contingency table, concordant pairs arise when both
-variables increase together, and discordant pairs when one increases
-while the other decreases.</p>
+pairs. Uses cumulative suffix sums for \(O(nr \times nc)\)
+complexity.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

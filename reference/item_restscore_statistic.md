@@ -133,10 +133,6 @@ Goodman, L. A. & Kruskal, W. H. (1954). Measures of association for
 cross classifications. *Journal of the American Statistical
 Association*, *49*(268), 732–764.
 
-Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS)
-with Bayesian Item Response Models. *Journal of Intelligence*, *8*(1).
-[doi:10.3390/jintelligence8010005](https://doi.org/10.3390/jintelligence8010005)
-
 Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
 and Stan. *Journal of Statistical Software*, *100*, 1–54.
 [doi:10.18637/jss.v100.i05](https://doi.org/10.18637/jss.v100.i05)
@@ -187,21 +183,20 @@ irs <- item_restscore_statistic(
 )
 #> Error: object 'fit_pcm' not found
 
-# Flag items with too-strong discrimination (ppp > 0.95)
-irs %>% filter(ppp > 0.95)
+# Post-process draws
+irs_results <- item_restscore_post(irs)
 #> Error: object 'irs' not found
-
-# Flag items with too-weak discrimination (ppp < 0.05)
-irs %>% filter(ppp < 0.05)
-#> Error: object 'irs' not found
+irs_results$summary
+#> Error: object 'irs_results' not found
+irs_results$plot
+#> Error: object 'irs_results' not found
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::rainger %>%
+df_rm <- eRm::raschdat3 %>%
   as.data.frame() %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
-#> Error: 'rainger' is not an exported object from 'namespace:eRm'
 
 fit_rm <- brm(
   response ~ 1 + (1 | item) + (1 | id),
@@ -211,7 +206,8 @@ fit_rm <- brm(
   cores  = 1, # use more cores if you have
   iter   = 500 # use at least 2000 
 )
-#> Error: object 'df_rm' not found
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 irs_rm <- item_restscore_statistic(
   model      = fit_rm,
@@ -219,8 +215,12 @@ irs_rm <- item_restscore_statistic(
 )
 #> Error: object 'fit_rm' not found
 
-irs_rm %>%
-  arrange(ppp)
+# Post-process draws
+irs_results <- item_restscore_post(irs_rm)
 #> Error: object 'irs_rm' not found
+irs_results$summary
+#> Error: object 'irs_results' not found
+irs_results$plot
+#> Error: object 'irs_results' not found
 # }
 ```

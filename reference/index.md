@@ -9,15 +9,21 @@
   Models
 - [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)
   : Posterior Predictive Infit Statistic for Bayesian IRT Models
+- [`infit_post()`](https://pgmj.github.io/easyRaschBayes/reference/infit_post.md)
+  : Summarize and Plot Posterior Predictive Infit Statistics
 - [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_statistic.md)
   : Posterior Predictive Item-Restscore Association for Bayesian IRT
   Models
+- [`item_restscore_post()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_post.md)
+  : Summarize and Plot Posterior Predictive Item-Restscore Associations
 
 ## Local Dependence
 
 - [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)
   : Posterior Predictive Q3 Residual Correlations for Bayesian IRT
   Models
+- [`q3_post()`](https://pgmj.github.io/easyRaschBayes/reference/q3_post.md)
+  : Summarize and Plot Posterior Predictive Q3 Residual Correlations
 
 ## Dimensionality
 
