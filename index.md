@@ -81,10 +81,10 @@ and Stan. *Journal of Statistical Software*, *100*, 1–54.
 
 ## Credits
 
-This started as a little side project to update the code posted by
-Bürkner (2020) to assess item fit. With the help of Claude Opus 4.6 the
-things expanded to try to reproduce the core Rasch analysis aspects.
-Most of the code in this package is produced by the LLM.
+This started as a side project to update the code to assess item fit
+included in Bürkner (2020). With the help of Claude Opus 4.6 things
+expanded to try to reproduce core Rasch analysis steps. Most of the code
+in this package is produced by the LLM.
 
 [Magnus Johansson](https://ki.se/en/people/magnus-johansson-3) is a
 licensed psychologist with a PhD in behavior analysis. He works as a
