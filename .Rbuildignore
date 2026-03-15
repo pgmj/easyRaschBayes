@@ -6,7 +6,6 @@
 ^docs$
 ^_pkgdown\.yml$
 ^pkgdown$
-^vignettes/fits$
 ^doc$
 ^Meta$
 ^CRAN-SUBMISSION$

@@ -11,7 +11,7 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.path = "vignettes/figures/pcm-",
+  fig.path = "figures/pcm-",
   fig.width = 8,
   fig.height = 5,
   out.width = "100%"

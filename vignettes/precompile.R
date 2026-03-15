@@ -4,7 +4,10 @@
 
 library(knitr)
 devtools::install(".", upgrade = "never")  # Install from local source
-knit(
-  input  = "vignettes/pcm-rasch-analysis.Rmd.orig",
-  output = "vignettes/pcm-rasch-analysis.Rmd"
-)
+# Knit from within vignettes/ so fig.path = "figures/pcm-" resolves correctly
+withr::with_dir("vignettes", {
+  knit(
+    input  = "pcm-rasch-analysis.Rmd.orig",
+    output = "pcm-rasch-analysis.Rmd"
+  )
+})
