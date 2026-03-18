@@ -178,6 +178,8 @@ GPL (\>= 3)
   : Residual PCA Contrast Plot for Bayesian IRT Models
 - [`plot_targeting()`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting.md)
   : Person-Item Map (Targeting Plot) for Bayesian IRT Models
+- [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/reference/posterior_to_prior.md)
+  : Extract Informative Priors from a Fitted Bayesian IRT Model
 - [`q3_post()`](https://pgmj.github.io/easyRaschBayes/reference/q3_post.md)
   : Summarize and Plot Posterior Predictive Q3 Residual Correlations
 - [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)
