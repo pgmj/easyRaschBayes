@@ -8,6 +8,8 @@
   - `item_restscore_post()` for the output of `item_restscore_statistic()`
   - `q3_post()` for the output of `q3_statistic()`
 - `plot_residual_pca()` is now faster.
+- New function `posterior_to_prior()` that extracts priors from a `brmsfit` model 
+that may be useful in model fit assessment. An article will be added, exploring this further.
 
 
 # easyRaschBayes 0.1.0

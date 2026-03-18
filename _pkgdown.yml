@@ -53,6 +53,6 @@ reference:
 - title: Reliability
   contents:
   - RMUreliability
-- title: "Other"
+- title: Other
   contents:
   - matches(".")
