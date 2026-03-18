@@ -12,13 +12,18 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "figures/pcm-",
-  fig.width = 8,
-  fig.height = 5,
+  fig.width = 7,
+  fig.height = 6,
   out.width = "100%"
 )
 # Only evaluate model-dependent chunks if the pre-fitted model exists
 EVAL <- file.exists("fits/fit_pcm.rds")
 ```
+
+** Sorry for a premature update of this vignette to match version 0.1.1 that is not 
+yet on CRAN. The 0.1.0 vignette is available 
+[via CRAN](https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html) 
+and the new version should be on CRAN before end of March 2026.**
 
 ## Overview
 
@@ -30,10 +35,11 @@ All functions in this package work with a Bayesian `brms` model object fitted wi
 `acat` (adjacent categories) family, which parameterises the PCM. Dichotomous 
 Rasch models can also be fit using `brms` and analyzed with the functions in
 this package. A code example is available 
-[here](https://pgmj.github.io/reliability.html#rasch-dichotomous-model).
+[here](https://pgmj.github.io/reliability.html#rasch-dichotomous-model), and more 
+detail is available in [Bürkner, 2021](https://doi.org/10.18637/jss.v100.i05).
 
-There is brief text explaining the output and interpretation in this vignette.
-For a more extensive treatment of the Rasch analysis steps, please see the
+Below, there is some brief texts explaining the output and interpretation of key functions.
+For a more extensive treatment of various Rasch analysis aspects, please see the
 [`easyRasch` vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html).
 
 ## Data Preparation
@@ -205,3 +211,9 @@ rmu
 
 RMU values range from 0 to 1, with higher values indicating higher reliability, 
 similarly to traditional reliability metrics such as Cronbach's alpha.
+
+## References 
+
+Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
+Stan. *Journal of Statistical Software*, *100*, 1–54.
+<https://doi.org/10.18637/jss.v100.i05>

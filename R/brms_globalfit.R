@@ -483,7 +483,7 @@ plot_residual_pca <- function(
       ggplot2::geom_errorbar(
         ggplot2::aes(xmin = .data$location_lower,
                      xmax = .data$location_upper),
-        height = 0, colour = point_color, alpha = crosshair_alpha,
+        width = 0, colour = point_color, alpha = crosshair_alpha,
         linewidth = 0.4,
         orientation = "y"
       ) +

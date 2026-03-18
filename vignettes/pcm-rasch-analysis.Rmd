@@ -9,6 +9,11 @@ vignette: >
 
 
 
+** Sorry for a premature update of this vignette to match version 0.1.1 that is not 
+yet on CRAN. The 0.1.0 vignette is available 
+[via CRAN](https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html) 
+and the new version should be on CRAN before end of March 2026.**
+
 ## Overview
 
 This vignette demonstrates a Partial Credit Model (PCM) Rasch analysis
@@ -19,10 +24,11 @@ All functions in this package work with a Bayesian `brms` model object fitted wi
 `acat` (adjacent categories) family, which parameterises the PCM. Dichotomous 
 Rasch models can also be fit using `brms` and analyzed with the functions in
 this package. A code example is available 
-[here](https://pgmj.github.io/reliability.html#rasch-dichotomous-model).
+[here](https://pgmj.github.io/reliability.html#rasch-dichotomous-model), and more 
+detail is available in [Bürkner, 2021](https://doi.org/10.18637/jss.v100.i05).
 
-There is brief text explaining the output and interpretation in this vignette.
-For a more extensive treatment of the Rasch analysis steps, please see the
+Below, there is some brief texts explaining the output and interpretation of key functions.
+For a more extensive treatment of various Rasch analysis aspects, please see the
 [`easyRasch` vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html).
 
 ## Data Preparation
@@ -112,18 +118,18 @@ infit_results$summary
 #> # A tibble: 4 × 4
 #>   item  infit_obs infit_rep infit_ppp
 #>   <chr>     <dbl>     <dbl>     <dbl>
-#> 1 I1        1.04      0.994     0.248
-#> 2 I2        1.08      0.998     0.142
-#> 3 I3        0.916     1.00      0.922
-#> 4 I4        1.03      1.00      0.336
+#> 1 I1        1.04      0.999     0.262
+#> 2 I2        1.08      0.999     0.15 
+#> 3 I3        0.922     1.00      0.906
+#> 4 I4        1.03      0.999     0.356
 infit_results$hdi
 #> # A tibble: 4 × 3
 #>   item  underfit overfit
 #>   <chr>    <dbl>   <dbl>
-#> 1 I1       0.226   0.012
-#> 2 I2       0.446   0.006
-#> 3 I3       0.002   0.426
-#> 4 I4       0.156   0.016
+#> 1 I1       0.176   0.006
+#> 2 I2       0.406   0.006
+#> 3 I3       0.004   0.338
+#> 4 I4       0.152   0.03
 infit_results$plot
 ```
 
@@ -155,10 +161,10 @@ rest_results$summary
 #> # A tibble: 4 × 5
 #>   item  gamma_obs gamma_rep gamma_diff   ppp
 #>   <chr>     <dbl>     <dbl>      <dbl> <dbl>
-#> 1 I1        0.473     0.544     -0.071 0.106
-#> 2 I2        0.441     0.548     -0.106 0.044
-#> 3 I3        0.643     0.537      0.106 0.96 
-#> 4 I4        0.535     0.539     -0.004 0.476
+#> 1 I1        0.473     0.537     -0.064 0.146
+#> 2 I2        0.441     0.548     -0.107 0.036
+#> 3 I3        0.643     0.533      0.11  0.962
+#> 4 I4        0.535     0.537     -0.002 0.48
 rest_results$plot
 ```
 
@@ -177,7 +183,6 @@ contrast factor together with item locations and the uncertainty of both.
 ``` r
 pca <- plot_residual_pca(fit_pcm, ndraws_use = 500)
 pca$plot
-#> `height` was translated to `width`.
 ```
 
 <div class="figure">
@@ -206,22 +211,22 @@ q3_results$summary
 #> # A tibble: 6 × 7
 #>   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp
 #>   <chr>     <chr>  <chr>   <dbl>  <dbl>   <dbl>  <dbl>
-#> 1 I3 : I4   I3     I4      0.342 -0.002   0.344  1    
-#> 2 I1 : I2   I1     I2      0.104  0.005   0.099  0.994
-#> 3 I1 : I3   I1     I3     -0.068 -0.004  -0.064  0.042
-#> 4 I2 : I3   I2     I3     -0.084 -0.001  -0.083  0.002
-#> 5 I1 : I4   I1     I4     -0.129  0.001  -0.13   0    
-#> 6 I2 : I4   I2     I4     -0.16  -0.004  -0.156  0
+#> 1 I3 : I4   I3     I4      0.34   0.001   0.339  1    
+#> 2 I1 : I2   I1     I2      0.107  0       0.107  1    
+#> 3 I1 : I3   I1     I3     -0.066  0.002  -0.068  0.026
+#> 4 I2 : I3   I2     I3     -0.085 -0.001  -0.084  0.006
+#> 5 I1 : I4   I1     I4     -0.128  0.001  -0.129  0    
+#> 6 I2 : I4   I2     I4     -0.162 -0.002  -0.16   0
 q3_results$hdi
 #> # A tibble: 6 × 5
 #>   item_pair item_1 item_2    ld    lr
 #>   <chr>     <chr>  <chr>  <dbl> <dbl>
 #> 1 I3 : I4   I3     I4     1     0    
-#> 2 I1 : I2   I1     I2     0.756 0    
-#> 3 I1 : I3   I1     I3     0     0.272
-#> 4 I1 : I4   I1     I4     0     0.878
-#> 5 I2 : I3   I2     I3     0     0.524
-#> 6 I2 : I4   I2     I4     0     0.996
+#> 2 I1 : I2   I1     I2     0.704 0    
+#> 3 I1 : I3   I1     I3     0     0.458
+#> 4 I1 : I4   I1     I4     0     0.93 
+#> 5 I2 : I3   I2     I3     0     0.454
+#> 6 I2 : I4   I2     I4     0     0.988
 q3_results$plot
 ```
 
@@ -282,8 +287,14 @@ person_draws <- fit_pcm %>%
 rmu <- RMUreliability(person_draws)
 rmu
 #>   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval
-#> 1    0.6732676       0.6166992       0.7322603   0.95   mean      hdci
+#> 1    0.6720508       0.6150852       0.7294157   0.95   mean      hdci
 ```
 
 RMU values range from 0 to 1, with higher values indicating higher reliability, 
 similarly to traditional reliability metrics such as Cronbach's alpha.
+
+## References 
+
+Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
+Stan. *Journal of Statistical Software*, *100*, 1–54.
+<https://doi.org/10.18637/jss.v100.i05>

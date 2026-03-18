@@ -1190,21 +1190,30 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
   result <- tibble::as_tibble(result)
   result <- dplyr::arrange(result, dplyr::desc(.data$gamma_diff))
   
+  # --- Assign real item names to matrix columns BEFORE pivoting ---
+  colnames(gamma_rep_draws) <- unique_items
+  colnames(gamma_obs_draws) <- unique_items
+  
   gamma_rep_draws_df <- gamma_rep_draws |>
     as.data.frame() |>
-    tidyr::pivot_longer(dplyr::everything(), names_to = "item", values_to = "gamma_rep")
+    tidyr::pivot_longer(dplyr::everything(),
+                        names_to = "item", values_to = "gamma_rep")
   gamma_obs_draws_df <- gamma_obs_draws |>
     as.data.frame() |>
-    tidyr::pivot_longer(dplyr::everything(), names_to = "item", values_to = "gamma_obs")
+    tidyr::pivot_longer(dplyr::everything(),
+                        names_to = "item", values_to = "gamma_obs")
   
   gamma_draws_df <- dplyr::bind_cols(
     gamma_rep_draws_df,
     gamma = gamma_obs_draws_df$gamma_obs
   )
   
+  # Rename the "item" column to match the user's item variable name
+  names(gamma_draws_df)[names(gamma_draws_df) == "item"] <- item_name
+  
   list(
     result = result,
-    draws = tidyr::as_tibble(gamma_draws_df)
+    draws = tibble::as_tibble(gamma_draws_df)
   )
 }
 

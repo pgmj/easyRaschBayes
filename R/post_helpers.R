@@ -527,3 +527,315 @@ q3_post <- function(q3_draws,
   
   list(summary = summary_tbl, hdi = hdi_tbl, plot = p)
 }
+
+#' Extract Informative Priors from a Fitted Bayesian IRT Model
+#'
+#' Takes a fitted \code{\link[brms]{brmsfit}} object and constructs a
+#' \code{\link[brms]{brmsprior}} object in which each item parameter
+#' receives a \code{normal(mean, sd)} prior derived from its posterior
+#' distribution. The person-level random effect SD prior is also
+#' updated. The returned prior can be passed directly to
+#' \code{\link[brms]{update}} (or \code{\link[brms]{brm}}) to refit
+#' the model with empirical Bayes / informative priors — useful for
+#' anchoring scales, warm-starting a model on new data, or
+#' regularising estimation with small samples.
+#'
+#' @param model A fitted \code{\link[brms]{brmsfit}} object. Supported
+#'   parameterisations:
+#'   \describe{
+#'     \item{Polytomous ordinal}{e.g., \code{family = acat} with
+#'       \code{thres(gr = item)}, producing item-specific thresholds.}
+#'     \item{Dichotomous Rasch (random items)}{e.g.,
+#'       \code{response ~ 1 + (1 | item) + (1 | id)} with
+#'       \code{family = bernoulli()}.}
+#'     \item{Dichotomous 1PL (fixed items)}{e.g.,
+#'       \code{response ~ 0 + item + (1 | id)} with
+#'       \code{family = bernoulli()}.}
+#'   }
+#' @param item_var An unquoted variable name identifying the item
+#'   grouping variable in the model data. Default is \code{item}.
+#' @param person_var An unquoted variable name identifying the person
+#'   grouping variable in the model data. Default is \code{id}.
+#' @param mult Numeric multiplier applied to each posterior SD before
+#'   it is used as the prior SD. Values > 1 widen the priors
+#'   (less informative); values < 1 tighten them. Default is 1
+#'   (use posterior SD directly).
+#'
+#' @return A \code{\link[brms]{brmsprior}} object that can be supplied
+#'   to the \code{prior} argument of \code{\link[brms]{brm}} or
+#'   \code{\link[brms]{update}}.
+#'
+#' @details
+#' The function extracts all posterior draws via
+#' \code{\link[brms]{as_draws_df}}, computes the mean and SD of each
+#' parameter's marginal posterior, and constructs
+#' \code{normal(mean, sd * mult)} priors.
+#'
+#' \strong{Polytomous ordinal models} with grouped thresholds
+#' (\code{thres(gr = item)}): each threshold receives its own prior
+#' via \code{brms::set_prior("normal(...)", class = "Intercept",
+#' group = item, coef = threshold_index)}.
+#'
+#' \strong{Dichotomous Rasch models} parameterised as
+#' \code{response ~ 1 + (1 | item) + (1 | id)}: priors are set on
+#' the global intercept (\code{class = "Intercept"}), the item-level
+#' SD (\code{class = "sd", group = item_var}), and the person-level
+#' SD.
+#'
+#' \strong{Dichotomous 1PL models} parameterised as
+#' \code{response ~ 0 + item + (1 | id)}: each item-specific fixed
+#' effect (e.g., \code{b_itemI1}) receives its own
+#' \code{normal(mean, sd)} prior via
+#' \code{brms::set_prior(..., class = "b", coef = "itemI1")}.
+#'
+#' In all cases the person-level SD receives a
+#' \code{normal(mean, sd * mult)} prior (brms applies the lower
+#' bound of zero automatically for SD parameters).
+#'
+#' @examples
+#' \donttest{
+#' library(brms)
+#' library(dplyr)
+#' library(tidyr)
+#' library(tibble)
+#'
+#' # --- Partial Credit Model ---
+#'
+#' df_pcm <- eRm::pcmdat2 %>%
+#'   mutate(across(everything(), ~ .x + 1)) %>%
+#'   rownames_to_column("id") %>%
+#'   pivot_longer(!id, names_to = "item", values_to = "response")
+#'
+#' fit_pcm <- brm(
+#'   response | thres(gr = item) ~ 1 + (1 | id),
+#'   data   = df_pcm,
+#'   family = acat,
+#'   chains = 4,
+#'   cores  = 4,
+#'   iter   = 2000
+#' )
+#'
+#' # Extract posterior-informed priors
+#' new_priors <- posterior_to_prior(fit_pcm)
+#' new_priors
+#'
+#' # Widen the priors by a factor of 2
+#' wide_priors <- posterior_to_prior(fit_pcm, mult = 2)
+#'
+#' # --- Dichotomous 1PL (fixed item effects) ---
+#'
+#' df_rm <- eRm::raschdat3 %>%
+#'   as.data.frame() %>%
+#'   rownames_to_column("id") %>%
+#'   pivot_longer(!id, names_to = "item", values_to = "response")
+#'
+#' fit_1pl <- brm(
+#'   response ~ 0 + item + (1 | id),
+#'   data   = df_rm,
+#'   family = bernoulli(),
+#'   chains = 4,
+#'   cores  = 4,
+#'   iter   = 2000
+#' )
+#'
+#' priors_1pl <- posterior_to_prior(fit_1pl)
+#' priors_1pl
+#' }
+#'
+#' @importFrom brms as_draws_df set_prior
+#' @importFrom rlang enquo as_name
+#' @importFrom stats sd family
+#' @export
+posterior_to_prior <- function(model,
+                               item_var = item,
+                               person_var = id,
+                               mult = 1) {
+  
+  if (!inherits(model, "brmsfit")) {
+    stop("'model' must be a brmsfit object.", call. = FALSE)
+  }
+  if (!is.numeric(mult) || length(mult) != 1 || mult <= 0) {
+    stop("'mult' must be a single positive number.", call. = FALSE)
+  }
+  
+  item_name   <- rlang::as_name(rlang::enquo(item_var))
+  person_name <- rlang::as_name(rlang::enquo(person_var))
+  
+  if (!item_name %in% names(model$data)) {
+    stop("Item variable '", item_name, "' not found in model data.",
+         call. = FALSE)
+  }
+  if (!person_name %in% names(model$data)) {
+    stop("Person variable '", person_name, "' not found in model data.",
+         call. = FALSE)
+  }
+  
+  draws       <- brms::as_draws_df(model)
+  family_name <- stats::family(model)$family
+  is_ordinal  <- grepl("acat|cumul|sratio|cratio",
+                       family_name, ignore.case = TRUE)
+  
+  prior_list <- list()
+  
+  # ==================================================================
+  # ORDINAL MODELS (grouped thresholds: thres(gr = item))
+  # ==================================================================
+  if (is_ordinal) {
+    has_grouped <- any(grepl("^b_Intercept\\[.+,\\d+\\]$", names(draws)))
+    
+    if (!has_grouped) {
+      stop("Ordinal model does not appear to use grouped thresholds ",
+           "(thres(gr = ...)). This function currently requires ",
+           "item-specific thresholds.", call. = FALSE)
+    }
+    
+    unique_items <- sort(unique(model$data[[item_name]]))
+    
+    for (item_label in unique_items) {
+      thresh_pattern <- paste0(
+        "^b_Intercept\\[",
+        gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
+        ","
+      )
+      thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
+      
+      if (length(thresh_cols) == 0) {
+        warning("No threshold parameters found for item '", item_label,
+                "'. Skipping.", call. = FALSE)
+        next
+      }
+      
+      # Sort numerically
+      thresh_nums <- as.numeric(
+        gsub(".*,(\\d+)\\]$", "\\1", thresh_cols)
+      )
+      thresh_cols <- thresh_cols[order(thresh_nums)]
+      
+      for (idx in seq_along(thresh_cols)) {
+        vals   <- draws[[thresh_cols[idx]]]
+        p_mean <- mean(vals)
+        p_sd   <- stats::sd(vals) * mult
+        
+        prior_list[[length(prior_list) + 1]] <- brms::set_prior(
+          paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
+          class = "Intercept",
+          coef  = as.character(idx),
+          group = item_label
+        )
+      }
+    }
+    
+    # ==================================================================
+    # DICHOTOMOUS MODELS
+    # ==================================================================
+  } else {
+    
+    # --- Detect parameterisation ---
+    # Fixed item effects: columns like b_itemI1, b_itemI2, ...
+    # Random item effects: b_Intercept + r_item[I1,Intercept], ...
+    fe_pattern <- paste0("^b_", item_name)
+    fe_cols    <- grep(fe_pattern, names(draws), value = TRUE)
+    # Exclude b_Intercept from the match
+    fe_cols    <- setdiff(fe_cols, "b_Intercept")
+    
+    has_fixed_items  <- length(fe_cols) > 0
+    has_random_items <- any(grepl(
+      paste0("^r_", item_name, "\\["), names(draws)
+    ))
+    
+    # ── Fixed item effects: response ~ 0 + item + (1 | id) ──
+    if (has_fixed_items) {
+      
+      for (col_name in fe_cols) {
+        vals   <- draws[[col_name]]
+        p_mean <- mean(vals)
+        p_sd   <- stats::sd(vals) * mult
+        
+        # Column name is e.g. "b_itemI1" -> coef is "itemI1"
+        coef_name <- sub("^b_", "", col_name)
+        
+        prior_list[[length(prior_list) + 1]] <- brms::set_prior(
+          paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
+          class = "b",
+          coef  = coef_name
+        )
+      }
+      
+      # ── Random item effects: response ~ 1 + (1 | item) + (1 | id) ──
+    } else if (has_random_items) {
+      
+      # Global intercept
+      intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
+      if (length(intercept_col) == 1) {
+        vals   <- draws[[intercept_col]]
+        p_mean <- mean(vals)
+        p_sd   <- stats::sd(vals) * mult
+        
+        prior_list[[length(prior_list) + 1]] <- brms::set_prior(
+          paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
+          class = "Intercept"
+        )
+      }
+      
+      # Item-level SD
+      item_sd_col <- grep(
+        paste0("^sd_", item_name, "__Intercept$"),
+        names(draws), value = TRUE
+      )
+      if (length(item_sd_col) == 1) {
+        vals   <- draws[[item_sd_col]]
+        p_mean <- mean(vals)
+        p_sd   <- stats::sd(vals) * mult
+        
+        prior_list[[length(prior_list) + 1]] <- brms::set_prior(
+          paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
+          class = "sd",
+          group = item_name
+        )
+      }
+      
+    } else {
+      stop("Could not detect item parameters in the model. ",
+           "Supported dichotomous parameterisations:\n",
+           "  - response ~ 0 + item + (1 | id)    [fixed items]\n",
+           "  - response ~ 1 + (1 | item) + (1 | id)  [random items]",
+           call. = FALSE)
+    }
+  }
+  
+  # ==================================================================
+  # PERSON-LEVEL SD (common to all parameterisations)
+  # ==================================================================
+  person_sd_col <- grep(
+    paste0("^sd_", person_name, "__Intercept$"),
+    names(draws), value = TRUE
+  )
+  if (length(person_sd_col) == 1) {
+    vals   <- draws[[person_sd_col]]
+    p_mean <- mean(vals)
+    p_sd   <- stats::sd(vals) * mult
+    
+    prior_list[[length(prior_list) + 1]] <- brms::set_prior(
+      paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
+      class = "sd",
+      group = person_name
+    )
+  }
+  
+  # ==================================================================
+  # COMBINE INTO A SINGLE brmsprior OBJECT
+  # ==================================================================
+  if (length(prior_list) == 0) {
+    stop("Could not extract any parameters from the model.",
+         call. = FALSE)
+  }
+  
+  combined_prior <- prior_list[[1]]
+  if (length(prior_list) > 1) {
+    for (i in 2:length(prior_list)) {
+      combined_prior <- combined_prior + prior_list[[i]]
+    }
+  }
+  
+  combined_prior
+}
