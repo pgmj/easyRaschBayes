@@ -97,7 +97,7 @@ saveRDS(fit_pcm, "fits/fit_pcm.rds")
 fit_pcm <- readRDS("fits/fit_pcm.rds")
 ```
 
-## Item Fit: Infit and Outfit Statistics
+## Item Fit: Conditional Infit Statistics
 
 `infit_statistic()` computes posterior predictive infit and outfit statistics
 for each item. Values near 1.0 indicate good fit; values substantially above 1
@@ -111,7 +111,7 @@ speeds up computation during exploration. For final reporting, use all draws
 ```{r infit, eval = EVAL}
 fit_stats <- infit_statistic(fit_pcm, ndraws_use = 500)
 
-# Post-process infit
+# Post-process Infit
 infit_results <- infit_post(fit_stats)
 infit_results$summary
 infit_results$plot
@@ -139,7 +139,7 @@ rest_results$summary
 rest_results$plot
 ```
 
-## Conditional ICC plot
+## Conditional ICC Plot
 
 ```{r ciccplot, eval = EVAL}
 plot_icc(fit_pcm)
@@ -219,7 +219,7 @@ rmu
 RMU values range from 0 to 1, with higher values indicating higher reliability, 
 similarly to traditional reliability metrics such as Cronbach's alpha.
 
-## Item parameters
+## Item Parameters
 
 ```{r ipar, eval = EVAL}
 ipar <- item_parameters(fit_pcm)
@@ -227,7 +227,7 @@ knitr::kable(ipar$summary)
 knitr::kable(ipar$locations_wide)
 ```
 
-## Person parameters
+## Person Parameters
 
 This estimates latent scores.
 
