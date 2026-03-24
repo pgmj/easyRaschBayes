@@ -36,6 +36,7 @@ reference:
   - infit_post
   - item_restscore_statistic
   - item_restscore_post
+  - plot_icc
 - title: Local Dependence
   contents:
   - q3_statistic

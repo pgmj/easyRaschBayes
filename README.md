@@ -3,6 +3,8 @@
 <!-- badges: start -->
 [![CRAN Version](https://www.r-pkg.org/badges/version/easyRaschBayes)](https://cran.r-project.org/package=easyRaschBayes)
 [![Downloads](https://cranlogs.r-pkg.org/badges/easyRaschBayes?color=brightgreen)](https://CRAN.R-project.org/package=easyRaschBayes)
+![Downloads Status](https://cranlogs.r-pkg.org/badges/grand-total/easyRaschBayes)
+<a href="https://www.buymeacoffee.com/pgmj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 <!-- badges: end -->
 
 **easyRaschBayes** provides functions to reproduce classic Rasch analysis
@@ -36,14 +38,17 @@ remotes::install_github("pgmj/easyRaschBayes")
 |---|---|
 | `infit_statistic()` | Conditional infit / outfit statistics |
 | `item_restscore_statistic()` | Item–rest score associations with Goodman & Kruskal's gamma |
+| `plot_icc()` | Conditional item fit curves & DIF analysis |
 | `plot_residual_pca()` | Residual PCA contrast plot for dimensionality assessment |
 | `q3_statistic()` | Yen's Q3 residual correlations for local dependence evaluation |
 | `plot_ipf()` | Item category probability function curves |
 | `plot_targeting()` | Person-item map (Wright map) |
 | `dif_statistic()` | Differential Item Functioning (DIF) analysis |
-| `fit_statistic_pcm()` | Posterior predictive item fit for polytomous models |
-| `fit_statistic_rm()` | Posterior predictive item fit for dichotomous models |
+| `fit_statistic_pcm()` | Posterior predictive item/person fit for polytomous models |
+| `fit_statistic_rm()` | Posterior predictive item/person fit for dichotomous models |
 | `RMUreliability()` | Reliability via Relative Measurement Uncertainty (RMU) |
+| `person_parameters()` | EAP and WLE latent scores and ordinal sum score transformation table |
+| `item_parameters()` | Summarize item threshold locations |
 
 ## Usage
 

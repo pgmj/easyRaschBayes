@@ -20,10 +20,11 @@ knitr::opts_chunk$set(
 EVAL <- file.exists("fits/fit_pcm.rds")
 ```
 
-** Sorry for a premature update of this vignette to match version 0.1.1 that is not 
-yet on CRAN. The 0.1.0 vignette is available 
+** Sorry! This is a slightly premature update of the vignette to match 
+version 0.2.0 that is not yet on CRAN. The 0.1.0 vignette is available 
 [via CRAN](https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html) 
-and the new version should be on CRAN before end of March 2026.**
+and I hope to have the new version on CRAN before end of March 2026.**
+
 
 ## Overview
 
@@ -40,7 +41,9 @@ detail is available in [Bürkner, 2021](https://doi.org/10.18637/jss.v100.i05).
 
 Below, there is some brief texts explaining the output and interpretation of key functions.
 For a more extensive treatment of various Rasch analysis aspects, please see the
-[`easyRasch` vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html).
+[`easyRasch` vignette](https://pgmj.github.io/raschrvignette/RaschRvign.html). 
+Also, each function includes documentation and example code, use `?function` in your
+console.
 
 ## Data Preparation
 
@@ -73,7 +76,7 @@ fitting call (not evaluated during `R CMD check`). A pre-fitted model stored at
 `fits/fit_pcm.rds` is loaded instead.
 
 ```{r define-priors}
-prior_pcm <- prior("normal(0, 5)", class = "Intercept") +
+prior_pcm <- prior("normal(0, 3)", class = "Intercept") +
   prior("normal(0, 3)", class = "sd", group = "id")
 ```
 
@@ -111,7 +114,6 @@ fit_stats <- infit_statistic(fit_pcm, ndraws_use = 500)
 # Post-process infit
 infit_results <- infit_post(fit_stats)
 infit_results$summary
-infit_results$hdi
 infit_results$plot
 ```
 
@@ -135,6 +137,12 @@ rest_stats <- item_restscore_statistic(fit_pcm, ndraws_use = 500)
 rest_results <- item_restscore_post(rest_stats)
 rest_results$summary
 rest_results$plot
+```
+
+## Conditional ICC plot
+
+```{r ciccplot, eval = EVAL}
+plot_icc(fit_pcm)
 ```
 
 ## Dimensionality: Residual PCA
@@ -165,7 +173,6 @@ q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
 
 q3_results <- q3_post(q3_stats)
 q3_results$summary
-q3_results$hdi
 q3_results$plot
 ```
 
@@ -211,6 +218,24 @@ rmu
 
 RMU values range from 0 to 1, with higher values indicating higher reliability, 
 similarly to traditional reliability metrics such as Cronbach's alpha.
+
+## Item parameters
+
+```{r ipar, eval = EVAL}
+ipar <- item_parameters(fit_pcm)
+knitr::kable(ipar$summary)
+knitr::kable(ipar$locations_wide)
+```
+
+## Person parameters
+
+This estimates latent scores.
+
+```{r ppar, eval = EVAL}
+ppar <- person_parameters(fit_pcm)
+knitr::kable(ppar$score_table)
+hist(ppar$person_estimates$eap, col = "lightblue", main = "Histogram of EAP scores")
+```
 
 ## References 
 

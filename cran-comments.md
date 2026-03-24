@@ -19,6 +19,7 @@
 * Improved performance in 4 of the main functions and harmonized the output to be more 
   similar across functions.
 * Added 3 post-processing functions
+* Added 4 new functions
 
 * Notes since prior submission:
 

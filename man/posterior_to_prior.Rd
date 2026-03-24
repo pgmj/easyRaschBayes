@@ -34,7 +34,7 @@ it is used as the prior SD. Values > 1 widen the priors
 \value{
 A \code{\link[brms]{brmsprior}} object that can be supplied
 to the \code{prior} argument of \code{\link[brms]{brm}} or
-\code{\link[brms]{update}}.
+\code{\link[stats]{update}}.
 }
 \description{
 Takes a fitted \code{\link[brms]{brmsfit}} object and constructs a
@@ -42,7 +42,7 @@ Takes a fitted \code{\link[brms]{brmsfit}} object and constructs a
 receives a \code{normal(mean, sd)} prior derived from its posterior
 distribution. The person-level random effect SD prior is also
 updated. The returned prior can be passed directly to
-\code{\link[brms]{update}} (or \code{\link[brms]{brm}}) to refit
+\code{\link[stats]{update}} (or \code{\link[brms]{brm}}) to refit
 the model with empirical Bayes / informative priors — useful for
 anchoring scales, warm-starting a model on new data, or
 regularising estimation with small samples.
@@ -92,17 +92,15 @@ fit_pcm <- brm(
   response | thres(gr = item) ~ 1 + (1 | id),
   data   = df_pcm,
   family = acat,
-  chains = 4,
-  cores  = 4,
-  iter   = 2000
+  chains = 4, cores = 2, iter = 1000 # use more iter (and cores if you have)
 )
 
 # Extract posterior-informed priors
 new_priors <- posterior_to_prior(fit_pcm)
 new_priors
 
-# Widen the priors by a factor of 2
-wide_priors <- posterior_to_prior(fit_pcm, mult = 2)
+# Narrow the prior's sd by a factor of 0.5
+wide_priors <- posterior_to_prior(fit_pcm, mult = 0.5)
 
 # --- Dichotomous 1PL (fixed item effects) ---
 
@@ -115,9 +113,7 @@ fit_1pl <- brm(
   response ~ 0 + item + (1 | id),
   data   = df_rm,
   family = bernoulli(),
-  chains = 4,
-  cores  = 4,
-  iter   = 2000
+  chains = 4, cores = 2, iter = 1000 # use more iter (and cores if you have)
 )
 
 priors_1pl <- posterior_to_prior(fit_1pl)
