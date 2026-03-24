@@ -62,8 +62,8 @@
 
     
     
-<p>** Sorry! This is a slightly premature update of this vignette to
-match version 0.1.1 that is not yet on CRAN. The 0.1.0 vignette is
+<p>** Sorry! This is a slightly premature update of the vignette to
+match version 0.2.0 that is not yet on CRAN. The 0.1.0 vignette is
 available <a href="https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html" class="external-link">via
 CRAN</a> and I hope to have the new version on CRAN before end of March
 2026.**</p>
@@ -142,7 +142,7 @@ instead.</p>
 <code class="sourceCode R"><span><span class="va">fit_pcm</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/readRDS.html" class="external-link">readRDS</a></span><span class="op">(</span><span class="st">"fits/fit_pcm.rds"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="item-fit-infit-and-outfit-statistics">Item Fit: Infit and Outfit Statistics<a class="anchor" aria-label="anchor" href="#item-fit-infit-and-outfit-statistics"></a>
+<h2 id="item-fit-conditional-infit-statistics">Item Fit: Conditional Infit Statistics<a class="anchor" aria-label="anchor" href="#item-fit-conditional-infit-statistics"></a>
 </h2>
 <p><code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> computes posterior predictive infit
 and outfit statistics for each item. Values near 1.0 indicate good fit;
@@ -155,16 +155,16 @@ it).</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fit_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/infit_statistic.html">infit_statistic</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Post-process infit</span></span>
+<span><span class="co"># Post-process Infit</span></span>
 <span><span class="va">infit_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/infit_post.html">infit_post</a></span><span class="op">(</span><span class="va">fit_stats</span><span class="op">)</span></span>
 <span><span class="va">infit_results</span><span class="op">$</span><span class="va">summary</span></span>
 <span><span class="co">#&gt; # A tibble: 4 × 4</span></span>
 <span><span class="co">#&gt;   item  infit_obs infit_rep infit_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        1.04      0.997     0.286</span></span>
-<span><span class="co">#&gt; 2 I2        1.07      0.995     0.154</span></span>
-<span><span class="co">#&gt; 3 I3        0.916     1.00      0.912</span></span>
-<span><span class="co">#&gt; 4 I4        1.03      0.996     0.338</span></span>
+<span><span class="co">#&gt; 1 I1        1.04      1.00      0.304</span></span>
+<span><span class="co">#&gt; 2 I2        1.08      1.00      0.14 </span></span>
+<span><span class="co">#&gt; 3 I3        0.918     0.999     0.866</span></span>
+<span><span class="co">#&gt; 4 I4        1.03      0.997     0.31</span></span>
 <span><span class="va">infit_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-infit-1.png" alt="plot of chunk infit" width="100%"><p class="caption">
@@ -195,10 +195,10 @@ latent trait.</p>
 <span><span class="co">#&gt; # A tibble: 4 × 5</span></span>
 <span><span class="co">#&gt;   item  gamma_obs gamma_rep gamma_diff   ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        0.473     0.542     -0.069 0.108</span></span>
-<span><span class="co">#&gt; 2 I2        0.441     0.548     -0.107 0.026</span></span>
-<span><span class="co">#&gt; 3 I3        0.643     0.533      0.11  0.964</span></span>
-<span><span class="co">#&gt; 4 I4        0.535     0.542     -0.007 0.474</span></span>
+<span><span class="co">#&gt; 1 I1        0.473     0.541     -0.068 0.108</span></span>
+<span><span class="co">#&gt; 2 I2        0.441     0.548     -0.107 0.042</span></span>
+<span><span class="co">#&gt; 3 I3        0.643     0.536      0.107 0.966</span></span>
+<span><span class="co">#&gt; 4 I4        0.535     0.54      -0.005 0.48</span></span>
 <span><span class="va">rest_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-restscore-1.png" alt="plot of chunk restscore" width="100%"><p class="caption">
@@ -207,7 +207,7 @@ plot of chunk restscore
 </div>
 </div>
 <div class="section level2">
-<h2 id="conditional-icc-plot">Conditional ICC plot<a class="anchor" aria-label="anchor" href="#conditional-icc-plot"></a>
+<h2 id="conditional-icc-plot">Conditional ICC Plot<a class="anchor" aria-label="anchor" href="#conditional-icc-plot"></a>
 </h2>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_icc.html">plot_icc</a></span><span class="op">(</span><span class="va">fit_pcm</span><span class="op">)</span></span></code></pre></div>
@@ -254,12 +254,12 @@ on ppp values above 0.95.</p>
 <span><span class="co">#&gt; # A tibble: 6 × 7</span></span>
 <span><span class="co">#&gt;   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.343 -0.003   0.346  1    </span></span>
-<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.104 -0.001   0.105  0.998</span></span>
-<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.066 -0.003  -0.063  0.044</span></span>
-<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.084 -0.001  -0.083  0.002</span></span>
-<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.128 -0.002  -0.126  0    </span></span>
-<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.16   0      -0.16   0</span></span>
+<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.342  0.002   0.34   1    </span></span>
+<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.103 -0.001   0.104  0.998</span></span>
+<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.069  0      -0.069  0.016</span></span>
+<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.086 -0.004  -0.082  0.008</span></span>
+<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.131  0.003  -0.134  0    </span></span>
+<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.163 -0.003  -0.16   0</span></span>
 <span><span class="va">q3_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-q3-1.png" alt="plot of chunk q3" width="100%"><p class="caption">
@@ -315,13 +315,13 @@ continuous intervals (HDCI).</p>
 <span><span class="va">rmu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RMUreliability.html">RMUreliability</a></span><span class="op">(</span><span class="va">person_draws</span><span class="op">)</span></span>
 <span><span class="va">rmu</span></span>
 <span><span class="co">#&gt;   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval</span></span>
-<span><span class="co">#&gt; 1    0.6715786       0.6097665       0.7285306   0.95   mean      hdci</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    0.6723774       0.6167611       0.7258928   0.95   mean      hdci</span></span></code></pre></div>
 <p>RMU values range from 0 to 1, with higher values indicating higher
 reliability, similarly to traditional reliability metrics such as
 Cronbach’s alpha.</p>
 </div>
 <div class="section level2">
-<h2 id="item-parameters">Item parameters<a class="anchor" aria-label="anchor" href="#item-parameters"></a>
+<h2 id="item-parameters">Item Parameters<a class="anchor" aria-label="anchor" href="#item-parameters"></a>
 </h2>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ipar</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_parameters.html">item_parameters</a></span><span class="op">(</span><span class="va">fit_pcm</span><span class="op">)</span></span>
@@ -449,7 +449,7 @@ Cronbach’s alpha.</p>
 </table>
 </div>
 <div class="section level2">
-<h2 id="person-parameters">Person parameters<a class="anchor" aria-label="anchor" href="#person-parameters"></a>
+<h2 id="person-parameters">Person Parameters<a class="anchor" aria-label="anchor" href="#person-parameters"></a>
 </h2>
 <p>This estimates latent scores.</p>
 <div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
