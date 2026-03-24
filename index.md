@@ -27,18 +27,21 @@ remotes::install_github("pgmj/easyRaschBayes")
 
 ## Main functions
 
-| Function                                                                                                    | Description                                                    |
-|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)                   | Conditional infit / outfit statistics                          |
-| [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_statistic.md) | Item–rest score associations with Goodman & Kruskal’s gamma    |
-| [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/reference/plot_residual_pca.md)               | Residual PCA contrast plot for dimensionality assessment       |
-| [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)                         | Yen’s Q3 residual correlations for local dependence evaluation |
-| [`plot_ipf()`](https://pgmj.github.io/easyRaschBayes/reference/plot_ipf.md)                                 | Item category probability function curves                      |
-| [`plot_targeting()`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting.md)                     | Person-item map (Wright map)                                   |
-| [`dif_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/dif_statistic.md)                       | Differential Item Functioning (DIF) analysis                   |
-| [`fit_statistic_pcm()`](https://pgmj.github.io/easyRaschBayes/reference/fit_statistic_pcm.md)               | Posterior predictive item fit for polytomous models            |
-| [`fit_statistic_rm()`](https://pgmj.github.io/easyRaschBayes/reference/fit_statistic_rm.md)                 | Posterior predictive item fit for dichotomous models           |
-| [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/reference/RMUreliability.md)                     | Reliability via Relative Measurement Uncertainty (RMU)         |
+| Function                                                                                                    | Description                                                          |
+|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------|
+| [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)                   | Conditional infit / outfit statistics                                |
+| [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_statistic.md) | Item–rest score associations with Goodman & Kruskal’s gamma          |
+| [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc.md)                                 | Conditional item fit curves & DIF analysis                           |
+| [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/reference/plot_residual_pca.md)               | Residual PCA contrast plot for dimensionality assessment             |
+| [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)                         | Yen’s Q3 residual correlations for local dependence evaluation       |
+| [`plot_ipf()`](https://pgmj.github.io/easyRaschBayes/reference/plot_ipf.md)                                 | Item category probability function curves                            |
+| [`plot_targeting()`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting.md)                     | Person-item map (Wright map)                                         |
+| [`dif_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/dif_statistic.md)                       | Differential Item Functioning (DIF) analysis                         |
+| [`fit_statistic_pcm()`](https://pgmj.github.io/easyRaschBayes/reference/fit_statistic_pcm.md)               | Posterior predictive item/person fit for polytomous models           |
+| [`fit_statistic_rm()`](https://pgmj.github.io/easyRaschBayes/reference/fit_statistic_rm.md)                 | Posterior predictive item/person fit for dichotomous models          |
+| [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/reference/RMUreliability.md)                     | Reliability via Relative Measurement Uncertainty (RMU)               |
+| [`person_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/person_parameters.md)               | EAP and WLE latent scores and ordinal sum score transformation table |
+| [`item_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/item_parameters.md)                   | Summarize item threshold locations                                   |
 
 ## Usage
 

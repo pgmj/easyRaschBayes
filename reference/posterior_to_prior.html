@@ -23,7 +23,7 @@ regularising estimation with small samples."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,7 @@ regularising estimation with small samples."></head><body>
 receives a <code>normal(mean, sd)</code> prior derived from its posterior
 distribution. The person-level random effect SD prior is also
 updated. The returned prior can be passed directly to
-<code>update</code> (or <code><a href="https://paulbuerkner.com/brms/reference/brm.html" class="external-link">brm</a></code>) to refit
+<code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></code> (or <code><a href="https://paulbuerkner.com/brms/reference/brm.html" class="external-link">brm</a></code>) to refit
 the model with empirical Bayes / informative priors — useful for
 anchoring scales, warm-starting a model on new data, or
 regularising estimation with small samples.</p>
@@ -113,7 +113,7 @@ it is used as the prior SD. Values &gt; 1 widen the priors
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A <code><a href="https://paulbuerkner.com/brms/reference/set_prior.html" class="external-link">brmsprior</a></code> object that can be supplied
 to the <code>prior</code> argument of <code><a href="https://paulbuerkner.com/brms/reference/brm.html" class="external-link">brm</a></code> or
-<code>update</code>.</p>
+<code><a href="https://rdrr.io/r/stats/update.html" class="external-link">update</a></code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -159,9 +159,7 @@ bound of zero automatically for SD parameters).</p>
 <span class="r-in"><span>  <span class="va">response</span> <span class="op">|</span> <span class="fu">thres</span><span class="op">(</span>gr <span class="op">=</span> <span class="va">item</span><span class="op">)</span> <span class="op">~</span> <span class="fl">1</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">id</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  data   <span class="op">=</span> <span class="va">df_pcm</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="va">acat</span>,</span></span>
-<span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  cores  <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  iter   <span class="op">=</span> <span class="fl">2000</span></span></span>
+<span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">4</span>, cores <span class="op">=</span> <span class="fl">2</span>, iter <span class="op">=</span> <span class="fl">1000</span> <span class="co"># use more iter (and cores if you have)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
@@ -172,8 +170,8 @@ bound of zero automatically for SD parameters).</p>
 <span class="r-in"><span><span class="va">new_priors</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'new_priors' not found</span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Widen the priors by a factor of 2</span></span></span>
-<span class="r-in"><span><span class="va">wide_priors</span> <span class="op">&lt;-</span> <span class="fu">posterior_to_prior</span><span class="op">(</span><span class="va">fit_pcm</span>, mult <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Narrow the prior's sd by a factor of 0.5</span></span></span>
+<span class="r-in"><span><span class="va">wide_priors</span> <span class="op">&lt;-</span> <span class="fu">posterior_to_prior</span><span class="op">(</span><span class="va">fit_pcm</span>, mult <span class="op">=</span> <span class="fl">0.5</span><span class="op">)</span></span></span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_pcm' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># --- Dichotomous 1PL (fixed item effects) ---</span></span></span>
@@ -187,9 +185,7 @@ bound of zero automatically for SD parameters).</p>
 <span class="r-in"><span>  <span class="va">response</span> <span class="op">~</span> <span class="fl">0</span> <span class="op">+</span> <span class="va">item</span> <span class="op">+</span> <span class="op">(</span><span class="fl">1</span> <span class="op">|</span> <span class="va">id</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  data   <span class="op">=</span> <span class="va">df_rm</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="fu"><a href="https://paulbuerkner.com/brms/reference/brmsfamily.html" class="external-link">bernoulli</a></span><span class="op">(</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  cores  <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  iter   <span class="op">=</span> <span class="fl">2000</span></span></span>
+<span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">4</span>, cores <span class="op">=</span> <span class="fl">2</span>, iter <span class="op">=</span> <span class="fl">1000</span> <span class="co"># use more iter (and cores if you have)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
 <span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>

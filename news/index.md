@@ -1,17 +1,23 @@
 # Changelog
 
-## easyRaschBayes 0.1.1
+## easyRaschBayes 0.2.0 (development version)
 
-- [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)
-  is now faster and defaults to not output outfit statistics.
-- [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_statistic.md)
-  is now faster and has output similar to
-  [`infit_post()`](https://pgmj.github.io/easyRaschBayes/reference/infit_post.md).
-- [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)
-  is now faster and has output similar to
-  [`infit_post()`](https://pgmj.github.io/easyRaschBayes/reference/infit_post.md).
-- Three post-processing helper functions added that output a list with
-  result table(s) and a plot:
+- Updates:
+  - [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)
+    is now faster and defaults to not output outfit statistics, since
+    these are of dubious value (see [Müller
+    2020](https://doi.org/10.1186/s40488-020-00108-7) and [Johansson,
+    2025](https://pgmj.github.io/rasch_itemfit/)).
+  - [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_statistic.md)
+    is now faster and has output similar to
+    [`infit_post()`](https://pgmj.github.io/easyRaschBayes/reference/infit_post.md).
+  - [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)
+    is now faster and has output similar to
+    [`infit_post()`](https://pgmj.github.io/easyRaschBayes/reference/infit_post.md).
+  - [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/reference/plot_residual_pca.md)
+    is now faster.
+- Three post-processing helper functions that output a list with result
+  table(s) and a plot:
   - [`infit_post()`](https://pgmj.github.io/easyRaschBayes/reference/infit_post.md)
     for the output of
     [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)
@@ -21,13 +27,20 @@
   - [`q3_post()`](https://pgmj.github.io/easyRaschBayes/reference/q3_post.md)
     for the output of
     [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)
-- [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/reference/plot_residual_pca.md)
-  is now faster.
-- New function
-  [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/reference/posterior_to_prior.md)
-  that extracts priors from a `brmsfit` model that may be useful in
-  model fit assessment. An article will be added, exploring this
-  further.
+- Other new functions:
+  - [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc.md)
+    can both produce a basic conditional ICC plot and optionally a DIF
+    ICC plot, the latter also reporting a partial gamma DIF magnitude
+    coefficient. This is inspired from `iarm::ICCplot()`
+  - [`item_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/item_parameters.md)
+    to retrieve item threshold locations
+  - [`person_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/person_parameters.md)
+    to retrieve person locations (latent scores) using EAP and WLE, and
+    also a transformation table from ordinal sum score to EAP/WLE.
+  - [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/reference/posterior_to_prior.md)
+    that extracts priors from a `brmsfit` model that may be useful in
+    model fit assessment. An article will be added later, exploring this
+    further.
 
 ## easyRaschBayes 0.1.0
 

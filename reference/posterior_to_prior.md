@@ -7,10 +7,11 @@ object and constructs a
 object in which each item parameter receives a `normal(mean, sd)` prior
 derived from its posterior distribution. The person-level random effect
 SD prior is also updated. The returned prior can be passed directly to
-`update` (or [`brm`](https://paulbuerkner.com/brms/reference/brm.html))
-to refit the model with empirical Bayes / informative priors — useful
-for anchoring scales, warm-starting a model on new data, or regularising
-estimation with small samples.
+[`update`](https://rdrr.io/r/stats/update.html) (or
+[`brm`](https://paulbuerkner.com/brms/reference/brm.html)) to refit the
+model with empirical Bayes / informative priors — useful for anchoring
+scales, warm-starting a model on new data, or regularising estimation
+with small samples.
 
 ## Usage
 
@@ -61,7 +62,8 @@ posterior_to_prior(model, item_var = item, person_var = id, mult = 1)
 
 A [`brmsprior`](https://paulbuerkner.com/brms/reference/set_prior.html)
 object that can be supplied to the `prior` argument of
-[`brm`](https://paulbuerkner.com/brms/reference/brm.html) or `update`.
+[`brm`](https://paulbuerkner.com/brms/reference/brm.html) or
+[`update`](https://rdrr.io/r/stats/update.html).
 
 ## Details
 
@@ -108,9 +110,7 @@ fit_pcm <- brm(
   response | thres(gr = item) ~ 1 + (1 | id),
   data   = df_pcm,
   family = acat,
-  chains = 4,
-  cores  = 4,
-  iter   = 2000
+  chains = 4, cores = 2, iter = 1000 # use more iter (and cores if you have)
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
@@ -121,8 +121,8 @@ new_priors <- posterior_to_prior(fit_pcm)
 new_priors
 #> Error: object 'new_priors' not found
 
-# Widen the priors by a factor of 2
-wide_priors <- posterior_to_prior(fit_pcm, mult = 2)
+# Narrow the prior's sd by a factor of 0.5
+wide_priors <- posterior_to_prior(fit_pcm, mult = 0.5)
 #> Error: object 'fit_pcm' not found
 
 # --- Dichotomous 1PL (fixed item effects) ---
@@ -136,9 +136,7 @@ fit_1pl <- brm(
   response ~ 0 + item + (1 | id),
   data   = df_rm,
   family = bernoulli(),
-  chains = 4,
-  cores  = 4,
-  iter   = 2000
+  chains = 4, cores = 2, iter = 1000 # use more iter (and cores if you have)
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')

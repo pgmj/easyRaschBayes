@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.1.1</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,14 +35,18 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.1" id="easyraschbayes-011">easyRaschBayes 0.1.1<a class="anchor" aria-label="anchor" href="#easyraschbayes-011"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="easyraschbayes-020-development-version">easyRaschBayes 0.2.0 (development version)<a class="anchor" aria-label="anchor" href="#easyraschbayes-020-development-version"></a></h2>
+<ul><li>Updates:
 <ul><li>
-<code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> is now faster and defaults to not output outfit statistics.</li>
+<code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> is now faster and defaults to not output outfit statistics, since these are of dubious value (see <a href="https://doi.org/10.1186/s40488-020-00108-7" class="external-link">Müller 2020</a> and <a href="https://pgmj.github.io/rasch_itemfit/" class="external-link">Johansson, 2025</a>).</li>
 <li>
 <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> is now faster and has output similar to <code><a href="../reference/infit_post.html">infit_post()</a></code>.</li>
 <li>
 <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> is now faster and has output similar to <code><a href="../reference/infit_post.html">infit_post()</a></code>.</li>
-<li>Three post-processing helper functions added that output a list with result table(s) and a plot:
+<li>
+<code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> is now faster.</li>
+</ul></li>
+<li>Three post-processing helper functions that output a list with result table(s) and a plot:
 <ul><li>
 <code><a href="../reference/infit_post.html">infit_post()</a></code> for the output of <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code>
 </li>
@@ -53,9 +57,17 @@
 <code><a href="../reference/q3_post.html">q3_post()</a></code> for the output of <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code>
 </li>
 </ul></li>
+<li>Other new functions:
+<ul><li>
+<code><a href="../reference/plot_icc.html">plot_icc()</a></code> can both produce a basic conditional ICC plot and optionally a DIF ICC plot, the latter also reporting a partial gamma DIF magnitude coefficient. This is inspired from <code>iarm::ICCplot()</code>
+</li>
 <li>
-<code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> is now faster.</li>
-<li>New function <code><a href="../reference/posterior_to_prior.html">posterior_to_prior()</a></code> that extracts priors from a <code>brmsfit</code> model that may be useful in model fit assessment. An article will be added, exploring this further.</li>
+<code><a href="../reference/item_parameters.html">item_parameters()</a></code> to retrieve item threshold locations</li>
+<li>
+<code><a href="../reference/person_parameters.html">person_parameters()</a></code> to retrieve person locations (latent scores) using EAP and WLE, and also a transformation table from ordinal sum score to EAP/WLE.</li>
+<li>
+<code><a href="../reference/posterior_to_prior.html">posterior_to_prior()</a></code> that extracts priors from a <code>brmsfit</code> model that may be useful in model fit assessment. An article will be added later, exploring this further.</li>
+</ul></li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="easyraschbayes-010">easyRaschBayes 0.1.0<a class="anchor" aria-label="anchor" href="#easyraschbayes-010"></a></h2><p class="text-muted">CRAN release: 2026-03-11</p>

@@ -16,6 +16,8 @@
   Models
 - [`item_restscore_post()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_post.md)
   : Summarize and Plot Posterior Predictive Item-Restscore Associations
+- [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc.md)
+  : Item Characteristic Curves with Class Intervals
 
 ## Local Dependence
 
@@ -64,11 +66,17 @@
   : Summarize and Plot Posterior Predictive Infit Statistics
 - [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)
   : Posterior Predictive Infit Statistic for Bayesian IRT Models
+- [`item_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/item_parameters.md)
+  : Extract Item Parameters from a Bayesian Rasch Model
 - [`item_restscore_post()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_post.md)
   : Summarize and Plot Posterior Predictive Item-Restscore Associations
 - [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_statistic.md)
   : Posterior Predictive Item-Restscore Association for Bayesian IRT
   Models
+- [`person_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/person_parameters.md)
+  : Extract Person Parameters from a Bayesian Rasch Model
+- [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc.md)
+  : Item Characteristic Curves with Class Intervals
 - [`plot_ipf()`](https://pgmj.github.io/easyRaschBayes/reference/plot_ipf.md)
   : Item Category Probability Function Curves for Polytomous IRT Models
 - [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/reference/plot_residual_pca.md)
