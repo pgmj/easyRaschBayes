@@ -5,8 +5,7 @@
 #' probability of endorsing each response category is plotted as a
 #' function of the latent variable (theta), with separate colored
 #' curves per category. All items are displayed in a combined faceted
-#' plot, similar to the trace plots produced by
-#' \code{\link[mirt]{itemplot}} in the \pkg{mirt} package.
+#' plot.
 #'
 #' @param model A fitted \code{\link[brms]{brmsfit}} object from a
 #'   polytomous IRT model (e.g., \code{family = acat} for a partial
@@ -58,8 +57,7 @@
 #'
 #' Posterior uncertainty in the thresholds propagates into credible
 #' interval ribbons around the category probability curves — a
-#' Bayesian advantage over point-estimate-based plots from packages
-#' like \pkg{mirt} or \pkg{eRm}.
+#' Bayesian advantage over point-estimate-based plots.
 #'
 #' @references
 #' Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
@@ -69,7 +67,6 @@
 #' @seealso
 #' \code{\link[brms]{posterior_epred}},
 #' \code{\link[brms]{conditional_effects}},
-#' \code{\link[mirt]{itemplot}}.
 #'
 #' @examples
 #' \donttest{

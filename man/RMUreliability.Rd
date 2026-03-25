@@ -83,7 +83,7 @@ brms_model = brm(
 
 posterior_draws = brms_model \%>\%
   as_draws_df() \%>\%
-  as_tibble \%>\% 
+  as_tibble() \%>\% 
   select(starts_with("r_mouse")) \%>\%
   t()
 
