@@ -114,11 +114,11 @@ distribution.
 ## Examples
 
 ``` r
-{
 library(ggplot2)
 
 # Basic stacked bar chart
 plot_stackedbars(eRm::pcmdat2)
+
 
 # With custom item and category labels
 plot_stackedbars(
@@ -127,6 +127,7 @@ plot_stackedbars(
   category_labels = c("Never", "Sometimes", "Often")
 )
 
+
 # Show percentages, suppress small segments
 plot_stackedbars(
   eRm::pcmdat2,
@@ -134,6 +135,5 @@ plot_stackedbars(
   show_n       = FALSE,
   min_label_n  = 5
 )
-}
 
 ```

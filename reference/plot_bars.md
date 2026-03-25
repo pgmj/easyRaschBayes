@@ -96,17 +96,18 @@ the viridis palette. Each bar shows the count (`n = X`) as text.
 ## Examples
 
 ``` r
-{
 library(ggplot2)
 
 # Basic response distribution plot
 plot_bars(eRm::pcmdat2)
+
 
 # With custom item labels
 plot_bars(
   eRm::pcmdat2,
   item_labels = c("Mood", "Sleep", "Appetite", "Energy")
 )
+
 
 # Two-column layout with wrapped labels
 plot_bars(
@@ -120,11 +121,11 @@ plot_bars(
   ncol = 2, label_wrap = 20
 )
 
+
 # With custom category labels
 plot_bars(
   eRm::pcmdat2,
   category_labels = c("Never", "Sometimes", "Often")
 )
-}
 
 ```

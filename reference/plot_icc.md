@@ -170,8 +170,8 @@ cannot be estimated.
 
 **Uncertainty around observed points:** For each class interval, the
 standard error of the mean observed response is computed and displayed
-as error bars showing \\\pm 1\\ SE. These reflect sampling variability
-of the observed mean within each bin.
+as error bars showing \\\pm 1.96\\ SE. These reflect sampling
+variability of the observed mean within each bin.
 
 **DIF overlay:** When `dif_var` is specified, observed scores are
 computed separately for each level of the DIF variable, producing

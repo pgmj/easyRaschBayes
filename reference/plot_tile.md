@@ -91,17 +91,18 @@ of the primary purposes of this plot.
 ## Examples
 
 ``` r
-{
 library(ggplot2)
 
 # Basic tile plot
 plot_tile(eRm::pcmdat2)
+
 
 # With custom item labels
 plot_tile(
   eRm::pcmdat2,
   item_labels = c("Mood", "Sleep", "Appetite", "Energy")
 )
+
 
 # With custom category labels and percentages
 plot_tile(
@@ -110,8 +111,8 @@ plot_tile(
   percent = TRUE
 )
 
+
 # Adjust cutoff for highlighting
 plot_tile(eRm::pcmdat2, cutoff = 20, highlight = TRUE)
-}
 
 ```
