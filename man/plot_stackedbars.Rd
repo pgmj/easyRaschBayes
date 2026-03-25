@@ -95,7 +95,6 @@ and at least 1 row (person).
 }
 }
 \examples{
-{
 library(ggplot2)
 
 # Basic stacked bar chart
@@ -115,6 +114,5 @@ plot_stackedbars(
   show_n       = FALSE,
   min_label_n  = 5
 )
-}
 
 }

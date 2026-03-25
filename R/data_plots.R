@@ -54,7 +54,6 @@
 #' }
 #'
 #' @examples
-#' {
 #' library(ggplot2)
 #'
 #' # Basic tile plot
@@ -75,7 +74,6 @@
 #'
 #' # Adjust cutoff for highlighting
 #' plot_tile(eRm::pcmdat2, cutoff = 20, highlight = TRUE)
-#' }
 #'
 #' @importFrom rlang .data
 #' @export
@@ -337,7 +335,6 @@ plot_tile <- function(
 #' }
 #'
 #' @examples
-#' {
 #' library(ggplot2)
 #'
 #' # Basic response distribution plot
@@ -366,7 +363,6 @@ plot_tile <- function(
 #'   eRm::pcmdat2,
 #'   category_labels = c("Never", "Sometimes", "Often")
 #' )
-#' }
 #'
 #' @importFrom rlang .data
 #' @export
@@ -610,7 +606,6 @@ plot_bars <- function(
 #' }
 #'
 #' @examples
-#' {
 #' library(ggplot2)
 #'
 #' # Basic stacked bar chart
@@ -630,7 +625,6 @@ plot_bars <- function(
 #'   show_n       = FALSE,
 #'   min_label_n  = 5
 #' )
-#' }
 #'
 #' @importFrom rlang .data
 #' @export

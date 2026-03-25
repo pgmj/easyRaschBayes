@@ -89,7 +89,7 @@
 #'
 #' \strong{Uncertainty around observed points:} For each class
 #' interval, the standard error of the mean observed response is
-#' computed and displayed as error bars showing \eqn{\pm 1} SE.
+#' computed and displayed as error bars showing \eqn{\pm 1.96} SE.
 #' These reflect sampling variability of the observed mean within
 #' each bin.
 #'
@@ -686,8 +686,8 @@ plot_icc <- function(
         data    = observed_data,
         mapping = ggplot2::aes(
           x      = .data$theta,
-          ymin   = pmax(.data$response - .data$se, 0),
-          ymax   = .data$response + .data$se,
+          ymin   = pmax(.data$response - (1.96 * .data$se), 0),
+          ymax   = .data$response + (1.96 * .data$se),
           colour = .data$.dif_group
         ),
         width = 0.05, linewidth = 0.4
@@ -724,8 +724,8 @@ plot_icc <- function(
         data    = observed_data,
         mapping = ggplot2::aes(
           x    = .data$theta,
-          ymin = pmax(.data$response - .data$se, 0),
-          ymax = .data$response + .data$se
+          ymin = pmax(.data$response - (1.96 * .data$se), 0),
+          ymax = .data$response + (1.96 * .data$se)
         ),
         colour = "#1F78B4", width = 0.05, linewidth = 0.4
       ) +

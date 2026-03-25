@@ -6,7 +6,7 @@
 
 ## Test environments
 
-* local: macOS 26.3, R 4.5.2
+* local: macOS 26.3.1, R 4.5.3
 * R-hub: linux, R-devel
 * R-hub: windows, R-devel
 * R-hub: macOS-arm64, R-devel

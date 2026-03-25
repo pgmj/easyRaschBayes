@@ -136,7 +136,7 @@ theta positions cannot be estimated.
 
 \strong{Uncertainty around observed points:} For each class
 interval, the standard error of the mean observed response is
-computed and displayed as error bars showing \eqn{\pm 1} SE.
+computed and displayed as error bars showing \eqn{\pm 1.96} SE.
 These reflect sampling variability of the observed mean within
 each bin.
 

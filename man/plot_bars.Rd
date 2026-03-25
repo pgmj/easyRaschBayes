@@ -81,7 +81,6 @@ and at least 1 row (person).
 }
 }
 \examples{
-{
 library(ggplot2)
 
 # Basic response distribution plot
@@ -110,6 +109,5 @@ plot_bars(
   eRm::pcmdat2,
   category_labels = c("Never", "Sometimes", "Often")
 )
-}
 
 }

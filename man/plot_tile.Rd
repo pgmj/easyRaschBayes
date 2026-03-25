@@ -77,7 +77,6 @@ and at least 1 row (person).
 }
 }
 \examples{
-{
 library(ggplot2)
 
 # Basic tile plot
@@ -98,6 +97,5 @@ plot_tile(
 
 # Adjust cutoff for highlighting
 plot_tile(eRm::pcmdat2, cutoff = 20, highlight = TRUE)
-}
 
 }
