@@ -1,6 +1,6 @@
 # Changelog
 
-## easyRaschBayes 0.2.0 (development version)
+## easyRaschBayes 0.2.0rc1 (development version)
 
 - Updates:
   - [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)
@@ -29,9 +29,10 @@
     [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)
 - Other new functions:
   - [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc.md)
-    can both produce a basic conditional ICC plot and optionally a DIF
-    ICC plot, the latter also reporting a partial gamma DIF magnitude
-    coefficient. This is inspired from `iarm::ICCplot()`
+    can both produce a basic conditional Item Characteristic Curves plot
+    and optionally a DIF ICC plot, the latter also reporting a partial
+    gamma DIF magnitude coefficient. This is inspired by
+    `iarm::ICCplot()`
   - [`item_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/item_parameters.md)
     to retrieve item threshold locations
   - [`person_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/person_parameters.md)

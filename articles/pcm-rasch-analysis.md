@@ -1,8 +1,8 @@
-# Partial Credit Model Analysis with easyRaschBayes
+# Rasch Partial Credit Model with easyRaschBayes
 
 \*\* Sorry! This is a slightly premature update of the vignette to match
-version 0.2.0 that is not yet on CRAN. The 0.1.0 vignette is available
-[via
+version 0.2.0rc1 that is not yet on CRAN. The 0.1.0 vignette is
+available [via
 CRAN](https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html)
 and I hope to have the new version on CRAN before end of March 2026.\*\*
 
@@ -48,7 +48,9 @@ response before reshaping to long format.
 df_pcm <- eRm::pcmdat2 %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
-  pivot_longer(!id, names_to = "item", values_to = "response")
+  pivot_longer(!id, # don't include the id variable in the wide->long transformation
+               names_to = "item", 
+               values_to = "response")
 
 head(df_pcm)
 #> # A tibble: 6 × 3
@@ -93,10 +95,11 @@ fit_pcm <- readRDS("fits/fit_pcm.rds")
 ## Item Fit: Conditional Infit Statistics
 
 [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)
-computes posterior predictive infit and outfit statistics for each item.
-Values near 1.0 indicate good fit; values substantially above 1 suggest
-underfit (unexpected responses), values below 1 suggest overfit (too
-predictable).
+computes posterior predictive infit (and outfit) statistics for each
+item. Values near 1.0 indicate good fit; values above 1 suggest underfit
+(unexpected responses, often indicating multidimensionality), values
+below 1 suggest overfit (too predictable, often coinciding with local
+dependence issues).
 
 The `ndraws_use` argument limits the number of posterior draws used,
 which speeds up computation during exploration. For final reporting, use
@@ -111,16 +114,16 @@ infit_results$summary
 #> # A tibble: 4 × 4
 #>   item  infit_obs infit_rep infit_ppp
 #>   <chr>     <dbl>     <dbl>     <dbl>
-#> 1 I1        1.04      1.00      0.304
-#> 2 I2        1.08      1.00      0.14 
-#> 3 I3        0.918     0.999     0.866
-#> 4 I4        1.03      0.997     0.31
+#> 1 I1        1.05      1.00      0.274
+#> 2 I2        1.07      0.998     0.138
+#> 3 I3        0.917     0.995     0.888
+#> 4 I4        1.03      0.998     0.342
 infit_results$plot
 ```
 
-![plot of chunk infit](figures/pcm-infit-1.png)
+![Conditional infit figure](figures/pcm-infit-1.png)
 
-plot of chunk infit
+Conditional infit figure
 
 `infit_obs` indicates the observed conditional infit, which can be
 compared to `infit_rep`, which is akin to the model expected value.
@@ -134,9 +137,9 @@ investigation.
 [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_statistic.md)
 computes Goodman-Kruskal’s gamma between each item’s observed responses
 and the rest score (total score minus the focal item). In a well-fitting
-Rasch model, gamma should be positive and moderate; very high values may
-indicate redundancy, very low or negative values suggest the item does
-not relate well to the latent trait.
+Rasch model, gamma should be positive and moderate and of similar
+magnitude for all items; high values may indicate redundancy, low values
+suggest the item does not relate well to the latent trait.
 
 ``` r
 rest_stats <- item_restscore_statistic(fit_pcm, ndraws_use = 500)
@@ -146,26 +149,30 @@ rest_results$summary
 #> # A tibble: 4 × 5
 #>   item  gamma_obs gamma_rep gamma_diff   ppp
 #>   <chr>     <dbl>     <dbl>      <dbl> <dbl>
-#> 1 I1        0.473     0.541     -0.068 0.108
-#> 2 I2        0.441     0.548     -0.107 0.042
-#> 3 I3        0.643     0.536      0.107 0.966
-#> 4 I4        0.535     0.54      -0.005 0.48
+#> 1 I1        0.473     0.542     -0.069 0.124
+#> 2 I2        0.441     0.541     -0.1   0.06 
+#> 3 I3        0.643     0.531      0.111 0.954
+#> 4 I4        0.535     0.539     -0.003 0.47
 rest_results$plot
 ```
 
-![plot of chunk restscore](figures/pcm-restscore-1.png)
+![Item-restscore figure](figures/pcm-restscore-1.png)
 
-plot of chunk restscore
+Item-restscore figure
 
 ## Conditional ICC Plot
+
+Shows item fit across the latent continuum, dividing the sample into n
+class intervals (default is 5).
 
 ``` r
 plot_icc(fit_pcm)
 ```
 
-![plot of chunk ciccplot](figures/pcm-ciccplot-1.png)
+![Conditional Item Characteristic Curves
+figure](figures/pcm-ciccplot-1.png)
 
-plot of chunk ciccplot
+Conditional Item Characteristic Curves figure
 
 ## Dimensionality: Residual PCA
 
@@ -183,10 +190,8 @@ pca$plot
 
 plot of chunk pca-plot
 
-Items with positive loadings cluster on one end, negative loadings on
-the other. If the observed largest eigenvalue is smaller than the
-replicated, unidimensionality is supported. The ppp should not be close
-to 1.
+If the observed largest eigenvalue is smaller than the replicated,
+unidimensionality is supported. The ppp should not be close to 1.
 
 ## Local Dependence: Q3 Residual Correlations
 
@@ -195,7 +200,7 @@ computes Yen’s Q3 statistic — the correlation between person-item
 residuals for every item pair. After conditioning on the latent trait,
 residuals should be uncorrelated; elevated Q3 values indicate local
 dependence (LD). Our primary metric here is the ppp, that should not be
-close to 1. The output is filtered on ppp values above 0.95.
+close to 1.
 
 ``` r
 q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
@@ -205,12 +210,12 @@ q3_results$summary
 #> # A tibble: 6 × 7
 #>   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp
 #>   <chr>     <chr>  <chr>   <dbl>  <dbl>   <dbl>  <dbl>
-#> 1 I3 : I4   I3     I4      0.342  0.002   0.34   1    
-#> 2 I1 : I2   I1     I2      0.103 -0.001   0.104  0.998
-#> 3 I1 : I3   I1     I3     -0.069  0      -0.069  0.016
-#> 4 I2 : I3   I2     I3     -0.086 -0.004  -0.082  0.008
-#> 5 I1 : I4   I1     I4     -0.131  0.003  -0.134  0    
-#> 6 I2 : I4   I2     I4     -0.163 -0.003  -0.16   0
+#> 1 I3 : I4   I3     I4      0.342 -0.002   0.344  1    
+#> 2 I1 : I2   I1     I2      0.102 -0.002   0.104  0.998
+#> 3 I1 : I3   I1     I3     -0.069 -0.004  -0.065  0.014
+#> 4 I2 : I3   I2     I3     -0.087  0      -0.087  0    
+#> 5 I1 : I4   I1     I4     -0.131 -0.004  -0.127  0    
+#> 6 I2 : I4   I2     I4     -0.164  0.002  -0.166  0
 q3_results$plot
 ```
 
@@ -245,9 +250,9 @@ distributions overlap substantially.
 plot_targeting(fit_pcm)
 ```
 
-![plot of chunk targeting](figures/pcm-targeting-1.png)
+![Targeting figure](figures/pcm-targeting-1.png)
 
-plot of chunk targeting
+Targeting figure
 
 ## Reliability: Relative Measurement Uncertainty
 
@@ -267,7 +272,7 @@ person_draws <- fit_pcm %>%
 rmu <- RMUreliability(person_draws)
 rmu
 #>   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval
-#> 1    0.6723774       0.6167611       0.7258928   0.95   mean      hdci
+#> 1    0.6728536       0.6133625       0.7237451   0.95   mean      hdci
 ```
 
 RMU values range from 0 to 1, with higher values indicating higher
@@ -328,9 +333,9 @@ knitr::kable(ppar$score_table)
 hist(ppar$person_estimates$eap, col = "lightblue", main = "Histogram of EAP scores")
 ```
 
-![plot of chunk ppar](figures/pcm-ppar-1.png)
+![EAP score histogram](figures/pcm-ppar-1.png)
 
-plot of chunk ppar
+EAP score histogram
 
 ## References
 

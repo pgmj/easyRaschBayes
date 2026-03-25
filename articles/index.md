@@ -2,5 +2,5 @@
 
 ### All vignettes
 
-- [Partial Credit Model Analysis with
+- [Rasch Partial Credit Model with
   easyRaschBayes](https://pgmj.github.io/easyRaschBayes/articles/pcm-rasch-analysis.md):

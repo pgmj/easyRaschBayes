@@ -5,12 +5,12 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Partial Credit Model Analysis with easyRaschBayes • easyRaschBayes</title>
+<title>Rasch Partial Credit Model with easyRaschBayes • easyRaschBayes</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Partial Credit Model Analysis with easyRaschBayes">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Rasch Partial Credit Model with easyRaschBayes">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -33,7 +33,7 @@
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/index.html">Vignettes</a></li>
+<li><a class="dropdown-item" href="../articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -53,7 +53,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>Partial Credit Model Analysis with easyRaschBayes</h1>
+      <h1>Rasch Partial Credit Model with easyRaschBayes</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/pgmj/easyRaschBayes/blob/main/vignettes/pcm-rasch-analysis.Rmd" class="external-link"><code>vignettes/pcm-rasch-analysis.Rmd</code></a></small>
@@ -63,7 +63,7 @@
     
     
 <p>** Sorry! This is a slightly premature update of the vignette to
-match version 0.2.0 that is not yet on CRAN. The 0.1.0 vignette is
+match version 0.2.0rc1 that is not yet on CRAN. The 0.1.0 vignette is
 available <a href="https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html" class="external-link">via
 CRAN</a> and I hope to have the new version on CRAN before end of March
 2026.**</p>
@@ -104,7 +104,9 @@ response before reshaping to long format.</p>
 <code class="sourceCode R"><span><span class="va">df_pcm</span> <span class="op">&lt;-</span> <span class="fu">eRm</span><span class="fu">::</span><span class="va"><a href="https://rdrr.io/pkg/eRm/man/eRm.data.html" class="external-link">pcmdat2</a></span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/everything.html" class="external-link">everything</a></span><span class="op">(</span><span class="op">)</span>, <span class="op">~</span> <span class="va">.x</span> <span class="op">+</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://tibble.tidyverse.org/reference/rownames.html" class="external-link">rownames_to_column</a></span><span class="op">(</span><span class="st">"id"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span><span class="op">!</span><span class="va">id</span>, names_to <span class="op">=</span> <span class="st">"item"</span>, values_to <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_longer.html" class="external-link">pivot_longer</a></span><span class="op">(</span><span class="op">!</span><span class="va">id</span>, <span class="co"># don't include the id variable in the wide-&gt;long transformation</span></span>
+<span>               names_to <span class="op">=</span> <span class="st">"item"</span>, </span>
+<span>               values_to <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_pcm</span><span class="op">)</span></span>
 <span><span class="co">#&gt; # A tibble: 6 × 3</span></span>
@@ -145,9 +147,10 @@ instead.</p>
 <h2 id="item-fit-conditional-infit-statistics">Item Fit: Conditional Infit Statistics<a class="anchor" aria-label="anchor" href="#item-fit-conditional-infit-statistics"></a>
 </h2>
 <p><code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> computes posterior predictive infit
-and outfit statistics for each item. Values near 1.0 indicate good fit;
-values substantially above 1 suggest underfit (unexpected responses),
-values below 1 suggest overfit (too predictable).</p>
+(and outfit) statistics for each item. Values near 1.0 indicate good
+fit; values above 1 suggest underfit (unexpected responses, often
+indicating multidimensionality), values below 1 suggest overfit (too
+predictable, often coinciding with local dependence issues).</p>
 <p>The <code>ndraws_use</code> argument limits the number of posterior
 draws used, which speeds up computation during exploration. For final
 reporting, use all draws (set <code>ndraws_use = NULL</code> or omit
@@ -161,14 +164,14 @@ it).</p>
 <span><span class="co">#&gt; # A tibble: 4 × 4</span></span>
 <span><span class="co">#&gt;   item  infit_obs infit_rep infit_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        1.04      1.00      0.304</span></span>
-<span><span class="co">#&gt; 2 I2        1.08      1.00      0.14 </span></span>
-<span><span class="co">#&gt; 3 I3        0.918     0.999     0.866</span></span>
-<span><span class="co">#&gt; 4 I4        1.03      0.997     0.31</span></span>
+<span><span class="co">#&gt; 1 I1        1.05      1.00      0.274</span></span>
+<span><span class="co">#&gt; 2 I2        1.07      0.998     0.138</span></span>
+<span><span class="co">#&gt; 3 I3        0.917     0.995     0.888</span></span>
+<span><span class="co">#&gt; 4 I4        1.03      0.998     0.342</span></span>
 <span><span class="va">infit_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pcm-infit-1.png" alt="plot of chunk infit" width="100%"><p class="caption">
-plot of chunk infit
+<img src="figures/pcm-infit-1.png" alt="Conditional infit figure" width="100%"><p class="caption">
+Conditional infit figure
 </p>
 </div>
 <p><code>infit_obs</code> indicates the observed conditional infit,
@@ -184,9 +187,9 @@ of the posterior predictive distribution, implying good fit. Values near
 <p><code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> computes Goodman-Kruskal’s
 gamma between each item’s observed responses and the rest score (total
 score minus the focal item). In a well-fitting Rasch model, gamma should
-be positive and moderate; very high values may indicate redundancy, very
-low or negative values suggest the item does not relate well to the
-latent trait.</p>
+be positive and moderate and of similar magnitude for all items; high
+values may indicate redundancy, low values suggest the item does not
+relate well to the latent trait.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">rest_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_restscore_statistic.html">item_restscore_statistic</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span></span>
@@ -195,25 +198,27 @@ latent trait.</p>
 <span><span class="co">#&gt; # A tibble: 4 × 5</span></span>
 <span><span class="co">#&gt;   item  gamma_obs gamma_rep gamma_diff   ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        0.473     0.541     -0.068 0.108</span></span>
-<span><span class="co">#&gt; 2 I2        0.441     0.548     -0.107 0.042</span></span>
-<span><span class="co">#&gt; 3 I3        0.643     0.536      0.107 0.966</span></span>
-<span><span class="co">#&gt; 4 I4        0.535     0.54      -0.005 0.48</span></span>
+<span><span class="co">#&gt; 1 I1        0.473     0.542     -0.069 0.124</span></span>
+<span><span class="co">#&gt; 2 I2        0.441     0.541     -0.1   0.06 </span></span>
+<span><span class="co">#&gt; 3 I3        0.643     0.531      0.111 0.954</span></span>
+<span><span class="co">#&gt; 4 I4        0.535     0.539     -0.003 0.47</span></span>
 <span><span class="va">rest_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pcm-restscore-1.png" alt="plot of chunk restscore" width="100%"><p class="caption">
-plot of chunk restscore
+<img src="figures/pcm-restscore-1.png" alt="Item-restscore figure" width="100%"><p class="caption">
+Item-restscore figure
 </p>
 </div>
 </div>
 <div class="section level2">
 <h2 id="conditional-icc-plot">Conditional ICC Plot<a class="anchor" aria-label="anchor" href="#conditional-icc-plot"></a>
 </h2>
+<p>Shows item fit across the latent continuum, dividing the sample into
+n class intervals (default is 5).</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_icc.html">plot_icc</a></span><span class="op">(</span><span class="va">fit_pcm</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pcm-ciccplot-1.png" alt="plot of chunk ciccplot" width="100%"><p class="caption">
-plot of chunk ciccplot
+<img src="figures/pcm-ciccplot-1.png" alt="Conditional Item Characteristic Curves figure" width="100%"><p class="caption">
+Conditional Item Characteristic Curves figure
 </p>
 </div>
 </div>
@@ -232,10 +237,8 @@ locations and the uncertainty of both.</p>
 plot of chunk pca-plot
 </p>
 </div>
-<p>Items with positive loadings cluster on one end, negative loadings on
-the other. If the observed largest eigenvalue is smaller than the
-replicated, unidimensionality is supported. The ppp should not be close
-to 1.</p>
+<p>If the observed largest eigenvalue is smaller than the replicated,
+unidimensionality is supported. The ppp should not be close to 1.</p>
 </div>
 <div class="section level2">
 <h2 id="local-dependence-q3-residual-correlations">Local Dependence: Q3 Residual Correlations<a class="anchor" aria-label="anchor" href="#local-dependence-q3-residual-correlations"></a>
@@ -244,8 +247,7 @@ to 1.</p>
 correlation between person-item residuals for every item pair. After
 conditioning on the latent trait, residuals should be uncorrelated;
 elevated Q3 values indicate local dependence (LD). Our primary metric
-here is the ppp, that should not be close to 1. The output is filtered
-on ppp values above 0.95.</p>
+here is the ppp, that should not be close to 1.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">q3_stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/q3_statistic.html">q3_statistic</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span></span>
@@ -254,12 +256,12 @@ on ppp values above 0.95.</p>
 <span><span class="co">#&gt; # A tibble: 6 × 7</span></span>
 <span><span class="co">#&gt;   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.342  0.002   0.34   1    </span></span>
-<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.103 -0.001   0.104  0.998</span></span>
-<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.069  0      -0.069  0.016</span></span>
-<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.086 -0.004  -0.082  0.008</span></span>
-<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.131  0.003  -0.134  0    </span></span>
-<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.163 -0.003  -0.16   0</span></span>
+<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.342 -0.002   0.344  1    </span></span>
+<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.102 -0.002   0.104  0.998</span></span>
+<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.069 -0.004  -0.065  0.014</span></span>
+<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.087  0      -0.087  0    </span></span>
+<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.131 -0.004  -0.127  0    </span></span>
+<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.164  0.002  -0.166  0</span></span>
 <span><span class="va">q3_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-q3-1.png" alt="plot of chunk q3" width="100%"><p class="caption">
@@ -292,8 +294,8 @@ occurs when person and item distributions overlap substantially.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_targeting.html">plot_targeting</a></span><span class="op">(</span><span class="va">fit_pcm</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pcm-targeting-1.png" alt="plot of chunk targeting" width="100%"><p class="caption">
-plot of chunk targeting
+<img src="figures/pcm-targeting-1.png" alt="Targeting figure" width="100%"><p class="caption">
+Targeting figure
 </p>
 </div>
 </div>
@@ -315,7 +317,7 @@ continuous intervals (HDCI).</p>
 <span><span class="va">rmu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RMUreliability.html">RMUreliability</a></span><span class="op">(</span><span class="va">person_draws</span><span class="op">)</span></span>
 <span><span class="va">rmu</span></span>
 <span><span class="co">#&gt;   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval</span></span>
-<span><span class="co">#&gt; 1    0.6723774       0.6167611       0.7258928   0.95   mean      hdci</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    0.6728536       0.6133625       0.7237451   0.95   mean      hdci</span></span></code></pre></div>
 <p>RMU values range from 0 to 1, with higher values indicating higher
 reliability, similarly to traditional reliability metrics such as
 Cronbach’s alpha.</p>
@@ -542,8 +544,8 @@ Cronbach’s alpha.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/hist.html" class="external-link">hist</a></span><span class="op">(</span><span class="va">ppar</span><span class="op">$</span><span class="va">person_estimates</span><span class="op">$</span><span class="va">eap</span>, col <span class="op">=</span> <span class="st">"lightblue"</span>, main <span class="op">=</span> <span class="st">"Histogram of EAP scores"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pcm-ppar-1.png" alt="plot of chunk ppar" width="100%"><p class="caption">
-plot of chunk ppar
+<img src="figures/pcm-ppar-1.png" alt="EAP score histogram" width="100%"><p class="caption">
+EAP score histogram
 </p>
 </div>
 </div>
