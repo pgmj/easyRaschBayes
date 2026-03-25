@@ -75,14 +75,20 @@
   Models
 - [`person_parameters()`](https://pgmj.github.io/easyRaschBayes/reference/person_parameters.md)
   : Extract Person Parameters from a Bayesian Rasch Model
+- [`plot_bars()`](https://pgmj.github.io/easyRaschBayes/reference/plot_bars.md)
+  : Item Response Distribution Bar Chart
 - [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc.md)
   : Item Characteristic Curves with Class Intervals
 - [`plot_ipf()`](https://pgmj.github.io/easyRaschBayes/reference/plot_ipf.md)
   : Item Category Probability Function Curves for Polytomous IRT Models
 - [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/reference/plot_residual_pca.md)
   : Residual PCA Contrast Plot for Bayesian IRT Models
+- [`plot_stackedbars()`](https://pgmj.github.io/easyRaschBayes/reference/plot_stackedbars.md)
+  : Stacked Bar Chart of Item Response Distributions
 - [`plot_targeting()`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting.md)
   : Person-Item Map (Targeting Plot) for Bayesian IRT Models
+- [`plot_tile()`](https://pgmj.github.io/easyRaschBayes/reference/plot_tile.md)
+  : Tile Plot of Item Response Distributions
 - [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/reference/posterior_to_prior.md)
   : Extract Informative Priors from a Fitted Bayesian IRT Model
 - [`q3_post()`](https://pgmj.github.io/easyRaschBayes/reference/q3_post.md)

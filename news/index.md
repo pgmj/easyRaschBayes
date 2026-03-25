@@ -42,6 +42,12 @@
     that extracts priors from a `brmsfit` model that may be useful in
     model fit assessment. An article will be added later, exploring this
     further.
+  - [`plot_tile()`](https://pgmj.github.io/easyRaschBayes/reference/plot_tile.md),
+    [`plot_bars()`](https://pgmj.github.io/easyRaschBayes/reference/plot_bars.md),
+    and
+    [`plot_stackedbars()`](https://pgmj.github.io/easyRaschBayes/reference/plot_stackedbars.md)
+    uses wide format item data to create plots to review response
+    patterns.
 
 ## easyRaschBayes 0.1.0
 
