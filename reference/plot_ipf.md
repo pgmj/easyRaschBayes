@@ -4,8 +4,7 @@ Plots item category probability functions (ICPFs) for polytomous
 Bayesian IRT models fitted with brms. For each item, the probability of
 endorsing each response category is plotted as a function of the latent
 variable (theta), with separate colored curves per category. All items
-are displayed in a combined faceted plot, similar to the trace plots
-produced by `itemplot` in the mirt package.
+are displayed in a combined faceted plot.
 
 ## Usage
 
@@ -112,8 +111,7 @@ the item thresholds. Analogous formulas are used for the `cumulative`,
 
 Posterior uncertainty in the thresholds propagates into credible
 interval ribbons around the category probability curves — a Bayesian
-advantage over point-estimate-based plots from packages like mirt or
-eRm.
+advantage over point-estimate-based plots.
 
 ## References
 
@@ -125,7 +123,6 @@ and Stan. *Journal of Statistical Software*, *100*, 1–54.
 
 [`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html),
 [`conditional_effects`](https://paulbuerkner.com/brms/reference/conditional_effects.brmsfit.html),
-`itemplot`.
 
 ## Examples
 
