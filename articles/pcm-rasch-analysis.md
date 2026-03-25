@@ -114,10 +114,10 @@ infit_results$summary
 #> # A tibble: 4 × 4
 #>   item  infit_obs infit_rep infit_ppp
 #>   <chr>     <dbl>     <dbl>     <dbl>
-#> 1 I1        1.05      1.00      0.274
-#> 2 I2        1.07      0.998     0.138
-#> 3 I3        0.917     0.995     0.888
-#> 4 I4        1.03      0.998     0.342
+#> 1 I1         1.04      1.01     0.306
+#> 2 I2         1.08      1        0.164
+#> 3 I3         0.92      1        0.886
+#> 4 I4         1.03      1.00     0.356
 infit_results$plot
 ```
 
@@ -149,10 +149,10 @@ rest_results$summary
 #> # A tibble: 4 × 5
 #>   item  gamma_obs gamma_rep gamma_diff   ppp
 #>   <chr>     <dbl>     <dbl>      <dbl> <dbl>
-#> 1 I1        0.473     0.542     -0.069 0.124
-#> 2 I2        0.441     0.541     -0.1   0.06 
-#> 3 I3        0.643     0.531      0.111 0.954
-#> 4 I4        0.535     0.539     -0.003 0.47
+#> 1 I1        0.473     0.539     -0.066 0.144
+#> 2 I2        0.441     0.546     -0.105 0.04 
+#> 3 I3        0.643     0.534      0.109 0.97 
+#> 4 I4        0.535     0.538     -0.003 0.472
 rest_results$plot
 ```
 
@@ -210,12 +210,12 @@ q3_results$summary
 #> # A tibble: 6 × 7
 #>   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp
 #>   <chr>     <chr>  <chr>   <dbl>  <dbl>   <dbl>  <dbl>
-#> 1 I3 : I4   I3     I4      0.342 -0.002   0.344  1    
-#> 2 I1 : I2   I1     I2      0.102 -0.002   0.104  0.998
-#> 3 I1 : I3   I1     I3     -0.069 -0.004  -0.065  0.014
-#> 4 I2 : I3   I2     I3     -0.087  0      -0.087  0    
-#> 5 I1 : I4   I1     I4     -0.131 -0.004  -0.127  0    
-#> 6 I2 : I4   I2     I4     -0.164  0.002  -0.166  0
+#> 1 I3 : I4   I3     I4      0.34   0.002   0.338  1    
+#> 2 I1 : I2   I1     I2      0.101  0.001   0.1    1    
+#> 3 I1 : I3   I1     I3     -0.07  -0.003  -0.067  0.024
+#> 4 I2 : I3   I2     I3     -0.087  0      -0.087  0.002
+#> 5 I1 : I4   I1     I4     -0.132 -0.001  -0.131  0    
+#> 6 I2 : I4   I2     I4     -0.164  0.003  -0.167  0
 q3_results$plot
 ```
 
@@ -272,7 +272,7 @@ person_draws <- fit_pcm %>%
 rmu <- RMUreliability(person_draws)
 rmu
 #>   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval
-#> 1    0.6728536       0.6133625       0.7237451   0.95   mean      hdci
+#> 1    0.6730352       0.6176834       0.7287748   0.95   mean      hdci
 ```
 
 RMU values range from 0 to 1, with higher values indicating higher
@@ -339,6 +339,28 @@ EAP score histogram
 
 ## References
 
-Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
-and Stan. *Journal of Statistical Software*, *100*, 1–54.
-<https://doi.org/10.18637/jss.v100.i05>
+- Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
+  and Stan. *Journal of Statistical Software*, *100*, 1–54.
+  <https://doi.org/10.18637/jss.v100.i05>
+
+- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general method
+  for estimating reliability using Bayesian Measurement Uncertainty.
+  OSF. <https://doi.org/10.31234/osf.io/h54k8_v1>
+
+- Levy, R., Mislevy, R. J., & Sinharay, S. (2009). Posterior Predictive
+  Model Checking for Multidimensionality in Item Response Theory.
+  Applied Psychological Measurement, 33(7), 519–537.
+  <https://doi.org/10.1177/0146621608329504>
+
+- Sinharay, S. (2006). Bayesian item fit analysis for unidimensional
+  item response theory models. British Journal of Mathematical and
+  Statistical Psychology, 59(2), 429–449.
+  <https://doi.org/10.1348/000711005X66888>
+
+- Müller, M. (2020). Item fit statistics for Rasch analysis: Can we
+  trust them? Journal of Statistical Distributions and Applications,
+  7(1), 5. <https://doi.org/10.1186/s40488-020-00108-7>
+
+- Kreiner, S. (2011). A Note on Item–Restscore Association in Rasch
+  Models. Applied Psychological Measurement, 35(7), 557–561.
+  <https://doi.org/10.1177/0146621611410227>

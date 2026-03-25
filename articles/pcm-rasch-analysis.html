@@ -167,10 +167,10 @@ it).</p>
 <span><span class="co">#&gt; # A tibble: 4 × 4</span></span>
 <span><span class="co">#&gt;   item  infit_obs infit_rep infit_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        1.05      1.00      0.274</span></span>
-<span><span class="co">#&gt; 2 I2        1.07      0.998     0.138</span></span>
-<span><span class="co">#&gt; 3 I3        0.917     0.995     0.888</span></span>
-<span><span class="co">#&gt; 4 I4        1.03      0.998     0.342</span></span>
+<span><span class="co">#&gt; 1 I1         1.04      1.01     0.306</span></span>
+<span><span class="co">#&gt; 2 I2         1.08      1        0.164</span></span>
+<span><span class="co">#&gt; 3 I3         0.92      1        0.886</span></span>
+<span><span class="co">#&gt; 4 I4         1.03      1.00     0.356</span></span>
 <span><span class="va">infit_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-infit-1.png" alt="Conditional infit figure" width="100%"><p class="caption">
@@ -201,10 +201,10 @@ relate well to the latent trait.</p>
 <span><span class="co">#&gt; # A tibble: 4 × 5</span></span>
 <span><span class="co">#&gt;   item  gamma_obs gamma_rep gamma_diff   ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        0.473     0.542     -0.069 0.124</span></span>
-<span><span class="co">#&gt; 2 I2        0.441     0.541     -0.1   0.06 </span></span>
-<span><span class="co">#&gt; 3 I3        0.643     0.531      0.111 0.954</span></span>
-<span><span class="co">#&gt; 4 I4        0.535     0.539     -0.003 0.47</span></span>
+<span><span class="co">#&gt; 1 I1        0.473     0.539     -0.066 0.144</span></span>
+<span><span class="co">#&gt; 2 I2        0.441     0.546     -0.105 0.04 </span></span>
+<span><span class="co">#&gt; 3 I3        0.643     0.534      0.109 0.97 </span></span>
+<span><span class="co">#&gt; 4 I4        0.535     0.538     -0.003 0.472</span></span>
 <span><span class="va">rest_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-restscore-1.png" alt="Item-restscore figure" width="100%"><p class="caption">
@@ -259,12 +259,12 @@ here is the ppp, that should not be close to 1.</p>
 <span><span class="co">#&gt; # A tibble: 6 × 7</span></span>
 <span><span class="co">#&gt;   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.342 -0.002   0.344  1    </span></span>
-<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.102 -0.002   0.104  0.998</span></span>
-<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.069 -0.004  -0.065  0.014</span></span>
-<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.087  0      -0.087  0    </span></span>
-<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.131 -0.004  -0.127  0    </span></span>
-<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.164  0.002  -0.166  0</span></span>
+<span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.34   0.002   0.338  1    </span></span>
+<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.101  0.001   0.1    1    </span></span>
+<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.07  -0.003  -0.067  0.024</span></span>
+<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.087  0      -0.087  0.002</span></span>
+<span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.132 -0.001  -0.131  0    </span></span>
+<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.164  0.003  -0.167  0</span></span>
 <span><span class="va">q3_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-q3-1.png" alt="plot of chunk q3" width="100%"><p class="caption">
@@ -320,7 +320,7 @@ continuous intervals (HDCI).</p>
 <span><span class="va">rmu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RMUreliability.html">RMUreliability</a></span><span class="op">(</span><span class="va">person_draws</span><span class="op">)</span></span>
 <span><span class="va">rmu</span></span>
 <span><span class="co">#&gt;   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval</span></span>
-<span><span class="co">#&gt; 1    0.6728536       0.6133625       0.7237451   0.95   mean      hdci</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    0.6730352       0.6176834       0.7287748   0.95   mean      hdci</span></span></code></pre></div>
 <p>RMU values range from 0 to 1, with higher values indicating higher
 reliability, similarly to traditional reliability metrics such as
 Cronbach’s alpha.</p>
@@ -555,9 +555,25 @@ EAP score histogram
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<p>Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
-and Stan. <em>Journal of Statistical Software</em>, <em>100</em>, 1–54.
-<a href="https://doi.org/10.18637/jss.v100.i05" class="external-link uri">https://doi.org/10.18637/jss.v100.i05</a></p>
+<ul>
+<li><p>Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
+brms and Stan. <em>Journal of Statistical Software</em>, <em>100</em>,
+1–54. <a href="https://doi.org/10.18637/jss.v100.i05" class="external-link uri">https://doi.org/10.18637/jss.v100.i05</a></p></li>
+<li><p>Bignardi, G., Kievit, R., &amp; Bürkner, P.-C. (2025). A general
+method for estimating reliability using Bayesian Measurement
+Uncertainty. OSF. <a href="https://doi.org/10.31234/osf.io/h54k8_v1" class="external-link uri">https://doi.org/10.31234/osf.io/h54k8_v1</a></p></li>
+<li><p>Levy, R., Mislevy, R. J., &amp; Sinharay, S. (2009). Posterior
+Predictive Model Checking for Multidimensionality in Item Response
+Theory. Applied Psychological Measurement, 33(7), 519–537. <a href="https://doi.org/10.1177/0146621608329504" class="external-link uri">https://doi.org/10.1177/0146621608329504</a></p></li>
+<li><p>Sinharay, S. (2006). Bayesian item fit analysis for
+unidimensional item response theory models. British Journal of
+Mathematical and Statistical Psychology, 59(2), 429–449. <a href="https://doi.org/10.1348/000711005X66888" class="external-link uri">https://doi.org/10.1348/000711005X66888</a></p></li>
+<li><p>Müller, M. (2020). Item fit statistics for Rasch analysis: Can we
+trust them? Journal of Statistical Distributions and Applications, 7(1),
+5. <a href="https://doi.org/10.1186/s40488-020-00108-7" class="external-link uri">https://doi.org/10.1186/s40488-020-00108-7</a></p></li>
+<li><p>Kreiner, S. (2011). A Note on Item–Restscore Association in Rasch
+Models. Applied Psychological Measurement, 35(7), 557–561. <a href="https://doi.org/10.1177/0146621611410227" class="external-link uri">https://doi.org/10.1177/0146621611410227</a></p></li>
+</ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
