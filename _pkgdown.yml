@@ -5,11 +5,12 @@ development:
 
 template:
   bootstrap: 5
+  bootswatch: lumen
 
 navbar:
   structure:
     left:  [intro, reference, articles, news]
-    right: [github]
+    right: [search, github, lightswitch]
   components:
     reference:
       text: Reference

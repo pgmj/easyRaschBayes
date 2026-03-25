@@ -243,6 +243,26 @@ hist(ppar$person_estimates$eap, col = "lightblue", main = "Histogram of EAP scor
 
 ## References 
 
-Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
+- Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
 Stan. *Journal of Statistical Software*, *100*, 1–54.
 <https://doi.org/10.18637/jss.v100.i05>
+
+- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general method for 
+estimating reliability using Bayesian Measurement Uncertainty. OSF. 
+<https://doi.org/10.31234/osf.io/h54k8_v1>
+
+- Levy, R., Mislevy, R. J., & Sinharay, S. (2009). Posterior Predictive Model 
+Checking for Multidimensionality in Item Response Theory. Applied Psychological 
+Measurement, 33(7), 519–537. <https://doi.org/10.1177/0146621608329504>
+
+- Sinharay, S. (2006). Bayesian item fit analysis for unidimensional item 
+response theory models. British Journal of Mathematical and Statistical 
+Psychology, 59(2), 429–449. <https://doi.org/10.1348/000711005X66888>
+
+- Müller, M. (2020). Item fit statistics for Rasch analysis: Can we trust them? 
+Journal of Statistical Distributions and Applications, 7(1), 5. 
+<https://doi.org/10.1186/s40488-020-00108-7>
+
+- Kreiner, S. (2011). A Note on Item–Restscore Association in Rasch Models. 
+Applied Psychological Measurement, 35(7), 557–561. 
+<https://doi.org/10.1177/0146621611410227>

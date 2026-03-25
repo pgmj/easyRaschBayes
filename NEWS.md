@@ -23,7 +23,8 @@ and [Johansson, 2025](https://pgmj.github.io/rasch_itemfit/)).
   - `posterior_to_prior()` that extracts priors from a `brmsfit` model 
   that may be useful in model fit assessment. An article will be added later, 
   exploring this further.
-
+  - `plot_tile()`, `plot_bars()`, and `plot_stackedbars()` uses wide format item data to create plots to review
+  response patterns.
 
 # easyRaschBayes 0.1.0
 
