@@ -71,6 +71,18 @@ df_pcm <- eRm::pcmdat2 %>%
 head(df_pcm)
 ```
 
+## Visualizing response data
+
+Before analyzing data, it is good to review the response distributions. There are 
+three simple plotting functions included in the package. All make use of wide 
+format datasets, where items are separate columns and respondents are rows.
+
+```{r data-viz, fig.cap = "Stacked bars"}
+plot_stackedbars(eRm::pcmdat2)
+```
+
+The other two visualization functions are `plot_tile()` and `plot_bars()`
+
 ## Fitting the PCM
 
 The model is fitted once and saved to disk. The code chunk below shows the
