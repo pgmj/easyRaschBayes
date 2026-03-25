@@ -1,8 +1,8 @@
 ---
-title: "Partial Credit Model Analysis with easyRaschBayes"
+title: "Rasch Partial Credit Model with easyRaschBayes"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Partial Credit Model Analysis with easyRaschBayes}
+  %\VignetteIndexEntry{Rasch Partial Credit Model}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -21,7 +21,7 @@ EVAL <- file.exists("fits/fit_pcm.rds")
 ```
 
 ** Sorry! This is a slightly premature update of the vignette to match 
-version 0.2.0 that is not yet on CRAN. The 0.1.0 vignette is available 
+version 0.2.0rc1 that is not yet on CRAN. The 0.1.0 vignette is available 
 [via CRAN](https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html) 
 and I hope to have the new version on CRAN before end of March 2026.**
 
@@ -64,7 +64,9 @@ to every response before reshaping to long format.
 df_pcm <- eRm::pcmdat2 %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
-  pivot_longer(!id, names_to = "item", values_to = "response")
+  pivot_longer(!id, # don't include the id variable in the wide->long transformation
+               names_to = "item", 
+               values_to = "response")
 
 head(df_pcm)
 ```
@@ -99,16 +101,17 @@ fit_pcm <- readRDS("fits/fit_pcm.rds")
 
 ## Item Fit: Conditional Infit Statistics
 
-`infit_statistic()` computes posterior predictive infit and outfit statistics
-for each item. Values near 1.0 indicate good fit; values substantially above 1
-suggest underfit (unexpected responses), values below 1 suggest overfit (too
-predictable).
+`infit_statistic()` computes posterior predictive infit (and outfit) statistics
+for each item. Values near 1.0 indicate good fit; values above 1
+suggest underfit (unexpected responses, often indicating multidimensionality), 
+values below 1 suggest overfit (too predictable, often coinciding with local
+dependence issues).
 
 The `ndraws_use` argument limits the number of posterior draws used, which
 speeds up computation during exploration. For final reporting, use all draws
 (set `ndraws_use = NULL` or omit it).
 
-```{r infit, eval = EVAL}
+```{r infit, eval = EVAL, fig.cap = "Conditional infit figure"}
 fit_stats <- infit_statistic(fit_pcm, ndraws_use = 500)
 
 # Post-process Infit
@@ -127,11 +130,11 @@ further investigation.
 
 `item_restscore_statistic()` computes Goodman-Kruskal's gamma between each
 item's observed responses and the rest score (total score minus the focal item).
-In a well-fitting Rasch model, gamma should be positive and moderate; very high
-values may indicate redundancy, very low or negative values suggest the item
+In a well-fitting Rasch model, gamma should be positive and moderate and of similar
+magnitude for all items; high values may indicate redundancy, low values suggest the item
 does not relate well to the latent trait.
 
-```{r restscore, eval = EVAL}
+```{r restscore, eval = EVAL, fig.cap = "Item-restscore figure"}
 rest_stats <- item_restscore_statistic(fit_pcm, ndraws_use = 500)
 
 rest_results <- item_restscore_post(rest_stats)
@@ -141,7 +144,10 @@ rest_results$plot
 
 ## Conditional ICC Plot
 
-```{r ciccplot, eval = EVAL}
+Shows item fit across the latent continuum, dividing the sample into n class 
+intervals (default is 5).
+
+```{r ciccplot, eval = EVAL, fig.cap = "Conditional Item Characteristic Curves figure"}
 plot_icc(fit_pcm)
 ```
 
@@ -156,7 +162,6 @@ pca <- plot_residual_pca(fit_pcm, ndraws_use = 500)
 pca$plot
 ```
 
-Items with positive loadings cluster on one end, negative loadings on the other.
 If the observed largest eigenvalue is smaller than the replicated, unidimensionality
 is supported. The ppp should not be close to 1.
 
@@ -166,7 +171,6 @@ is supported. The ppp should not be close to 1.
 person-item residuals for every item pair. After conditioning on the latent
 trait, residuals should be uncorrelated; elevated Q3 values indicate local
 dependence (LD). Our primary metric here is the ppp, that should not be close to 1.
-The output is filtered on ppp values above 0.95.
 
 ```{r q3, eval = EVAL}
 q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
@@ -195,7 +199,7 @@ the distribution of person locations alongside the item threshold locations on
 the same logit scale. Good targeting occurs when person and item distributions
 overlap substantially.
 
-```{r targeting, eval = EVAL, fig.width = 6, fig.height = 5}
+```{r targeting, eval = EVAL, fig.width = 6, fig.height = 5, fig.cap = "Targeting figure"}
 plot_targeting(fit_pcm)
 ```
 
@@ -231,7 +235,7 @@ knitr::kable(ipar$locations_wide)
 
 This estimates latent scores.
 
-```{r ppar, eval = EVAL}
+```{r ppar, eval = EVAL, fig.cap = "EAP score histogram"}
 ppar <- person_parameters(fit_pcm)
 knitr::kable(ppar$score_table)
 hist(ppar$person_estimates$eap, col = "lightblue", main = "Histogram of EAP scores")

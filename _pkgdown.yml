@@ -17,8 +17,8 @@ navbar:
     articles:
       text: Articles
       menu:
-      - text: Vignettes
-        href: articles/index.html
+      - text: Rasch Partial Credit Model
+        href: articles/pcm-rasch-analysis.html
     news:
       text: Changelog
       href: news/index.html

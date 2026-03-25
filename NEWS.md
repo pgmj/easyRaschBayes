@@ -1,4 +1,4 @@
-# easyRaschBayes 0.2.0 (development version)
+# easyRaschBayes 0.2.0rc1 (development version)
 
 - Updates:
   - `infit_statistic()` is now faster and defaults to not output outfit statistics, 
@@ -14,9 +14,9 @@ and [Johansson, 2025](https://pgmj.github.io/rasch_itemfit/)).
   - `q3_post()` for the output of `q3_statistic()`
 
 - Other new functions:
-  - `plot_icc()` can both produce a basic conditional ICC plot and optionally a DIF ICC plot, 
-  the latter also reporting a partial gamma DIF magnitude coefficient. 
-  This is inspired from `iarm::ICCplot()`
+  - `plot_icc()` can both produce a basic conditional Item Characteristic Curves plot 
+  and optionally a DIF ICC plot, the latter also reporting a partial gamma DIF 
+  magnitude coefficient. This is inspired by `iarm::ICCplot()`
   - `item_parameters()` to retrieve item threshold locations
   - `person_parameters()` to retrieve person locations (latent scores) using EAP and WLE, 
   and also a transformation table from ordinal sum score to EAP/WLE.
