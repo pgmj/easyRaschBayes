@@ -171,7 +171,7 @@
 #' @importFrom stats formula quantile complete.cases aggregate family
 #' @importFrom tibble tibble
 #' @importFrom grDevices colorRampPalette
-#' @importFrom tidyr as_tibble
+#' @importFrom tibble as_tibble
 #' @export
 plot_residual_pca <- function(
     model,
@@ -339,7 +339,7 @@ plot_residual_pca <- function(
   # =================================================================
   # Item locations with full posterior (draw-level)
   # =================================================================
-  draws_df <- tidyr::as_tibble(brms::as_draws_df(model))
+  draws_df <- tibble::as_tibble(brms::as_draws_df(model))
   family_name <- stats::family(model)$family
   is_ordinal <- grepl("acat|cumul|sratio|cratio",
                       family_name, ignore.case = TRUE)

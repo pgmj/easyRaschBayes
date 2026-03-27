@@ -21,7 +21,6 @@ Description: Reproduces classic Rasch psychometric analysis features
     measurement uncertainty following Bignardi et al. (2025) <doi:10.31234/osf.io/h54k8_v1>.
 License: GPL (>= 3)
 Encoding: UTF-8
-LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Depends:

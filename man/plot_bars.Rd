@@ -82,6 +82,7 @@ and at least 1 row (person).
 }
 \examples{
 library(ggplot2)
+if (requireNamespace("eRm", quietly = TRUE))
 
 # Basic response distribution plot
 plot_bars(eRm::pcmdat2)

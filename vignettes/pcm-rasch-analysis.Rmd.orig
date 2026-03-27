@@ -20,12 +20,6 @@ knitr::opts_chunk$set(
 EVAL <- file.exists("fits/fit_pcm.rds")
 ```
 
-** Sorry! This is a slightly premature update of the vignette to match 
-version 0.2.0rc1 that is not yet on CRAN. The 0.1.0 vignette is available 
-[via CRAN](https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html) 
-and I hope to have the new version on CRAN before end of March 2026.**
-
-
 ## Overview
 
 This vignette demonstrates a Partial Credit Model (PCM) Rasch analysis
@@ -169,7 +163,7 @@ plot_icc(fit_pcm)
 person-item residuals and plots the standardized loadings on the first residual 
 contrast factor together with item locations and the uncertainty of both.
 
-```{r pca-plot, eval = EVAL, fig.width = 6, fig.height = 4}
+```{r pca-plot, eval = EVAL, fig.width = 6, fig.height = 4, fig.cap = "1st residual contrast loadings & locations"}
 pca <- plot_residual_pca(fit_pcm, ndraws_use = 500)
 pca$plot
 ```
@@ -184,7 +178,7 @@ person-item residuals for every item pair. After conditioning on the latent
 trait, residuals should be uncorrelated; elevated Q3 values indicate local
 dependence (LD). Our primary metric here is the ppp, that should not be close to 1.
 
-```{r q3, eval = EVAL}
+```{r q3, eval = EVAL, fig.cap = "Q3 residual correlations"}
 q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
 
 q3_results <- q3_post(q3_stats)
@@ -199,7 +193,7 @@ the latent score on the x axis. The crossover points, where lines meet, are the
 item category threshold locations. Uncertainty is shown with the shaded area around
 each line.
 
-```{r ipf-plot, eval = EVAL, fig.width = 6, fig.height = 4}
+```{r ipf-plot, eval = EVAL, fig.width = 6, fig.height = 4, fig.cap = "Item Probability Functions"}
 plot_ipf(fit_pcm, theta_range = c(-6,5))
 ```
 

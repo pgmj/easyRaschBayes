@@ -31,13 +31,13 @@ navbar:
 reference:
 - title: Item Fit
   contents:
-  - fit_statistic_pcm
-  - fit_statistic_rm
   - infit_statistic
   - infit_post
   - item_restscore_statistic
   - item_restscore_post
   - plot_icc
+  - fit_statistic_pcm
+  - fit_statistic_rm
 - title: Local Dependence
   contents:
   - q3_statistic
@@ -48,13 +48,21 @@ reference:
 - title: Differential Item Functioning
   contents:
   - dif_statistic
+  - plot_icc
 - title: Plots
   contents:
   - plot_targeting
   - plot_ipf
+  - plot_icc
+  - plot_tile
+  - plot_bars
+  - plot_stackedbars
+  - plot_residual_pca
 - title: Reliability
   contents:
   - RMUreliability
 - title: Other
   contents:
-  - matches(".")
+  - item_parameters
+  - person_parameters
+  - posterior_to_prior

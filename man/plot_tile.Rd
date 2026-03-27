@@ -78,6 +78,7 @@ and at least 1 row (person).
 }
 \examples{
 library(ggplot2)
+if (requireNamespace("eRm", quietly = TRUE))
 
 # Basic tile plot
 plot_tile(eRm::pcmdat2)

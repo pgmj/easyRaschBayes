@@ -4,7 +4,7 @@
 [![CRAN Version](https://www.r-pkg.org/badges/version/easyRaschBayes)](https://cran.r-project.org/package=easyRaschBayes)
 [![Downloads](https://cranlogs.r-pkg.org/badges/easyRaschBayes?color=brightgreen)](https://CRAN.R-project.org/package=easyRaschBayes)
 ![Downloads Status](https://cranlogs.r-pkg.org/badges/grand-total/easyRaschBayes)
-<a href="https://www.buymeacoffee.com/pgmj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+<a href="https://buymeacoffee.com/pgmj" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 <!-- badges: end -->
 
 **easyRaschBayes** provides functions to reproduce classic Rasch analysis
@@ -36,12 +36,16 @@ remotes::install_github("pgmj/easyRaschBayes")
 
 | Function | Description |
 |---|---|
-| `infit_statistic()` | Conditional infit / outfit statistics |
+| `infit_statistic()` | Conditional infit (and outfit) statistics |
+| `infit_post()` | Post-processing and plotting of infit statistics |
 | `item_restscore_statistic()` | Item–rest score associations with Goodman & Kruskal's gamma |
+| `item_restscore_post()` | Post-processing and plotting of item-restscore statistics |
 | `plot_icc()` | Conditional item fit curves & DIF analysis |
 | `plot_residual_pca()` | Residual PCA contrast plot for dimensionality assessment |
 | `q3_statistic()` | Yen's Q3 residual correlations for local dependence evaluation |
-| `plot_ipf()` | Item category probability function curves |
+| `q3_post()` | Post-processing and plotting of Q3 statistics |
+| `plot_ipf()` | Item probability function curves |
+| `plot_icc()` | Item category characteristics curves |
 | `plot_targeting()` | Person-item map (Wright map) |
 | `dif_statistic()` | Differential Item Functioning (DIF) analysis |
 | `fit_statistic_pcm()` | Posterior predictive item/person fit for polytomous models |
@@ -49,6 +53,7 @@ remotes::install_github("pgmj/easyRaschBayes")
 | `RMUreliability()` | Reliability via Relative Measurement Uncertainty (RMU) |
 | `person_parameters()` | EAP and WLE latent scores and ordinal sum score transformation table |
 | `item_parameters()` | Summarize item threshold locations |
+| `plot_tile()` | Plot response data, see also `plot_bars()` and `plot_stackedbars()` |
 
 ## Usage
 
@@ -100,7 +105,6 @@ produced by the LLM.
 
 - ORCID: [0000-0003-1669-592X](https://orcid.org/0000-0003-1669-592X)
 - Bluesky: [@pgmj.bsky.social](https://bsky.app/profile/pgmj.bsky.social) 
-- Mastodon: [@pgmj@scicomm.xyz](https://scicomm.xyz/@pgmj)
 
 ## License
 

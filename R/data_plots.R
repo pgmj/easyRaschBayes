@@ -55,6 +55,7 @@
 #'
 #' @examples
 #' library(ggplot2)
+#' if (requireNamespace("eRm", quietly = TRUE))
 #'
 #' # Basic tile plot
 #' plot_tile(eRm::pcmdat2)
@@ -336,7 +337,8 @@ plot_tile <- function(
 #'
 #' @examples
 #' library(ggplot2)
-#'
+#' if (requireNamespace("eRm", quietly = TRUE))
+#' 
 #' # Basic response distribution plot
 #' plot_bars(eRm::pcmdat2)
 #'
@@ -406,7 +408,7 @@ plot_bars <- function(
     stop("All columns must be numeric. Non-numeric column(s): ",
          paste(non_numeric, collapse = ", "), ". ",
          "Remove non-item columns (e.g., person IDs, grouping ",
-         "variables) before passing to plot_item_responses().",
+         "variables) before passing to plot_bars().",
          call. = FALSE)
   }
   
@@ -607,6 +609,7 @@ plot_bars <- function(
 #'
 #' @examples
 #' library(ggplot2)
+#' if (requireNamespace("eRm", quietly = TRUE))
 #'
 #' # Basic stacked bar chart
 #' plot_stackedbars(eRm::pcmdat2)
@@ -670,7 +673,7 @@ plot_stackedbars <- function(
     stop("All columns must be numeric. Non-numeric column(s): ",
          paste(non_numeric, collapse = ", "), ". ",
          "Remove non-item columns (e.g., person IDs, grouping ",
-         "variables) before passing to plot_item_stacked().",
+         "variables) before passing to plot_stackedbars().",
          call. = FALSE)
   }
   

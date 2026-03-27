@@ -1,4 +1,4 @@
-# easyRaschBayes 0.2.0rc1 (development version)
+# easyRaschBayes 0.2.0
 
 - Updates:
   - `infit_statistic()` is now faster and defaults to not output outfit statistics, 
