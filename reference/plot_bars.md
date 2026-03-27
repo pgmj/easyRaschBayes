@@ -97,6 +97,7 @@ the viridis palette. Each bar shows the count (`n = X`) as text.
 
 ``` r
 library(ggplot2)
+if (requireNamespace("eRm", quietly = TRUE))
 
 # Basic response distribution plot
 plot_bars(eRm::pcmdat2)

@@ -115,6 +115,7 @@ distribution.
 
 ``` r
 library(ggplot2)
+if (requireNamespace("eRm", quietly = TRUE))
 
 # Basic stacked bar chart
 plot_stackedbars(eRm::pcmdat2)

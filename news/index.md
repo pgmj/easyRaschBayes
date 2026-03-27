@@ -1,6 +1,6 @@
 # Changelog
 
-## easyRaschBayes 0.2.0rc1 (development version)
+## easyRaschBayes 0.2.0
 
 - Updates:
   - [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)

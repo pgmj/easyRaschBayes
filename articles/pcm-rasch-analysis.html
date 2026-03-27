@@ -65,11 +65,6 @@
 
     
     
-<p>** Sorry! This is a slightly premature update of the vignette to
-match version 0.2.0rc1 that is not yet on CRAN. The 0.1.0 vignette is
-available <a href="https://cran.r-project.org/web/packages/easyRaschBayes/vignettes/pcm-rasch-analysis.html" class="external-link">via
-CRAN</a> and I hope to have the new version on CRAN before end of March
-2026.**</p>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
@@ -184,10 +179,10 @@ it).</p>
 <span><span class="co">#&gt; # A tibble: 4 × 4</span></span>
 <span><span class="co">#&gt;   item  infit_obs infit_rep infit_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;     &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1         1.05     1.00      0.26 </span></span>
-<span><span class="co">#&gt; 2 I2         1.08     0.999     0.148</span></span>
-<span><span class="co">#&gt; 3 I3         0.92     0.998     0.872</span></span>
-<span><span class="co">#&gt; 4 I4         1.03     1.00      0.332</span></span>
+<span><span class="co">#&gt; 1 I1        1.04      1.00      0.292</span></span>
+<span><span class="co">#&gt; 2 I2        1.08      1         0.11 </span></span>
+<span><span class="co">#&gt; 3 I3        0.917     1.00      0.89 </span></span>
+<span><span class="co">#&gt; 4 I4        1.03      0.999     0.364</span></span>
 <span><span class="va">infit_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-infit-1.png" alt="Conditional infit figure" width="100%"><p class="caption">
@@ -218,10 +213,10 @@ relate well to the latent trait.</p>
 <span><span class="co">#&gt; # A tibble: 4 × 5</span></span>
 <span><span class="co">#&gt;   item  gamma_obs gamma_rep gamma_diff   ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 I1        0.473     0.545     -0.072 0.112</span></span>
-<span><span class="co">#&gt; 2 I2        0.441     0.549     -0.107 0.03 </span></span>
-<span><span class="co">#&gt; 3 I3        0.643     0.535      0.108 0.952</span></span>
-<span><span class="co">#&gt; 4 I4        0.535     0.542     -0.007 0.46</span></span>
+<span><span class="co">#&gt; 1 I1        0.473     0.541     -0.068 0.118</span></span>
+<span><span class="co">#&gt; 2 I2        0.441     0.543     -0.102 0.056</span></span>
+<span><span class="co">#&gt; 3 I3        0.643     0.53       0.112 0.962</span></span>
+<span><span class="co">#&gt; 4 I4        0.535     0.537     -0.002 0.492</span></span>
 <span><span class="va">rest_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
 <img src="figures/pcm-restscore-1.png" alt="Item-restscore figure" width="100%"><p class="caption">
@@ -253,8 +248,8 @@ locations and the uncertainty of both.</p>
 <code class="sourceCode R"><span><span class="va">pca</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_residual_pca.html">plot_residual_pca</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span></span>
 <span><span class="va">pca</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pcm-pca-plot-1.png" alt="plot of chunk pca-plot" width="100%"><p class="caption">
-plot of chunk pca-plot
+<img src="figures/pcm-pca-plot-1.png" alt="1st residual contrast loadings &amp; locations" width="100%"><p class="caption">
+1st residual contrast loadings &amp; locations
 </p>
 </div>
 <p>If the observed largest eigenvalue is smaller than the replicated,
@@ -277,15 +272,15 @@ here is the ppp, that should not be close to 1.</p>
 <span><span class="co">#&gt;   item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 I3 : I4   I3     I4      0.34   0.001   0.339  1    </span></span>
-<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.101 -0.003   0.104  0.998</span></span>
-<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.071  0.004  -0.075  0.014</span></span>
-<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.089  0.002  -0.091  0.006</span></span>
+<span><span class="co">#&gt; 2 I1 : I2   I1     I2      0.102  0.002   0.1    0.994</span></span>
+<span><span class="co">#&gt; 3 I1 : I3   I1     I3     -0.072 -0.004  -0.068  0.016</span></span>
+<span><span class="co">#&gt; 4 I2 : I3   I2     I3     -0.088 -0.003  -0.085  0    </span></span>
 <span><span class="co">#&gt; 5 I1 : I4   I1     I4     -0.132  0      -0.132  0    </span></span>
-<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.165 -0.006  -0.159  0</span></span>
+<span><span class="co">#&gt; 6 I2 : I4   I2     I4     -0.163 -0.002  -0.161  0</span></span>
 <span><span class="va">q3_results</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pcm-q3-1.png" alt="plot of chunk q3" width="100%"><p class="caption">
-plot of chunk q3
+<img src="figures/pcm-q3-1.png" alt="Q3 residual correlations" width="100%"><p class="caption">
+Q3 residual correlations
 </p>
 </div>
 </div>
@@ -299,8 +294,8 @@ shown with the shaded area around each line.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_ipf.html">plot_ipf</a></span><span class="op">(</span><span class="va">fit_pcm</span>, theta_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">6</span>,<span class="fl">5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/pcm-ipf-plot-1.png" alt="plot of chunk ipf-plot" width="100%"><p class="caption">
-plot of chunk ipf-plot
+<img src="figures/pcm-ipf-plot-1.png" alt="Item Probability Functions" width="100%"><p class="caption">
+Item Probability Functions
 </p>
 </div>
 </div>
@@ -337,7 +332,7 @@ continuous intervals (HDCI).</p>
 <span><span class="va">rmu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/RMUreliability.html">RMUreliability</a></span><span class="op">(</span><span class="va">person_draws</span><span class="op">)</span></span>
 <span><span class="va">rmu</span></span>
 <span><span class="co">#&gt;   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval</span></span>
-<span><span class="co">#&gt; 1    0.6726092       0.6175261       0.7306377   0.95   mean      hdci</span></span></code></pre></div>
+<span><span class="co">#&gt; 1    0.6727799       0.6137229       0.7280385   0.95   mean      hdci</span></span></code></pre></div>
 <p>RMU values range from 0 to 1, with higher values indicating higher
 reliability, similarly to traditional reliability metrics such as
 Cronbach’s alpha.</p>

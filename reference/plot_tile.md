@@ -92,6 +92,7 @@ of the primary purposes of this plot.
 
 ``` r
 library(ggplot2)
+if (requireNamespace("eRm", quietly = TRUE))
 
 # Basic tile plot
 plot_tile(eRm::pcmdat2)
