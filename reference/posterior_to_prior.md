@@ -16,7 +16,13 @@ with small samples.
 ## Usage
 
 ``` r
-posterior_to_prior(model, item_var = item, person_var = id, mult = 1)
+posterior_to_prior(
+  model,
+  item_var = item,
+  person_var = id,
+  mult = 1,
+  target_link = c("source", "logit", "probit")
+)
 ```
 
 ## Arguments
@@ -58,6 +64,17 @@ posterior_to_prior(model, item_var = item, person_var = id, mult = 1)
   the prior SD. Values \> 1 widen the priors (less informative); values
   \< 1 tighten them. Default is 1 (use posterior SD directly).
 
+- target_link:
+
+  Character string specifying the link function of the model the priors
+  will be used with. One of `"logit"`, `"probit"`, or `"source"` (the
+  default). When `"source"`, the link function of the fitted model is
+  used and no transformation is applied. When different from the source
+  model's link, all location and scale parameters are rescaled using the
+  approximation \\\beta\_{\text{probit}} \approx \beta\_{\text{logit}} /
+  1.7\\. This is useful when transferring priors from a logit-fitted
+  model to a probit model or vice versa.
+
 ## Value
 
 A [`brmsprior`](https://paulbuerkner.com/brms/reference/set_prior.html)
@@ -90,6 +107,14 @@ In all cases the person-level SD receives a `normal(mean, sd * mult)`
 prior (brms applies the lower bound of zero automatically for SD
 parameters).
 
+**Link function transformation:** When `target_link` differs from the
+source model's link function, all parameters (means and SDs) are
+rescaled by a factor of approximately 1.7. This uses the well-known
+approximation that \\\Phi(x) \approx \text{logistic}(1.7 \\ x)\\, so
+logit-scale parameters can be converted to probit-scale by dividing by
+1.7, and vice versa. The approximation is excellent for parameters in
+the range \\\|\beta\| \< 3\\ and adequate beyond that range.
+
 ## Examples
 
 ``` r
@@ -115,7 +140,7 @@ fit_pcm <- brm(
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
-# Extract posterior-informed priors
+# Extract posterior-informed priors (same link)
 new_priors <- posterior_to_prior(fit_pcm)
 #> Error: object 'fit_pcm' not found
 new_priors
@@ -123,6 +148,10 @@ new_priors
 
 # Narrow the prior's sd by a factor of 0.5
 wide_priors <- posterior_to_prior(fit_pcm, mult = 0.5)
+#> Error: object 'fit_pcm' not found
+
+# Extract priors for use with a probit model
+probit_priors <- posterior_to_prior(fit_pcm, target_link = "probit")
 #> Error: object 'fit_pcm' not found
 
 # --- Dichotomous 1PL (fixed item effects) ---
@@ -145,5 +174,9 @@ priors_1pl <- posterior_to_prior(fit_1pl)
 #> Error: object 'fit_1pl' not found
 priors_1pl
 #> Error: object 'priors_1pl' not found
+
+# Transfer logit priors to a probit refit
+priors_probit <- posterior_to_prior(fit_1pl, target_link = "probit")
+#> Error: object 'fit_1pl' not found
 # }
 ```
