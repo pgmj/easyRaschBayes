@@ -37,59 +37,38 @@ For an example of how to apply this function to go/go-no task data using brms, s
 }
 \examples{
 \donttest{
-# See https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html
-# for more details on this example
-
-# Simulate data
-
+library(brms)
 library(dplyr)
 library(tidyr)
-library(brms)
-set.seed(1)
-N                   = 5000 # number of subjects (mice)
-J                   = 3    # number of measurements per subject
-true_score_variance = 1
-error_variance      = 10
+library(tibble)
 
-df = expand.grid(j = 1:J, mouse = 1:N)
+# --- Dichotomous Rasch Model ---
 
-true_scores       = rnorm(N, mean = 10, sd = sqrt(true_score_variance))
-measurement_error = rnorm(N*J, mean = 0, sd = sqrt(error_variance))
+df_rm <- eRm::raschdat3 \%>\%
+  as.data.frame() \%>\%
+  rownames_to_column("id") \%>\%
+  pivot_longer(!id, names_to = "item", values_to = "response")
 
-df$measurement = true_scores[df$mouse] + measurement_error
-
-df_average_lengths = df \%>\%
-  group_by(mouse) \%>\%
-  summarise(average_measurement = mean(measurement))
-
-# Reliability should equal this:
-
-true_score_variance/(true_score_variance+error_variance/J)
-
-# Approximately the same as:
-
-cor(df_average_lengths$average_measurement, true_scores)^2
-
-# Fit model and calculate RMU
-
-brms_model = brm(
-  measurement ~ 1 + (1 | mouse),
-  data    = df, 
-  iter = 500,
-  warmup = 150
+fit_rm <- brm(
+  response ~ 1 + (1 | item) + (1 | id),
+  data   = df_rm,
+  family = bernoulli(),
+  chains = 4,
+  cores  = 1, # use more cores if you have
+  iter   = 500 # use at least 2000 
 )
 
 # Extract posterior draws from brms model
 
-posterior_draws = brms_model \%>\%
+posterior_draws = fit_rm \%>\%
   as_draws_df() \%>\%
   as_tibble() \%>\% 
-  select(starts_with("r_mouse")) \%>\%
+  select(starts_with("r_id")) \%>\%
   t()
 
 # Calculate RMU
 
-RMUreliability(posterior_draws)$hdci
+RMUreliability(posterior_draws)
 }
 
 }
