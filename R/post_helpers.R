@@ -560,6 +560,15 @@ q3_post <- function(q3_draws,
 #'   it is used as the prior SD. Values > 1 widen the priors
 #'   (less informative); values < 1 tighten them. Default is 1
 #'   (use posterior SD directly).
+#' @param target_link Character string specifying the link function of
+#'   the model the priors will be used with. One of \code{"logit"},
+#'   \code{"probit"}, or \code{"source"} (the default). When
+#'   \code{"source"}, the link function of the fitted model is used
+#'   and no transformation is applied. When different from the source
+#'   model's link, all location and scale parameters are rescaled
+#'   using the approximation \eqn{\beta_{\text{probit}} \approx
+#'   \beta_{\text{logit}} / 1.7}. This is useful when transferring
+#'   priors from a logit-fitted model to a probit model or vice versa.
 #'
 #' @return A \code{\link[brms]{brmsprior}} object that can be supplied
 #'   to the \code{prior} argument of \code{\link[brms]{brm}} or
@@ -592,6 +601,16 @@ q3_post <- function(q3_draws,
 #' \code{normal(mean, sd * mult)} prior (brms applies the lower
 #' bound of zero automatically for SD parameters).
 #'
+#' \strong{Link function transformation:} When \code{target_link}
+#' differs from the source model's link function, all parameters
+#' (means and SDs) are rescaled by a factor of approximately 1.7.
+#' This uses the well-known approximation that
+#' \eqn{\Phi(x) \approx \text{logistic}(1.7 \, x)}, so
+#' logit-scale parameters can be converted to probit-scale by
+#' dividing by 1.7, and vice versa. The approximation is excellent
+#' for parameters in the range \eqn{|\beta| < 3} and adequate
+#' beyond that range.
+#'
 #' @examples
 #' \donttest{
 #' library(brms)
@@ -613,12 +632,15 @@ q3_post <- function(q3_draws,
 #'   chains = 4, cores = 2, iter = 1000 # use more iter (and cores if you have)
 #' )
 #'
-#' # Extract posterior-informed priors
+#' # Extract posterior-informed priors (same link)
 #' new_priors <- posterior_to_prior(fit_pcm)
 #' new_priors
 #'
 #' # Narrow the prior's sd by a factor of 0.5
 #' wide_priors <- posterior_to_prior(fit_pcm, mult = 0.5)
+#'
+#' # Extract priors for use with a probit model
+#' probit_priors <- posterior_to_prior(fit_pcm, target_link = "probit")
 #'
 #' # --- Dichotomous 1PL (fixed item effects) ---
 #'
@@ -636,16 +658,21 @@ q3_post <- function(q3_draws,
 #'
 #' priors_1pl <- posterior_to_prior(fit_1pl)
 #' priors_1pl
+#'
+#' # Transfer logit priors to a probit refit
+#' priors_probit <- posterior_to_prior(fit_1pl, target_link = "probit")
 #' }
 #'
 #' @importFrom brms as_draws_df set_prior
 #' @importFrom rlang enquo as_name
 #' @importFrom stats sd family
+#' @importFrom tibble as_tibble
 #' @export
 posterior_to_prior <- function(model,
                                item_var = item,
                                person_var = id,
-                               mult = 1) {
+                               mult = 1,
+                               target_link = c("source", "logit", "probit")) {
   
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
@@ -653,6 +680,8 @@ posterior_to_prior <- function(model,
   if (!is.numeric(mult) || length(mult) != 1 || mult <= 0) {
     stop("'mult' must be a single positive number.", call. = FALSE)
   }
+  
+  target_link <- match.arg(target_link)
   
   item_name   <- rlang::as_name(rlang::enquo(item_var))
   person_name <- rlang::as_name(rlang::enquo(person_var))
@@ -666,10 +695,33 @@ posterior_to_prior <- function(model,
          call. = FALSE)
   }
   
-  draws       <- brms::as_draws_df(model)
+  draws       <- tibble::as_tibble(brms::as_draws_df(model))
   family_name <- stats::family(model)$family
   is_ordinal  <- grepl("acat|cumul|sratio|cratio",
                        family_name, ignore.case = TRUE)
+  
+  # ================================================================
+  # DETERMINE LINK TRANSFORMATION FACTOR
+  # ================================================================
+  source_link <- stats::family(model)$link
+  if (is.null(source_link) || source_link == "") {
+    source_link <- "logit"  # brms default for bernoulli/acat
+  }
+  
+  if (target_link == "source") {
+    link_factor <- 1
+  } else if (source_link == target_link) {
+    link_factor <- 1
+  } else if (source_link == "logit" && target_link == "probit") {
+    link_factor <- 1 / 1.7
+  } else if (source_link == "probit" && target_link == "logit") {
+    link_factor <- 1.7
+  } else {
+    warning("Link transformation from '", source_link, "' to '",
+            target_link, "' is not supported. No rescaling applied.",
+            call. = FALSE)
+    link_factor <- 1
+  }
   
   prior_list <- list()
   
@@ -709,8 +761,8 @@ posterior_to_prior <- function(model,
       
       for (idx in seq_along(thresh_cols)) {
         vals   <- draws[[thresh_cols[idx]]]
-        p_mean <- mean(vals)
-        p_sd   <- stats::sd(vals) * mult
+        p_mean <- mean(vals) * link_factor
+        p_sd   <- stats::sd(vals) * mult * abs(link_factor)
         
         prior_list[[length(prior_list) + 1]] <- brms::set_prior(
           paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
@@ -727,11 +779,8 @@ posterior_to_prior <- function(model,
   } else {
     
     # --- Detect parameterisation ---
-    # Fixed item effects: columns like b_itemI1, b_itemI2, ...
-    # Random item effects: b_Intercept + r_item[I1,Intercept], ...
     fe_pattern <- paste0("^b_", item_name)
     fe_cols    <- grep(fe_pattern, names(draws), value = TRUE)
-    # Exclude b_Intercept from the match
     fe_cols    <- setdiff(fe_cols, "b_Intercept")
     
     has_fixed_items  <- length(fe_cols) > 0
@@ -744,10 +793,9 @@ posterior_to_prior <- function(model,
       
       for (col_name in fe_cols) {
         vals   <- draws[[col_name]]
-        p_mean <- mean(vals)
-        p_sd   <- stats::sd(vals) * mult
+        p_mean <- mean(vals) * link_factor
+        p_sd   <- stats::sd(vals) * mult * abs(link_factor)
         
-        # Column name is e.g. "b_itemI1" -> coef is "itemI1"
         coef_name <- sub("^b_", "", col_name)
         
         prior_list[[length(prior_list) + 1]] <- brms::set_prior(
@@ -764,8 +812,8 @@ posterior_to_prior <- function(model,
       intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
       if (length(intercept_col) == 1) {
         vals   <- draws[[intercept_col]]
-        p_mean <- mean(vals)
-        p_sd   <- stats::sd(vals) * mult
+        p_mean <- mean(vals) * link_factor
+        p_sd   <- stats::sd(vals) * mult * abs(link_factor)
         
         prior_list[[length(prior_list) + 1]] <- brms::set_prior(
           paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
@@ -780,8 +828,8 @@ posterior_to_prior <- function(model,
       )
       if (length(item_sd_col) == 1) {
         vals   <- draws[[item_sd_col]]
-        p_mean <- mean(vals)
-        p_sd   <- stats::sd(vals) * mult
+        p_mean <- mean(vals) * abs(link_factor)
+        p_sd   <- stats::sd(vals) * mult * abs(link_factor)
         
         prior_list[[length(prior_list) + 1]] <- brms::set_prior(
           paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
@@ -808,8 +856,8 @@ posterior_to_prior <- function(model,
   )
   if (length(person_sd_col) == 1) {
     vals   <- draws[[person_sd_col]]
-    p_mean <- mean(vals)
-    p_sd   <- stats::sd(vals) * mult
+    p_mean <- mean(vals) * abs(link_factor)
+    p_sd   <- stats::sd(vals) * mult * abs(link_factor)
     
     prior_list[[length(prior_list) + 1]] <- brms::set_prior(
       paste0("normal(", round(p_mean, 4), ", ", round(p_sd, 4), ")"),
@@ -831,6 +879,12 @@ posterior_to_prior <- function(model,
     for (i in 2:length(prior_list)) {
       combined_prior <- combined_prior + prior_list[[i]]
     }
+  }
+  
+  if (link_factor != 1) {
+    message("Priors rescaled from '", source_link, "' to '",
+            target_link, "' link (factor = ",
+            round(link_factor, 4), ").")
   }
   
   combined_prior

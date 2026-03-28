@@ -4,7 +4,13 @@
 \alias{posterior_to_prior}
 \title{Extract Informative Priors from a Fitted Bayesian IRT Model}
 \usage{
-posterior_to_prior(model, item_var = item, person_var = id, mult = 1)
+posterior_to_prior(
+  model,
+  item_var = item,
+  person_var = id,
+  mult = 1,
+  target_link = c("source", "logit", "probit")
+)
 }
 \arguments{
 \item{model}{A fitted \code{\link[brms]{brmsfit}} object. Supported
@@ -30,6 +36,16 @@ grouping variable in the model data. Default is \code{id}.}
 it is used as the prior SD. Values > 1 widen the priors
 (less informative); values < 1 tighten them. Default is 1
 (use posterior SD directly).}
+
+\item{target_link}{Character string specifying the link function of
+the model the priors will be used with. One of \code{"logit"},
+\code{"probit"}, or \code{"source"} (the default). When
+\code{"source"}, the link function of the fitted model is used
+and no transformation is applied. When different from the source
+model's link, all location and scale parameters are rescaled
+using the approximation \eqn{\beta_{\text{probit}} \approx
+  \beta_{\text{logit}} / 1.7}. This is useful when transferring
+priors from a logit-fitted model to a probit model or vice versa.}
 }
 \value{
 A \code{\link[brms]{brmsprior}} object that can be supplied
@@ -73,6 +89,16 @@ effect (e.g., \code{b_itemI1}) receives its own
 In all cases the person-level SD receives a
 \code{normal(mean, sd * mult)} prior (brms applies the lower
 bound of zero automatically for SD parameters).
+
+\strong{Link function transformation:} When \code{target_link}
+differs from the source model's link function, all parameters
+(means and SDs) are rescaled by a factor of approximately 1.7.
+This uses the well-known approximation that
+\eqn{\Phi(x) \approx \text{logistic}(1.7 \, x)}, so
+logit-scale parameters can be converted to probit-scale by
+dividing by 1.7, and vice versa. The approximation is excellent
+for parameters in the range \eqn{|\beta| < 3} and adequate
+beyond that range.
 }
 \examples{
 \donttest{
@@ -95,12 +121,15 @@ fit_pcm <- brm(
   chains = 4, cores = 2, iter = 1000 # use more iter (and cores if you have)
 )
 
-# Extract posterior-informed priors
+# Extract posterior-informed priors (same link)
 new_priors <- posterior_to_prior(fit_pcm)
 new_priors
 
 # Narrow the prior's sd by a factor of 0.5
 wide_priors <- posterior_to_prior(fit_pcm, mult = 0.5)
+
+# Extract priors for use with a probit model
+probit_priors <- posterior_to_prior(fit_pcm, target_link = "probit")
 
 # --- Dichotomous 1PL (fixed item effects) ---
 
@@ -118,6 +147,9 @@ fit_1pl <- brm(
 
 priors_1pl <- posterior_to_prior(fit_1pl)
 priors_1pl
+
+# Transfer logit priors to a probit refit
+priors_probit <- posterior_to_prior(fit_1pl, target_link = "probit")
 }
 
 }

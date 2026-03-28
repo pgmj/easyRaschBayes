@@ -6,28 +6,16 @@
 
 ## Test environments
 
-* local: macOS 26.3.1(a), R 4.5.3 - success
-* check_win_devel: 1 NOTE (resolved)
-* R-hub: linux, R-devel - success
-* R-hub: windows, R-devel - failed
-* R-hub: macOS-arm64, R-devel - failed
+* local: macOS 26.3.1(a), R 4.5.3
+* devtools::check_win_devel()
+* devtools::check_mac_release()
 
 ## Notes
 
-Can't make sense of the error message from R-hub for windows/macOS-arm64:
-
-> ** installing vignettes
-> ** testing if installed package can be loaded from temporary location
-> ** testing if installed package can be loaded from final location
-> ** testing if installed package keeps a record of temporary installation path
-> * SHA256 sums
-> * creating tarball
-> Error in if (custom.bin) { : argument is of length zero
-
 * Update version 0.1.0 -> 0.2.0 
 
-* Improved performance in 4 of the main functions and harmonized the output to be more 
-  similar across functions.
+* Improved performance in 4 of the main functions and harmonized the output 
+  to be similar across functions.
 * Added 3 post-processing functions
 * Added 4 new analysis functions
 * Added 3 new pre-analysis plotting functions
@@ -35,9 +23,9 @@ Can't make sense of the error message from R-hub for windows/macOS-arm64:
 * Notes since prior submission:
 
 * The package depends on 'brms', which requires a C++ toolchain for
-  Stan model compilation. All examples and the vignette use
-  `\donttest{}` or pre-computed results to avoid long-running MCMC
-  sampling during checks.
+  Stan model compilation. All examples that include `brmsfit` models and 
+  the vignette use `\donttest{}` or pre-computed results to avoid 
+  long-running MCMC sampling during checks.
 
 * The vignette is designed to display code without evaluation on CRAN
   (model fitting results are loaded from a pre-saved file that is not
