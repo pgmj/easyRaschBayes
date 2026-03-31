@@ -295,7 +295,7 @@ plot_icc <- function(
       tau_mean <- vapply(
         thresh_cols, function(col) mean(draws[[col]]), numeric(1)
       )
-      tau_mean <- tau_mean + shift
+      tau_mean <- tau_mean - shift
       n_cat <- length(tau_mean) + 1
       cats  <- seq(0, n_cat - 1)
       
@@ -514,7 +514,7 @@ plot_icc <- function(
       thresh_sub <- as.matrix(
         draws[draw_sample, thresh_cols, drop = FALSE]
       )
-      thresh_sub <- thresh_sub + shift
+      thresh_sub <- thresh_sub - shift
       
       n_thresh <- ncol(thresh_sub)
       n_cat    <- n_thresh + 1
