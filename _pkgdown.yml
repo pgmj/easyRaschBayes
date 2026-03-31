@@ -20,6 +20,8 @@ navbar:
       menu:
       - text: Rasch Partial Credit Model
         href: articles/pcm-rasch-analysis.html
+      - text: Comparing Rasch with CML/MML and `brms`
+        href: https://pgmj.github.io/rasch_bayes_comp.html
     news:
       text: Changelog
       href: news/index.html
