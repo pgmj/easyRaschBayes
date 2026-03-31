@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.1.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -18,10 +18,12 @@
       <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/index.html">Vignettes</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
-      </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/pgmj/easyRaschBayes/" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
+      </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/pgmj/easyRaschBayes/" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
       </ul></div>
 
 
@@ -35,8 +37,46 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="easyraschbayes-development-version">easyRaschBayes (development version)<a class="anchor" aria-label="anchor" href="#easyraschbayes-development-version"></a></h2>
-</div>
+<h2 class="pkg-version" data-toc-text="0.2.0.1" id="easyraschbayes-0201-dev">easyRaschBayes 0.2.0.1 (dev)<a class="anchor" aria-label="anchor" href="#easyraschbayes-0201-dev"></a></h2>
+<ul><li>Fix for <code><a href="../reference/plot_icc.html">plot_icc()</a></code> theta values.</li>
+</ul></div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.2.0" id="easyraschbayes-020">easyRaschBayes 0.2.0<a class="anchor" aria-label="anchor" href="#easyraschbayes-020"></a></h2><p class="text-muted">CRAN release: 2026-03-28</p>
+<ul><li>Updates:
+<ul><li>
+<code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> is now faster and defaults to not output outfit statistics, since these are of dubious value (see <a href="https://doi.org/10.1186/s40488-020-00108-7" class="external-link">Müller 2020</a> and <a href="https://pgmj.github.io/rasch_itemfit/" class="external-link">Johansson, 2025</a>).</li>
+<li>
+<code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> is now faster and has output similar to <code><a href="../reference/infit_post.html">infit_post()</a></code>.</li>
+<li>
+<code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> is now faster and has output similar to <code><a href="../reference/infit_post.html">infit_post()</a></code>.</li>
+<li>
+<code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> is now faster.</li>
+</ul></li>
+<li>Three post-processing helper functions that output a list with result table(s) and a plot:
+<ul><li>
+<code><a href="../reference/infit_post.html">infit_post()</a></code> for the output of <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code>
+</li>
+<li>
+<code><a href="../reference/item_restscore_post.html">item_restscore_post()</a></code> for the output of <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code>
+</li>
+<li>
+<code><a href="../reference/q3_post.html">q3_post()</a></code> for the output of <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code>
+</li>
+</ul></li>
+<li>Other new functions:
+<ul><li>
+<code><a href="../reference/plot_icc.html">plot_icc()</a></code> can both produce a basic conditional Item Characteristic Curves plot and optionally a DIF ICC plot, the latter also reporting a partial gamma DIF magnitude coefficient. This is inspired by <code>iarm::ICCplot()</code>
+</li>
+<li>
+<code><a href="../reference/item_parameters.html">item_parameters()</a></code> to retrieve item threshold locations</li>
+<li>
+<code><a href="../reference/person_parameters.html">person_parameters()</a></code> to retrieve person locations (latent scores) using EAP and WLE, and also a transformation table from ordinal sum score to EAP/WLE.</li>
+<li>
+<code><a href="../reference/posterior_to_prior.html">posterior_to_prior()</a></code> that extracts priors from a <code>brmsfit</code> model that may be useful in model fit assessment. An article will be added later, exploring this further.</li>
+<li>
+<code><a href="../reference/plot_tile.html">plot_tile()</a></code>, <code><a href="../reference/plot_bars.html">plot_bars()</a></code>, and <code><a href="../reference/plot_stackedbars.html">plot_stackedbars()</a></code> uses wide format item data to create plots to review response patterns.</li>
+</ul></li>
+</ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.1.0" id="easyraschbayes-010">easyRaschBayes 0.1.0<a class="anchor" aria-label="anchor" href="#easyraschbayes-010"></a></h2><p class="text-muted">CRAN release: 2026-03-11</p>
 <ul><li>Initial release.</li>

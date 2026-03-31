@@ -4,14 +4,12 @@ Bayesian IRT models fitted with brms. For each item, the
 probability of endorsing each response category is plotted as a
 function of the latent variable (theta), with separate colored
 curves per category. All items are displayed in a combined faceted
-plot, similar to the trace plots produced by
-itemplot in the mirt package."><meta property="og:description" content="Plots item category probability functions (ICPFs) for polytomous
+plot."><meta property="og:description" content="Plots item category probability functions (ICPFs) for polytomous
 Bayesian IRT models fitted with brms. For each item, the
 probability of endorsing each response category is plotted as a
 function of the latent variable (theta), with separate colored
 curves per category. All items are displayed in a combined faceted
-plot, similar to the trace plots produced by
-itemplot in the mirt package."><meta name="robots" content="noindex"></head><body>
+plot."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -19,7 +17,7 @@ itemplot in the mirt package."><meta name="robots" content="noindex"></head><bod
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.1.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -30,10 +28,12 @@ itemplot in the mirt package."><meta name="robots" content="noindex"></head><bod
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/index.html">Vignettes</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
-      </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/pgmj/easyRaschBayes/" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
+      </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/pgmj/easyRaschBayes/" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
       </ul></div>
 
 
@@ -53,8 +53,7 @@ Bayesian IRT models fitted with <span class="pkg">brms</span>. For each item, th
 probability of endorsing each response category is plotted as a
 function of the latent variable (theta), with separate colored
 curves per category. All items are displayed in a combined faceted
-plot, similar to the trace plots produced by
-<code>itemplot</code> in the <span class="pkg">mirt</span> package.</p>
+plot.</p>
     </div>
 
     <div class="section level2">
@@ -166,8 +165,7 @@ item thresholds. Analogous formulas are used for the
 <code>cumulative</code>, <code>sratio</code>, and <code>cratio</code> families.</p>
 <p>Posterior uncertainty in the thresholds propagates into credible
 interval ribbons around the category probability curves — a
-Bayesian advantage over point-estimate-based plots from packages
-like <span class="pkg">mirt</span> or <span class="pkg">eRm</span>.</p>
+Bayesian advantage over point-estimate-based plots.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -178,8 +176,7 @@ brms and Stan. <em>Journal of Statistical Software</em>, <em>100</em>,
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="https://mc-stan.org/rstantools/reference/posterior_epred.html" class="external-link">posterior_epred</a></code>,
-<code><a href="https://paulbuerkner.com/brms/reference/conditional_effects.brmsfit.html" class="external-link">conditional_effects</a></code>,
-<code>itemplot</code>.</p></div>
+<code><a href="https://paulbuerkner.com/brms/reference/conditional_effects.brmsfit.html" class="external-link">conditional_effects</a></code>,</p></div>
     </div>
 
     <div class="section level2">

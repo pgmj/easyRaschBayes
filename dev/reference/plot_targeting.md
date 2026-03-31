@@ -189,11 +189,10 @@ plot_targeting(fit_pcm, robust = TRUE, sort_items = "location")
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::rainger %>%
+df_rm <- eRm::raschdat3 %>%
   as.data.frame() %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
-#> Error: 'rainger' is not an exported object from 'namespace:eRm'
 
 fit_rm <- brm(
   response ~ 1 + (1 | item) + (1 | id),
@@ -203,7 +202,8 @@ fit_rm <- brm(
   cores  = 1, # use more cores if you have
   iter   = 500 # use at least 2000 
 )
-#> Error: object 'df_rm' not found
+#> Compiling Stan program...
+#> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 plot_targeting(fit_rm, sort_items = "location")
 #> Error: object 'fit_rm' not found

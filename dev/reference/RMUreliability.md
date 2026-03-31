@@ -63,21 +63,6 @@ estimating reliability using Bayesian Measurement Uncertainty. PsyArXiv.
 
 ``` r
 # \donttest{
-# See https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_reliability.html
-# for more details on this example
-
-# Simulate data
-
-library(dplyr)
-#> 
-#> Attaching package: ‘dplyr’
-#> The following objects are masked from ‘package:stats’:
-#> 
-#>     filter, lag
-#> The following objects are masked from ‘package:base’:
-#> 
-#>     intersect, setdiff, setequal, union
-library(tidyr)
 library(brms)
 #> Loading required package: Rcpp
 #> Loading 'brms' package (version 2.23.0). Useful instructions
@@ -88,56 +73,48 @@ library(brms)
 #> The following object is masked from ‘package:stats’:
 #> 
 #>     ar
-set.seed(1)
-N                   = 5000 # number of subjects (mice)
-J                   = 3    # number of measurements per subject
-true_score_variance = 1
-error_variance      = 10
+library(dplyr)
+#> 
+#> Attaching package: ‘dplyr’
+#> The following objects are masked from ‘package:stats’:
+#> 
+#>     filter, lag
+#> The following objects are masked from ‘package:base’:
+#> 
+#>     intersect, setdiff, setequal, union
+library(tidyr)
+library(tibble)
 
-df = expand.grid(j = 1:J, mouse = 1:N)
+# --- Dichotomous Rasch Model ---
 
-true_scores       = rnorm(N, mean = 10, sd = sqrt(true_score_variance))
-measurement_error = rnorm(N*J, mean = 0, sd = sqrt(error_variance))
+df_rm <- eRm::raschdat3 %>%
+  as.data.frame() %>%
+  rownames_to_column("id") %>%
+  pivot_longer(!id, names_to = "item", values_to = "response")
 
-df$measurement = true_scores[df$mouse] + measurement_error
-
-df_average_lengths = df %>%
-  group_by(mouse) %>%
-  summarise(average_measurement = mean(measurement))
-
-# Reliability should equal this:
-
-true_score_variance/(true_score_variance+error_variance/J)
-#> [1] 0.2307692
-
-# Approximately the same as:
-
-cor(df_average_lengths$average_measurement, true_scores)^2
-#> [1] 0.2414736
-
-# Fit model and calculate RMU
-
-brms_model = brm(
-  measurement ~ 1 + (1 | mouse),
-  data    = df, 
-  iter = 500,
-  warmup = 150
+fit_rm <- brm(
+  response ~ 1 + (1 | item) + (1 | id),
+  data   = df_rm,
+  family = bernoulli(),
+  chains = 4,
+  cores  = 1, # use more cores if you have
+  iter   = 500 # use at least 2000 
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
 # Extract posterior draws from brms model
 
-posterior_draws = brms_model %>%
+posterior_draws = fit_rm %>%
   as_draws_df() %>%
-  as_tibble %>% 
-  select(starts_with("r_mouse")) %>%
+  as_tibble() %>% 
+  select(starts_with("r_id")) %>%
   t()
-#> Error: object 'brms_model' not found
+#> Error: object 'fit_rm' not found
 
 # Calculate RMU
 
-RMUreliability(posterior_draws)$hdci
+RMUreliability(posterior_draws)
 #> Error: object 'posterior_draws' not found
 # }
 ```

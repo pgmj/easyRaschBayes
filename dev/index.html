@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.1.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,12 +36,15 @@
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="articles/index.html">Vignettes</a></li>
+<li><a class="dropdown-item" href="articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
+<li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
+</form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/pgmj/easyRaschBayes/" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
       </ul>
 </div>
@@ -56,6 +59,7 @@
 <!-- badges: start -->
 
 <p><strong>easyRaschBayes</strong> provides functions to reproduce classic Rasch analysis features using Bayesian item response theory (IRT) models fitted with <a href="https://paulbuerkner.com/brms/" class="external-link">brms</a>. It supports both dichotomous Rasch models and polytomous partial credit models, and exposes the full posterior distribution for all output.</p>
+<p>For more materials on Rasch analysis, see the <a href="https://pgmj.github.io/raschrvignette/RaschRvign.html" class="external-link">vignette</a> for my (frequentist) package <a href="https://pgmj.github.io/easyRasch/" class="external-link"><code>easyRasch</code></a>.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -81,24 +85,24 @@
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td><code><a href="reference/dif_statistic.html">dif_statistic()</a></code></td>
-<td>Differential Item Functioning (DIF) analysis</td>
-</tr>
-<tr class="even">
-<td><code><a href="reference/fit_statistic_pcm.html">fit_statistic_pcm()</a></code></td>
-<td>Posterior predictive item fit for polytomous models</td>
-</tr>
-<tr class="odd">
-<td><code><a href="reference/fit_statistic_rm.html">fit_statistic_rm()</a></code></td>
-<td>Posterior predictive item fit for dichotomous models</td>
-</tr>
-<tr class="even">
 <td><code><a href="reference/infit_statistic.html">infit_statistic()</a></code></td>
-<td>Conditional infit / outfit statistics</td>
+<td>Conditional infit (and outfit) statistics</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/infit_post.html">infit_post()</a></code></td>
+<td>Post-processing and plotting of infit statistics</td>
 </tr>
 <tr class="odd">
 <td><code><a href="reference/item_restscore_statistic.html">item_restscore_statistic()</a></code></td>
 <td>Item–rest score associations with Goodman &amp; Kruskal’s gamma</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/item_restscore_post.html">item_restscore_post()</a></code></td>
+<td>Post-processing and plotting of item-restscore statistics</td>
+</tr>
+<tr class="odd">
+<td><code><a href="reference/plot_icc.html">plot_icc()</a></code></td>
+<td>Conditional item fit curves &amp; DIF analysis</td>
 </tr>
 <tr class="even">
 <td><code><a href="reference/plot_residual_pca.html">plot_residual_pca()</a></code></td>
@@ -109,16 +113,49 @@
 <td>Yen’s Q3 residual correlations for local dependence evaluation</td>
 </tr>
 <tr class="even">
+<td><code><a href="reference/q3_post.html">q3_post()</a></code></td>
+<td>Post-processing and plotting of Q3 statistics</td>
+</tr>
+<tr class="odd">
 <td><code><a href="reference/plot_ipf.html">plot_ipf()</a></code></td>
-<td>Item category probability function curves</td>
+<td>Item probability function curves</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/plot_icc.html">plot_icc()</a></code></td>
+<td>Item category characteristics curves</td>
 </tr>
 <tr class="odd">
 <td><code><a href="reference/plot_targeting.html">plot_targeting()</a></code></td>
 <td>Person-item map (Wright map)</td>
 </tr>
 <tr class="even">
+<td><code><a href="reference/dif_statistic.html">dif_statistic()</a></code></td>
+<td>Differential Item Functioning (DIF) analysis</td>
+</tr>
+<tr class="odd">
+<td><code><a href="reference/fit_statistic_pcm.html">fit_statistic_pcm()</a></code></td>
+<td>Posterior predictive item/person fit for polytomous models</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/fit_statistic_rm.html">fit_statistic_rm()</a></code></td>
+<td>Posterior predictive item/person fit for dichotomous models</td>
+</tr>
+<tr class="odd">
 <td><code><a href="reference/RMUreliability.html">RMUreliability()</a></code></td>
 <td>Reliability via Relative Measurement Uncertainty (RMU)</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/person_parameters.html">person_parameters()</a></code></td>
+<td>EAP and WLE latent scores and ordinal sum score transformation table</td>
+</tr>
+<tr class="odd">
+<td><code><a href="reference/item_parameters.html">item_parameters()</a></code></td>
+<td>Summarize item threshold locations</td>
+</tr>
+<tr class="even">
+<td><code><a href="reference/plot_tile.html">plot_tile()</a></code></td>
+<td>Plot response data, see also <code><a href="reference/plot_bars.html">plot_bars()</a></code> and <code><a href="reference/plot_stackedbars.html">plot_stackedbars()</a></code>
+</td>
 </tr>
 </tbody>
 </table>
@@ -138,14 +175,19 @@
 <span>  chains <span class="op">=</span> <span class="fl">4</span>, cores <span class="op">=</span> <span class="fl">4</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Item fit</span></span>
-<span><span class="fu"><a href="reference/infit_statistic.html">infit_statistic</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="co"># Conditional item infit</span></span>
+<span><span class="va">infit</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/infit_statistic.html">infit_statistic</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/infit_post.html">infit_post</a></span><span class="op">(</span><span class="va">infit</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Local dependence with Yen's Q3</span></span>
+<span><span class="va">q3_results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/q3_statistic.html">q3_statistic</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/q3_post.html">q3_post</a></span><span class="op">(</span><span class="va">q3_results</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Response category functioning</span></span>
+<span><span class="fu"><a href="reference/plot_ipf.html">plot_ipf</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Person-item map</span></span>
-<span><span class="fu"><a href="reference/plot_targeting.html">plot_targeting</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span>
-<span></span>
-<span><span class="co"># Local dependence</span></span>
-<span><span class="fu"><a href="reference/q3_statistic.html">q3_statistic</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="reference/plot_targeting.html">plot_targeting</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
@@ -156,14 +198,12 @@
 <div class="section level2">
 <h2 id="credits">Credits<a class="anchor" aria-label="anchor" href="#credits"></a>
 </h2>
-<p>This started as a little side project to update the code posted by Bürkner (2020) to assess item fit. With the help of Claude Opus 4.6 the things expanded to try to reproduce the core Rasch analysis aspects. Most of the code in this package is produced by the LLM.</p>
+<p>This started as a side project to update the code to assess item fit included in Bürkner (2020). With the help of Claude Opus 4.6 things expanded to try to reproduce core Rasch analysis steps. Most of the code in this package is produced by the LLM.</p>
 <p><a href="https://ki.se/en/people/magnus-johansson-3" class="external-link">Magnus Johansson</a> is a licensed psychologist with a PhD in behavior analysis. He works as a research specialist at <a href="https://ki.se/en/cns/research/centre-for-psychiatry-research" class="external-link">Karolinska Institutet</a>, Department of Clinical Neuroscience, Center for Psychiatry Research.</p>
 <ul>
 <li>ORCID: <a href="https://orcid.org/0000-0003-1669-592X" class="external-link">0000-0003-1669-592X</a>
 </li>
 <li>Bluesky: <a href="https://bsky.app/profile/pgmj.bsky.social" class="external-link">@pgmj.bsky.social</a>
-</li>
-<li>Mastodon: <a href="https://scicomm.xyz/@pgmj" class="external-link">@pgmj@scicomm.xyz</a>
 </li>
 </ul>
 </div>
@@ -211,6 +251,7 @@
 <ul class="list-unstyled">
 <li><a href="https://cran.r-project.org/package=easyRaschBayes" class="external-link"><img src="https://www.r-pkg.org/badges/version/easyRaschBayes" alt="CRAN Version"></a></li>
 <li><a href="https://CRAN.R-project.org/package=easyRaschBayes" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/easyRaschBayes?color=brightgreen" alt="Downloads"></a></li>
+<li><a href="https://buymeacoffee.com/pgmj" target="_blank" class="external-link"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a></li>
 </ul>
 </div>
 

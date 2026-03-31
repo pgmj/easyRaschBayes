@@ -23,10 +23,8 @@ A scalar: the gamma coefficient in \\\[-1, 1\]\\.
 ## Details
 
 Gamma is defined as \\(C - D) / (C + D)\\, where \\C\\ is the number of
-concordant pairs and \\D\\ is the number of discordant pairs. For a
-contingency table, concordant pairs arise when both variables increase
-together, and discordant pairs when one increases while the other
-decreases.
+concordant pairs and \\D\\ is the number of discordant pairs. Uses
+cumulative suffix sums for \\O(nr \times nc)\\ complexity.
 
 ## References
 

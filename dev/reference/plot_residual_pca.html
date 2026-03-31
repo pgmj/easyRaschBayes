@@ -21,7 +21,7 @@ what the model predicts under unidimensionality."><meta name="robots" content="n
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.1.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.2.0.1</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -32,10 +32,12 @@ what the model predicts under unidimensionality."><meta name="robots" content="n
       <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/index.html">Vignettes</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
-      </ul><ul class="navbar-nav"><li class="nav-item"><a class="external-link nav-link" href="https://github.com/pgmj/easyRaschBayes/" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
+      </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/pgmj/easyRaschBayes/" aria-label="GitHub"><span class="fa fab fa-github"></span></a></li>
       </ul></div>
 
 
@@ -238,7 +240,7 @@ local dependence / dimensionality diagnostic).</p></div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/paul-buerkner/brms" class="external-link">brms</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyr.tidyverse.org" class="external-link">tidyr</a></span><span class="op">)</span></span></span>
@@ -257,29 +259,21 @@ local dependence / dimensionality diagnostic).</p></div>
 <span class="r-in"><span>  data   <span class="op">=</span> <span class="va">df_pcm</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="va">acat</span>,</span></span>
 <span class="r-in"><span>  chains <span class="op">=</span> <span class="fl">4</span>,</span></span>
-<span class="r-in"><span>  cores  <span class="op">=</span> <span class="fl">1</span>, <span class="co"># use more cores if you have</span></span></span>
-<span class="r-in"><span>  iter   <span class="op">=</span> <span class="fl">500</span> <span class="co"># use at least 2000 </span></span></span>
+<span class="r-in"><span>  cores  <span class="op">=</span> <span class="fl">4</span>,</span></span>
+<span class="r-in"><span>  iter   <span class="op">=</span> <span class="fl">2000</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Compiling Stan program...</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in .fun(model_code = .x1):</span> Boost not found; call install.packages('BH')</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># 2D density contours (default)</span></span></span>
 <span class="r-in"><span><span class="va">result</span> <span class="op">&lt;-</span> <span class="fu">plot_residual_pca</span><span class="op">(</span><span class="va">fit_pcm</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_pcm' not found</span>
 <span class="r-in"><span><span class="va">result</span><span class="op">$</span><span class="va">plot</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'result' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Crosshair style</span></span></span>
 <span class="r-in"><span><span class="va">result_c</span> <span class="op">&lt;-</span> <span class="fu">plot_residual_pca</span><span class="op">(</span><span class="va">fit_pcm</span>, style <span class="op">=</span> <span class="st">"crosshair"</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_pcm' not found</span>
 <span class="r-in"><span><span class="va">result_c</span><span class="op">$</span><span class="va">plot</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'result_c' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Both combined</span></span></span>
 <span class="r-in"><span><span class="va">result_b</span> <span class="op">&lt;-</span> <span class="fu">plot_residual_pca</span><span class="op">(</span><span class="va">fit_pcm</span>, style <span class="op">=</span> <span class="st">"both"</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_pcm' not found</span>
 <span class="r-in"><span><span class="va">result_b</span><span class="op">$</span><span class="va">plot</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'result_b' not found</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Custom warm palette</span></span></span>
 <span class="r-in"><span><span class="va">result_w</span> <span class="op">&lt;-</span> <span class="fu">plot_residual_pca</span><span class="op">(</span></span></span>
@@ -288,10 +282,8 @@ local dependence / dimensionality diagnostic).</p></div>
 <span class="r-in"><span>                      <span class="st">"#B30000"</span>, <span class="st">"#7F0000"</span>, <span class="st">"#4A0000"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  point_color <span class="op">=</span> <span class="st">"#B30000"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'fit_pcm' not found</span>
 <span class="r-in"><span><span class="va">result_w</span><span class="op">$</span><span class="va">plot</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error:</span> object 'result_w' not found</span>
-<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
