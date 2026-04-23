@@ -1,4 +1,4 @@
-# easyRaschBayes 0.2.0.1 (dev)
+# easyRaschBayes 0.2.0.1
 
 - Fix for `plot_icc()` theta values.
 
