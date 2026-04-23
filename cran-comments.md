@@ -12,24 +12,10 @@
 
 ## Notes
 
-* Update version 0.1.0 -> 0.2.0 
+* Update version 0.2.0 -> 0.2.0.1
 
-* Improved performance in 4 of the main functions and harmonized the output 
-  to be similar across functions.
-* Added 3 post-processing functions
-* Added 4 new analysis functions
-* Added 3 new pre-analysis plotting functions
+* Very minor bug fix, two lines of code changed, switching a plus to a minus.
 
-* Notes since prior submission:
-
-* The package depends on 'brms', which requires a C++ toolchain for
-  Stan model compilation. All examples that include `brmsfit` models and 
-  the vignette use `\donttest{}` or pre-computed results to avoid 
-  long-running MCMC sampling during checks.
-
-* The vignette is designed to display code without evaluation on CRAN
-  (model fitting results are loaded from a pre-saved file that is not
-  included in the package tarball). This is noted in the vignette text.
 
 ## Downstream dependencies
 
