@@ -1,6 +1,6 @@
 # Changelog
 
-## easyRaschBayes 0.2.0.1 (dev)
+## easyRaschBayes 0.2.0.1
 
 - Fix for
   [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_icc.md)
