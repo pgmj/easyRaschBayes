@@ -5,8 +5,13 @@
 - **Magnus Johansson**. Author, maintainer.
   [](https://orcid.org/0000-0003-1669-592X)
 
-- **Giacomo Bignardi**. Contributor.  
+- **Giacomo Bignardi**. Contributor.
+  [](https://orcid.org/0000-0002-1153-0838)  
   RMU reliability code
+
+- **Kristoffer Magnusson**. Contributor.
+  [](https://orcid.org/0000-0003-0713-0556)  
+  hurdle_acat custom brms family
 
 ## Citation
 
@@ -14,13 +19,13 @@ Source:
 [`DESCRIPTION`](https://github.com/pgmj/easyRaschBayes/blob/main/DESCRIPTION)
 
 Johansson M (2026). *easyRaschBayes: Bayesian Rasch Analysis Using
-'brms'*. R package version 0.2.0,
+'brms'*. R package version 0.3.0,
 <https://github.com/pgmj/easyRaschBayes>.
 
     @Manual{,
       title = {easyRaschBayes: Bayesian Rasch Analysis Using 'brms'},
       author = {Magnus Johansson},
       year = {2026},
-      note = {R package version 0.2.0},
+      note = {R package version 0.3.0},
       url = {https://github.com/pgmj/easyRaschBayes},
     }

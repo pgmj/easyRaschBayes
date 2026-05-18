@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Bayesian Rasch Analysis Using brms • easyRaschBayes</title>
 <script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
+<script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Bayesian Rasch Analysis Using brms">
 <meta name="description" content="Reproduces classic Rasch psychometric analysis features using Bayesian item response theory models fitted with brms following Bürkner (2021) &lt;doi:10.18637/jss.v100.i05&gt; and Bürkner (2020) &lt;doi:10.3390/jintelligence8010005&gt;. Supports both dichotomous and polytomous Rasch models. Features include posterior predictive item fit, conditional infit, item-restscore associations, person fit, differential item functioning, local dependence assessment via Q3 residual correlations, dimensionality assessment with residual principal components analysis, person-item targeting plots, item category probability curves, and reliability using relative measurement uncertainty following Bignardi et al. (2025) &lt;doi:10.31234/osf.io/h54k8_v1&gt;.">
@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,6 +36,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
+    <li><a class="external-link dropdown-item" href="https://pgmj.github.io/rasch_bayes_comp.html">Comparing Rasch with CML/MML and `brms`</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -78,80 +79,80 @@
 <col width="50%">
 <col width="50%">
 </colgroup>
-<thead><tr class="header">
+<thead><tr>
 <th>Function</th>
 <th>Description</th>
 </tr></thead>
 <tbody>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/infit_statistic.html">infit_statistic()</a></code></td>
 <td>Conditional infit (and outfit) statistics</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/infit_post.html">infit_post()</a></code></td>
 <td>Post-processing and plotting of infit statistics</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/item_restscore_statistic.html">item_restscore_statistic()</a></code></td>
 <td>Item–rest score associations with Goodman &amp; Kruskal’s gamma</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/item_restscore_post.html">item_restscore_post()</a></code></td>
 <td>Post-processing and plotting of item-restscore statistics</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/plot_icc.html">plot_icc()</a></code></td>
 <td>Conditional item fit curves &amp; DIF analysis</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/plot_residual_pca.html">plot_residual_pca()</a></code></td>
 <td>Residual PCA contrast plot for dimensionality assessment</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/q3_statistic.html">q3_statistic()</a></code></td>
 <td>Yen’s Q3 residual correlations for local dependence evaluation</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/q3_post.html">q3_post()</a></code></td>
 <td>Post-processing and plotting of Q3 statistics</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/plot_ipf.html">plot_ipf()</a></code></td>
 <td>Item probability function curves</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/plot_icc.html">plot_icc()</a></code></td>
 <td>Item category characteristics curves</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/plot_targeting.html">plot_targeting()</a></code></td>
 <td>Person-item map (Wright map)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/dif_statistic.html">dif_statistic()</a></code></td>
 <td>Differential Item Functioning (DIF) analysis</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/fit_statistic_pcm.html">fit_statistic_pcm()</a></code></td>
 <td>Posterior predictive item/person fit for polytomous models</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/fit_statistic_rm.html">fit_statistic_rm()</a></code></td>
 <td>Posterior predictive item/person fit for dichotomous models</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/RMUreliability.html">RMUreliability()</a></code></td>
 <td>Reliability via Relative Measurement Uncertainty (RMU)</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/person_parameters.html">person_parameters()</a></code></td>
 <td>EAP and WLE latent scores and ordinal sum score transformation table</td>
 </tr>
-<tr class="odd">
+<tr>
 <td><code><a href="reference/item_parameters.html">item_parameters()</a></code></td>
 <td>Summarize item threshold locations</td>
 </tr>
-<tr class="even">
+<tr>
 <td><code><a href="reference/plot_tile.html">plot_tile()</a></code></td>
 <td>Plot response data, see also <code><a href="reference/plot_bars.html">plot_bars()</a></code> and <code><a href="reference/plot_stackedbars.html">plot_stackedbars()</a></code>
 </td>

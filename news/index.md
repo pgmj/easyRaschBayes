@@ -1,6 +1,30 @@
 # Changelog
 
+## easyRaschBayes 0.3.0 (development)
+
+- New custom brms family `hurdle_acat` for hurdle partial credit models
+  (H-PCM).
+- Several adapted (experimental) functions for H-PCM, all using the
+  `*_hpcm` suffix.
+  - [`infit_statistic_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic_hpcm.md)
+  - [`q3_statistic_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic_hpcm.md)
+  - [`item_parameters_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/item_parameters_hpcm.md)
+  - [`person_parameters_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/person_parameters_hpcm.md)
+  - [`RMUreliability_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/RMUreliability_hpcm.md)
+  - [`plot_icc_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc_hpcm.md)
+  - [`plot_targeting_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting_hpcm.md)
+
+## easyRaschBayes 0.2.0.1
+
+CRAN release: 2026-04-23
+
+- Fix for
+  [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc.md)
+  theta values.
+
 ## easyRaschBayes 0.2.0
+
+CRAN release: 2026-03-28
 
 - Updates:
   - [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)

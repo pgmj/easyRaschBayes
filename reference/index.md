@@ -70,3 +70,23 @@
   : Extract Person Parameters from a Bayesian Rasch Model
 - [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/reference/posterior_to_prior.md)
   : Extract Informative Priors from a Fitted Bayesian IRT Model
+
+## Hurdle-PCM specific
+
+- [`hurdle_acat()`](https://pgmj.github.io/easyRaschBayes/reference/hurdle_acat.md)
+  : Hurdle Partial Credit Model Custom brms Family
+- [`infit_statistic_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic_hpcm.md)
+  : Posterior Predictive Infit Statistic for the Hurdle Partial Credit
+  Model
+- [`q3_statistic_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic_hpcm.md)
+  : Posterior Predictive Q3 Residual Correlations for the Hurdle PCM
+- [`item_parameters_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/item_parameters_hpcm.md)
+  : Extract Item Parameters from a Hurdle Partial Credit Model
+- [`person_parameters_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/person_parameters_hpcm.md)
+  : Extract Person Parameters from a Hurdle Partial Credit Model
+- [`RMUreliability_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/RMUreliability_hpcm.md)
+  : Relative Measurement Uncertainty Reliability for the Hurdle PCM
+- [`plot_icc_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc_hpcm.md)
+  : Item Characteristic Curves with Class Intervals for Hurdle PCM
+- [`plot_targeting_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting_hpcm.md)
+  : Person-Item Targeting Plot for the Hurdle Partial Credit Model

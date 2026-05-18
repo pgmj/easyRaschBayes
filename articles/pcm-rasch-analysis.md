@@ -25,6 +25,7 @@ in your console.
 ## Data Preparation
 
 ``` r
+
 library(easyRaschBayes)
 library(brms)
 library(dplyr)
@@ -39,6 +40,7 @@ expects response categories starting at **1**, so we add 1 to every
 response before reshaping to long format.
 
 ``` r
+
 df_pcm <- eRm::pcmdat2 %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
@@ -66,6 +68,7 @@ make use of wide format datasets, where items are separate columns and
 respondents are rows.
 
 ``` r
+
 plot_stackedbars(eRm::pcmdat2)
 ```
 
@@ -85,11 +88,13 @@ the fitting call (not evaluated during `R CMD check`). A pre-fitted
 model stored at `fits/fit_pcm.rds` is loaded instead.
 
 ``` r
+
 prior_pcm <- prior("normal(0, 3)", class = "Intercept") +
   prior("normal(0, 3)", class = "sd", group = "id")
 ```
 
 ``` r
+
 fit_pcm <- brm(
   response | thres(gr = item) ~ 1 + (1 | id),
   data    = df_pcm,
@@ -103,6 +108,7 @@ saveRDS(fit_pcm, "fits/fit_pcm.rds")
 ```
 
 ``` r
+
 fit_pcm <- readRDS("fits/fit_pcm.rds")
 ```
 
@@ -120,6 +126,7 @@ which speeds up computation during exploration. For final reporting, use
 all draws (set `ndraws_use = NULL` or omit it).
 
 ``` r
+
 fit_stats <- infit_statistic(fit_pcm, ndraws_use = 500)
 
 # Post-process Infit
@@ -156,6 +163,7 @@ magnitude for all items; high values may indicate redundancy, low values
 suggest the item does not relate well to the latent trait.
 
 ``` r
+
 rest_stats <- item_restscore_statistic(fit_pcm, ndraws_use = 500)
 
 rest_results <- item_restscore_post(rest_stats)
@@ -180,6 +188,7 @@ Shows item fit across the latent continuum, dividing the sample into n
 class intervals (default is 5).
 
 ``` r
+
 plot_icc(fit_pcm)
 ```
 
@@ -196,6 +205,7 @@ and plots the standardized loadings on the first residual contrast
 factor together with item locations and the uncertainty of both.
 
 ``` r
+
 pca <- plot_residual_pca(fit_pcm, ndraws_use = 500)
 pca$plot
 ```
@@ -218,6 +228,7 @@ dependence (LD). Our primary metric here is the ppp, that should not be
 close to 1.
 
 ``` r
+
 q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
 
 q3_results <- q3_post(q3_stats)
@@ -246,6 +257,7 @@ lines meet, are the item category threshold locations. Uncertainty is
 shown with the shaded area around each line.
 
 ``` r
+
 plot_ipf(fit_pcm, theta_range = c(-6,5))
 ```
 
@@ -262,6 +274,7 @@ on the same logit scale. Good targeting occurs when person and item
 distributions overlap substantially.
 
 ``` r
+
 plot_targeting(fit_pcm)
 ```
 
@@ -274,11 +287,15 @@ Targeting figure
 [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/reference/RMUreliability.md)
 provides a Bayesian reliability estimate via Relative Measurement
 Uncertainty (RMU, see Bignardi et al., 2025). It requires a matrix of
-person location draws with dimensions $$persons \times draws$$. The
-output is a point estimate and lower/upper 95% highest density
+person location draws with dimensions
+``` math
+persons × draws
+```
+. The output is a point estimate and lower/upper 95% highest density
 continuous intervals (HDCI).
 
 ``` r
+
 person_draws <- fit_pcm %>%
   as_draws_df() %>%
   as_tibble() %>% 
@@ -297,6 +314,7 @@ Cronbach’s alpha.
 ## Item Parameters
 
 ``` r
+
 ipar <- item_parameters(fit_pcm)
 knitr::kable(ipar$summary)
 ```
@@ -313,6 +331,7 @@ knitr::kable(ipar$summary)
 | I4   |         2 |   0.5866 | 0.1608 |     0.2573 |     0.8902 |  4000 |
 
 ``` r
+
 knitr::kable(ipar$locations_wide)
 ```
 
@@ -328,6 +347,7 @@ knitr::kable(ipar$locations_wide)
 This estimates latent scores.
 
 ``` r
+
 ppar <- person_parameters(fit_pcm)
 knitr::kable(ppar$score_table)
 ```
@@ -345,6 +365,7 @@ knitr::kable(ppar$score_table)
 |         8 |  37 |  2.5625 | 0.8963 |  7.0000 |    NaN |
 
 ``` r
+
 hist(ppar$person_estimates$eap, col = "lightblue", main = "Histogram of EAP scores")
 ```
 

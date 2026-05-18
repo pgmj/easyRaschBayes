@@ -32,4 +32,8 @@ Useful links:
 
 Other contributors:
 
-- Giacomo Bignardi (RMU reliability code) \[contributor\]
+- Giacomo Bignardi ([ORCID](https://orcid.org/0000-0002-1153-0838)) (RMU
+  reliability code) \[contributor\]
+
+- Kristoffer Magnusson ([ORCID](https://orcid.org/0000-0003-0713-0556))
+  (hurdle_acat custom brms family) \[contributor\]
