@@ -156,6 +156,7 @@ hurdle_acat <- function() {
 #' @seealso \code{\link{hurdle_acat}}
 #'
 #' @importFrom brms stanvar
+#' @keywords internal
 #' @export
 hurdle_acat_stanvars <- function() {
   fun_block <- "

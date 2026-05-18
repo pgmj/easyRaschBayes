@@ -23,3 +23,4 @@ to \code{\link[brms]{brm}}.
 \author{
 Kristoffer Magnusson
 }
+\keyword{internal}
