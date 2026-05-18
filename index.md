@@ -52,6 +52,12 @@ remotes::install_github("pgmj/easyRaschBayes")
 
 ## Usage
 
+See the [package
+vignette](https://pgmj.github.io/easyRaschBayes/articles/pcm-rasch-analysis.html)
+for some examples. Also, there is a [comparison with frequentist Rasch
+tools in R](https://pgmj.github.io/rasch_bayes_comp.html). Below is a
+quick example.
+
 ``` r
 
 library(brms)

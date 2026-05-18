@@ -3,7 +3,8 @@
 ## easyRaschBayes 0.3.0 (development)
 
 - New custom brms family `hurdle_acat` for hurdle partial credit models
-  (H-PCM).
+  (H-PCM). This is written by [Kristoffer
+  Magnusson](https://rpsychologist.com/)
 - Several adapted (experimental) functions for H-PCM, all using the
   `*_hpcm` suffix.
   - [`infit_statistic_hpcm()`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic_hpcm.md)
