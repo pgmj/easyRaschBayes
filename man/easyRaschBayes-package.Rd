@@ -22,7 +22,8 @@ Useful links:
 
 Other contributors:
 \itemize{
-  \item Giacomo Bignardi (RMU reliability code) [contributor]
+  \item Giacomo Bignardi (\href{https://orcid.org/0000-0002-1153-0838}{ORCID}) (RMU reliability code) [contributor]
+  \item Kristoffer Magnusson (\href{https://orcid.org/0000-0003-0713-0556}{ORCID}) (hurdle_acat custom brms family) [contributor]
 }
 
 }

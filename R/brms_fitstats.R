@@ -1216,4 +1216,3 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
     draws = tibble::as_tibble(gamma_draws_df)
   )
 }
-

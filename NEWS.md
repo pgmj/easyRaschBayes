@@ -1,3 +1,15 @@
+# easyRaschBayes 0.3.0 (development)
+
+- New custom brms family `hurdle_acat` for hurdle partial credit models (H-PCM).
+- Several adapted (experimental) functions for H-PCM, all using the `*_hpcm` suffix.
+  - `infit_statistic_hpcm()`
+  - `q3_statistic_hpcm()`
+  - `item_parameters_hpcm()`
+  - `person_parameters_hpcm()`
+  - `RMUreliability_hpcm()`
+  - `plot_icc_hpcm()`
+  - `plot_targeting_hpcm()`
+
 # easyRaschBayes 0.2.0.1
 
 - Fix for `plot_icc()` theta values.

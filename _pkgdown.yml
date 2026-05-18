@@ -68,3 +68,13 @@ reference:
   - item_parameters
   - person_parameters
   - posterior_to_prior
+- title: Hurdle-PCM specific
+  contents:
+  - hurdle_acat
+  - infit_statistic_hpcm
+  - q3_statistic_hpcm
+  - item_parameters_hpcm
+  - person_parameters_hpcm
+  - RMUreliability_hpcm
+  - plot_icc_hpcm
+  - plot_targeting_hpcm
