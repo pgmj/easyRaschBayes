@@ -89,7 +89,7 @@
 #' }
 #'
 #' @importFrom dplyr group_by summarise left_join mutate
-#' @importFrom ggdist stat_slab stat_slabinterval median_hdi
+#' @importFrom ggdist stat_slab stat_slabinterval median_hdci
 #' @importFrom ggplot2 ggplot aes after_stat geom_vline labs
 #'   theme_bw theme scale_fill_manual scale_fill_brewer
 #' @importFrom forcats fct_rev
@@ -122,7 +122,15 @@ infit_post <- function(infit_draws, ci = 0.84) {
   infit_rep_hdi <- infit_draws |>
     dplyr::group_by(.data$item) |>
     dplyr::summarise(
-      ggdist::median_hdi(.data$infit_rep, .width = ci),
+      # Use the continuous-interval variant (`_hdci`) rather than
+      # `_hdi`. The plain `median_hdi()` returns a *set* of disjoint
+      # HDIs when the posterior is multimodal at the requested width,
+      # i.e., one row per disjoint segment. Inside dplyr::summarise()
+      # that violates the one-row-per-group contract and errors out
+      # with "must be size 1, not 2". The continuous version always
+      # returns a single [lower, upper] interval, which is the right
+      # quantity to use as a cutoff for the LD / LR classification.
+      ggdist::median_hdci(.data$infit_rep, .width = ci),
       .groups = "drop"
     )
   
@@ -407,7 +415,7 @@ item_restscore_post <- function(item_restscore) {
 #'
 #' @importFrom dplyr group_by summarise left_join mutate arrange
 #'   desc slice_head filter
-#' @importFrom ggdist stat_slab stat_slabinterval median_hdi
+#' @importFrom ggdist stat_slab stat_slabinterval median_hdci
 #' @importFrom ggplot2 ggplot aes after_stat geom_vline labs
 #'   theme_bw theme scale_fill_manual scale_fill_brewer
 #' @importFrom forcats fct_rev fct_reorder
@@ -450,7 +458,16 @@ q3_post <- function(q3_draws,
   q3_rep_hdi <- q3_draws |>
     dplyr::group_by(.data$item_pair) |>
     dplyr::summarise(
-      ggdist::median_hdi(.data$q3_rep, .width = ci),
+      # Use the continuous-interval variant (`_hdci`) rather than
+      # `_hdi`. The plain `median_hdi()` returns a *set* of disjoint
+      # HDIs when the q3_rep posterior is multimodal at the requested
+      # width (e.g., bimodal item-pair residual correlations), i.e.,
+      # one row per disjoint segment. Inside dplyr::summarise() that
+      # violates the one-row-per-group contract and errors out with
+      # "must be size 1, not 2". The continuous version always returns
+      # a single [lower, upper] interval, which is the right quantity
+      # to use as a cutoff for the LD / LR classification below.
+      ggdist::median_hdci(.data$q3_rep, .width = ci),
       .groups = "drop"
     )
   

@@ -2530,7 +2530,17 @@ plot_icc_hpcm <- function(model,
     expected_data = pcm_expected_data,
     observed_data = pcm_observed_data,
     y_label       = expression(E(Y * "|" * Y > 0)),
-    y_lim_min     = 1,
+    # Let the y-axis auto-scale (with ggplot's default 5% expansion)
+    # rather than hard-clipping at the response floor of 1. A hard
+    # `limits = c(1, NA)` glues observed points at the floor — common
+    # in the leftmost class interval where every active responder
+    # gave Y = 1 — to the bottom edge of the panel, which reads
+    # visually as "y = 0". The defensive observed-data filter inside
+    # build_plot (response >= error_floor) plus the error-bar clamps
+    # (pmax/pmin to [error_floor, error_ceil]) already prevent any
+    # spurious below-floor values, so removing the hard scale clip is
+    # safe.
+    y_lim_min     = NA_real_,
     y_lim_max     = NA_real_,
     error_floor   = 1,
     error_ceil    = pcm_max_cat

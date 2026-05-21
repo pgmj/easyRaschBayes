@@ -10,6 +10,8 @@
   - `RMUreliability_hpcm()`
   - `plot_icc_hpcm()`
   - `plot_targeting_hpcm()`
+- Bug fix(ish) - changed post processing functions to use `median_hdci()` 
+  instead of `median_hdi()` to avoid issues with multimodal posteriors.
 
 # easyRaschBayes 0.2.0.1
 
