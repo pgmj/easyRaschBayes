@@ -51,6 +51,7 @@
 <li><code><a href="../reference/plot_targeting_hpcm.html">plot_targeting_hpcm()</a></code></li>
 </ul></li>
 <li>Bug fix(ish) - changed post processing functions to use <code>median_hdci()</code> instead of <code>median_hdi()</code> to avoid issues with multimodal posteriors.</li>
+<li>Bug fix - corrected the WLE person estimates in <code><a href="../reference/person_parameters.html">person_parameters()</a></code> and <code><a href="../reference/person_parameters_hpcm.html">person_parameters_hpcm()</a></code>. The polytomous Warm bias correction had the wrong sign, biasing estimates outward; WLE now matches <code>catR</code>/<code>TAM</code>. Extreme (minimum and maximum) scores now receive proper finite WLE estimates instead of being clamped to the <code>theta_range</code> bounds.</li>
 </ul></div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.2.0.1" id="easyraschbayes-0201">easyRaschBayes 0.2.0.1<a class="anchor" aria-label="anchor" href="#easyraschbayes-0201"></a></h2><p class="text-muted">CRAN release: 2026-04-23</p>
