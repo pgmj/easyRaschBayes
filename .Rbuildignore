@@ -13,3 +13,5 @@
 ^vignettes/.*\.Rmd\.orig$
 ^vignettes/precompile\.R$
 ^vignettes/fits$
+^\.positai$
+^\.claude$

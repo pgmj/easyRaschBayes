@@ -500,90 +500,55 @@ person_parameters <- function(
 # WLE COMPUTATION HELPERS
 # ══════════════════════════════════════════════════════════════════
 #
-# Newton-Raphson with adaptive step damping following the approach
-# in iarm::persons_mle (Mueller): the maximum allowed step size
-# starts at maxdelta_start and shrinks by a factor of
-# maxdelta_shrink each iteration, preventing overshoot and ensuring
-# convergence for near-extreme scores.
+# The Warm (1989) weighted-likelihood estimate solves
+#   l'(theta) + J(theta) / (2 I(theta)) = 0,
+# where J is the summed third central moment of the item scores. The
+# bias-correction term keeps the equation solvable at the extreme
+# scores, so the WLE is finite there (a sensible step beyond the next
+# score) rather than diverging like the MLE. Each score's root is found
+# by bracketed search (stats::uniroot) over theta_range; only a root
+# that falls outside that range is clamped to the nearer boundary.
 # ══════════════════════════════════════════════════════════════════
 
 # ── Internal: WLE for dichotomous Rasch ──────────────────────────
 #' @keywords internal
-.compute_wle_dichotomous <- function(difficulties, theta_range,
-                                     max_iter = 100, tol = 1e-4,
-                                     maxdelta_start = 3,
-                                     maxdelta_shrink = 1.05) {
-  n_items  <- length(difficulties)
-  scores   <- 0:n_items
-  n_scores <- length(scores)
-  maxval   <- max(abs(theta_range))
-  
-  wle    <- rep(NA_real_, n_scores)
-  wle_se <- rep(NA_real_, n_scores)
-  
+.compute_wle_dichotomous <- function(difficulties, theta_range, tol = 1e-6) {
+  n_items <- length(difficulties)
+  scores  <- 0:n_items
+  lo <- theta_range[1]; hi <- theta_range[2]
+
+  wle    <- rep(NA_real_, length(scores))
+  wle_se <- rep(NA_real_, length(scores))
+
+  # Warm score: l'(theta) + J(theta) / (2 I(theta)).
+  warm_score <- function(theta, r) {
+    p     <- stats::plogis(theta - difficulties)
+    info  <- sum(p * (1 - p))
+    third <- sum(p * (1 - p) * (1 - 2 * p))
+    (r - sum(p)) + third / (2 * info)
+  }
+  info_at <- function(theta) {
+    p <- stats::plogis(theta - difficulties)
+    sum(p * (1 - p))
+  }
+
   for (idx in seq_along(scores)) {
-    r <- scores[idx]
-    
-    # Extreme scores: boundary values, no SE
-    if (r == 0) {
-      wle[idx]    <- theta_range[1]
-      wle_se[idx] <- NA_real_
-      next
-    }
-    if (r == n_items) {
-      wle[idx]    <- theta_range[2]
-      wle_se[idx] <- NA_real_
-      next
-    }
-    
-    # Newton-Raphson with adaptive step damping
-    theta_hat <- 0
-    maxdelta  <- maxdelta_start
-    
-    for (iter in seq_len(max_iter)) {
-      theta0 <- theta_hat
-      
-      p_i <- stats::plogis(theta_hat - difficulties)
-      q_i <- 1 - p_i
-      
-      # Score function and derivatives
-      dll  <- r - sum(p_i)                    # first derivative
-      d2ll <- -sum(p_i * q_i)                 # second derivative
-      d3ll <- -sum(p_i * q_i * (q_i - p_i))  # third derivative
-      
-      # WLE step: NR + Warm bias correction
-      delta <- -dll / d2ll - d3ll / (2 * d2ll^2)
-      
-      # Adaptive damping: shrink maxdelta each iteration
-      maxdelta <- maxdelta / maxdelta_shrink
-      if (abs(delta) > maxdelta) {
-        delta <- sign(delta) * maxdelta
-      }
-      
-      theta_hat <- theta_hat + delta
-      
-      # Safety clamp at boundary
-      if (abs(theta_hat) > maxval) {
-        theta_hat <- sign(theta_hat) * maxval
-      }
-      
-      if (abs(theta_hat - theta0) < tol) break
-    }
-    
-    wle[idx] <- theta_hat
-    
-    # SE = 1/sqrt(I) at convergence; NA if at boundary
-    p_i     <- stats::plogis(theta_hat - difficulties)
-    q_i     <- 1 - p_i
-    I_final <- sum(p_i * q_i)
-    
-    if (abs(theta_hat) >= maxval || I_final < 1e-12) {
-      wle_se[idx] <- NA_real_
+    r    <- scores[idx]
+    g_lo <- warm_score(lo, r)
+    g_hi <- warm_score(hi, r)
+
+    if (is.finite(g_lo) && is.finite(g_hi) && g_lo * g_hi < 0) {
+      theta <- stats::uniroot(warm_score, c(lo, hi), r = r, tol = tol)$root
+      info  <- info_at(theta)
+      wle[idx]    <- theta
+      wle_se[idx] <- if (info < 1e-12) NA_real_ else 1 / sqrt(info)
     } else {
-      wle_se[idx] <- 1 / sqrt(I_final)
+      # Root outside the search range: clamp to the nearer boundary.
+      wle[idx]    <- if (r <= n_items / 2) lo else hi
+      wle_se[idx] <- NA_real_
     }
   }
-  
+
   list(scores = scores, wle = wle, wle_se = wle_se)
 }
 
@@ -591,109 +556,56 @@ person_parameters <- function(
 # ── Internal: WLE for polytomous (acat/PCM) ─────────────────────
 #' @keywords internal
 .compute_wle_polytomous <- function(thresholds, max_score, theta_range,
-                                    max_iter = 100, tol = 1e-4,
-                                    maxdelta_start = 3,
-                                    maxdelta_shrink = 1.05) {
-  scores   <- 0:max_score
-  n_scores <- length(scores)
-  n_items  <- length(thresholds)
-  maxval   <- max(abs(theta_range))
-  
-  wle    <- rep(NA_real_, n_scores)
-  wle_se <- rep(NA_real_, n_scores)
-  
-  for (idx in seq_along(scores)) {
-    r <- scores[idx]
-    
-    # Extreme scores: boundary values, no SE
-    if (r == 0) {
-      wle[idx]    <- theta_range[1]
-      wle_se[idx] <- NA_real_
-      next
-    }
-    if (r == max_score) {
-      wle[idx]    <- theta_range[2]
-      wle_se[idx] <- NA_real_
-      next
-    }
-    
-    # Newton-Raphson with adaptive step damping
-    theta_hat <- 0
-    maxdelta  <- maxdelta_start
-    
-    for (iter in seq_len(max_iter)) {
-      theta0 <- theta_hat
-      
-      # Accumulate derivatives across items
-      dll  <- r   # will subtract E_i for each item
-      d2ll <- 0
-      d3ll <- 0
-      
-      for (i in seq_len(n_items)) {
-        tau_i <- thresholds[[i]]
-        n_cat <- length(tau_i) + 1
-        cats  <- seq(0, n_cat - 1)
-        
-        # Adjacent category model probabilities (log-sum-exp stable)
-        cum_eta   <- c(0, cumsum(theta_hat - tau_i))
-        max_eta   <- max(cum_eta)
-        log_denom <- max_eta + log(sum(exp(cum_eta - max_eta)))
-        p_cat     <- exp(cum_eta - log_denom)
-        
-        E_i <- sum(cats * p_cat)              # expected score
-        V_i <- sum((cats - E_i)^2 * p_cat)   # variance = info
-        K_i <- sum((cats - E_i)^3 * p_cat)   # third central moment
-        
-        dll  <- dll - E_i
-        d2ll <- d2ll - V_i
-        d3ll <- d3ll + K_i
-      }
-      
-      # Guard against zero information
-      if (abs(d2ll) < 1e-12) break
-      
-      # WLE step: NR + Warm bias correction
-      delta <- -dll / d2ll - d3ll / (2 * d2ll^2)
-      
-      # Adaptive damping: shrink maxdelta each iteration
-      maxdelta <- maxdelta / maxdelta_shrink
-      if (abs(delta) > maxdelta) {
-        delta <- sign(delta) * maxdelta
-      }
-      
-      theta_hat <- theta_hat + delta
-      
-      # Safety clamp at boundary
-      if (abs(theta_hat) > maxval) {
-        theta_hat <- sign(theta_hat) * maxval
-      }
-      
-      if (abs(theta_hat - theta0) < tol) break
-    }
-    
-    wle[idx] <- theta_hat
-    
-    # Recompute information at convergence for SE
-    I_final <- 0
+                                    tol = 1e-6) {
+  scores  <- 0:max_score
+  n_items <- length(thresholds)
+  lo <- theta_range[1]; hi <- theta_range[2]
+
+  wle    <- rep(NA_real_, length(scores))
+  wle_se <- rep(NA_real_, length(scores))
+
+  # Adjacent-category probabilities (log-sum-exp stable).
+  cat_probs <- function(theta, tau_i) {
+    cum_eta <- c(0, cumsum(theta - tau_i))
+    m       <- max(cum_eta)
+    exp(cum_eta - (m + log(sum(exp(cum_eta - m)))))
+  }
+  # Summed expected score, information and third central moment.
+  moments <- function(theta) {
+    E_sum <- 0; info <- 0; third <- 0
     for (i in seq_len(n_items)) {
       tau_i <- thresholds[[i]]
-      n_cat <- length(tau_i) + 1
-      cats  <- seq(0, n_cat - 1)
-      cum_eta   <- c(0, cumsum(theta_hat - tau_i))
-      max_eta   <- max(cum_eta)
-      log_denom <- max_eta + log(sum(exp(cum_eta - max_eta)))
-      p_cat     <- exp(cum_eta - log_denom)
-      E_i <- sum(cats * p_cat)
-      V_i <- sum((cats - E_i)^2 * p_cat)
-      I_final <- I_final + V_i
+      cats  <- 0:length(tau_i)
+      p     <- cat_probs(theta, tau_i)
+      E_i   <- sum(cats * p)
+      E_sum <- E_sum + E_i
+      info  <- info  + sum((cats - E_i)^2 * p)
+      third <- third + sum((cats - E_i)^3 * p)
     }
-    
-    if (abs(theta_hat) >= maxval || I_final < 1e-12) {
-      wle_se[idx] <- NA_real_
+    list(E = E_sum, info = info, third = third)
+  }
+  # Warm score: l'(theta) + J(theta) / (2 I(theta)).
+  warm_score <- function(theta, r) {
+    m <- moments(theta)
+    (r - m$E) + m$third / (2 * m$info)
+  }
+
+  for (idx in seq_along(scores)) {
+    r    <- scores[idx]
+    g_lo <- warm_score(lo, r)
+    g_hi <- warm_score(hi, r)
+
+    if (is.finite(g_lo) && is.finite(g_hi) && g_lo * g_hi < 0) {
+      theta <- stats::uniroot(warm_score, c(lo, hi), r = r, tol = tol)$root
+      info  <- moments(theta)$info
+      wle[idx]    <- theta
+      wle_se[idx] <- if (info < 1e-12) NA_real_ else 1 / sqrt(info)
     } else {
-      wle_se[idx] <- 1 / sqrt(I_final)
+      # Root outside the search range: clamp to the nearer boundary.
+      wle[idx]    <- if (r <= max_score / 2) lo else hi
+      wle_se[idx] <- NA_real_
     }
   }
-  
+
   list(scores = scores, wle = wle, wle_se = wle_se)
 }

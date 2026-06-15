@@ -12,6 +12,11 @@
   - `plot_targeting_hpcm()`
 - Bug fix(ish) - changed post processing functions to use `median_hdci()` 
   instead of `median_hdi()` to avoid issues with multimodal posteriors.
+- Bug fix - corrected the WLE person estimates in `person_parameters()` and 
+  `person_parameters_hpcm()`. The polytomous Warm bias correction had the wrong 
+  sign, biasing estimates outward; WLE now matches `catR`/`TAM`. Extreme (minimum 
+  and maximum) scores now receive proper finite WLE estimates instead of being 
+  clamped to the `theta_range` bounds.
 
 # easyRaschBayes 0.2.0.1
 
