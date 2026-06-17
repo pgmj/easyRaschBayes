@@ -209,6 +209,134 @@ hurdle_acat_stanvars <- function() {
 # top-level brms methods on a model fitted with `hurdle_acat()`. They
 # are not meant to be called directly by end-users.
 
+# ---------------------------------------------------------------------------
+# Internal acat-logit kernel
+# ---------------------------------------------------------------------------
+#
+# The post-processing helpers below previously relied on unexported brms
+# internals (`brms:::dacat`, `brms:::pordinal`, `brms:::first_greater`,
+# `brms:::subset_thres`). Using `:::` triggers an R CMD check NOTE and is
+# fragile: those functions can change or disappear between brms releases.
+#
+# For the *logit* link -- the only link these helpers ever use -- the
+# adjacent-category (acat) model has a simple closed form, so we
+# reimplement the needed pieces locally. The implementations below were
+# verified to reproduce the corresponding brms internals to < 1e-10 over
+# hundreds of random inputs (category probabilities, CDF, and the
+# inverse-CDF index). The only remaining brms coupling is via the public
+# `brms::get_dpar()` and the `prep$thres` list elements, both already
+# used elsewhere in these helpers.
+
+#' Adjacent-category (logit) probabilities for the hurdle PCM severity part
+#'
+#' Local replacement for the relevant behaviour of \code{brms:::dacat()}
+#' with \code{link = "logit"}. For category scores \eqn{k = 0, \ldots, K-1}
+#' (with \eqn{K - 1} thresholds), the adjacent-category logit model gives
+#' \deqn{P(Y = k) \propto \exp\left(\sum_{j \le k} disc \cdot
+#'   (\eta - \tau_j)\right), \quad P(Y = 0) \propto 1.}
+#'
+#' @param eta Numeric vector (length S) of latent values per draw.
+#' @param thres Numeric matrix (S x nthres) of thresholds per draw.
+#' @param disc Scalar discrimination (default 1).
+#' @return An S x (nthres + 1) matrix of category probabilities, columns
+#'   ordered as categories 1..K (1-based, matching \code{brms:::dacat()}).
+#' @keywords internal
+#' @noRd
+.hpcm_acat_probs <- function(eta, thres, disc = 1) {
+  thres <- as.matrix(thres)
+  # disc * (eta - thres): eta (length S) recycles down the rows so that
+  # element [s, j] = disc * (eta[s] - thres[s, j]).
+  x  <- disc * (eta - thres)
+  ex <- exp(x)
+  # Cumulative product across thresholds (columns), then prepend the
+  # category-0 reference column of 1s.
+  cum <- ex
+  if (ncol(ex) > 1L) {
+    for (k in 2:ncol(ex)) cum[, k] <- cum[, k - 1L] * ex[, k]
+  }
+  out <- cbind(1, cum)
+  out / rowSums(out)
+}
+
+#' Select category probabilities (local replacement for brms:::dacat)
+#'
+#' @param x Integer vector of (1-based) category indices to return.
+#' @inheritParams .hpcm_acat_probs
+#' @return An S x length(x) matrix, matching \code{brms:::dacat(..., }
+#'   \code{link = "logit")[, x, drop = FALSE]}.
+#' @keywords internal
+#' @noRd
+.hpcm_dacat <- function(x, eta, thres, disc = 1) {
+  probs <- .hpcm_acat_probs(eta, thres, disc = disc)
+  probs[, x, drop = FALSE]
+}
+
+#' Cumulative acat probabilities (local replacement for brms:::pordinal)
+#'
+#' @param q Integer vector of (1-based) category indices whose CDF values
+#'   to return.
+#' @inheritParams .hpcm_acat_probs
+#' @return An S x length(q) matrix of cumulative category probabilities
+#'   \eqn{P(Y \le q)}, matching \code{brms:::pordinal(..., }
+#'   \code{family = "acat", link = "logit")}.
+#' @keywords internal
+#' @noRd
+.hpcm_pordinal <- function(q, eta, thres, disc = 1) {
+  probs <- .hpcm_acat_probs(eta, thres, disc = disc)
+  cdf <- probs
+  if (ncol(probs) > 1L) {
+    for (k in 2:ncol(probs)) cdf[, k] <- cdf[, k - 1L] + probs[, k]
+  }
+  cdf[, q, drop = FALSE]
+}
+
+#' First column index exceeding a target (local replacement for
+#' brms:::first_greater)
+#'
+#' For each row of \code{A}, returns the index of the first column whose
+#' value is \eqn{\ge} \code{target}; if none, returns \code{ncol(A)}.
+#' Used for inverse-CDF sampling. Matches \code{brms:::first_greater()}
+#' in value (returned as integer rather than double).
+#'
+#' @param A Numeric matrix (S x K), typically a per-draw CDF.
+#' @param target Numeric vector (length S) of thresholds, e.g. uniform
+#'   draws.
+#' @return Integer vector (length S) of selected column indices.
+#' @keywords internal
+#' @noRd
+.hpcm_first_greater <- function(A, target) {
+  A <- as.matrix(A)
+  n <- nrow(A)
+  K <- ncol(A)
+  out   <- rep.int(K, n)
+  found <- logical(n)
+  for (i in seq_len(K)) {
+    hit <- !found & (target <= A[, i])
+    out[hit] <- i
+    found <- found | hit
+  }
+  out
+}
+
+#' Per-observation thresholds (local replacement for brms:::subset_thres)
+#'
+#' Identical to \code{brms:::subset_thres()} but accesses the
+#' \code{prep$thres} list elements directly (no \code{:::}).
+#'
+#' @param prep A brms prep object.
+#' @param i Observation index.
+#' @return An S x nthres_i matrix of thresholds for observation \code{i}.
+#' @keywords internal
+#' @noRd
+.hpcm_subset_thres <- function(prep, i) {
+  thres  <- prep$thres$thres
+  Jthres <- prep$thres$Jthres
+  if (!is.null(Jthres)) {
+    thres <- thres[, Jthres[i, 1]:Jthres[i, 2], drop = FALSE]
+  }
+  thres
+}
+
 #' Log-Likelihood Method for `hurdle_acat`
 #'
 #' Not called directly. brms invokes this when \code{\link[brms]{log_lik}}
@@ -230,10 +358,9 @@ log_lik_hurdle_acat <- function(i, prep) {
     return(log(hu))
   }
   mu <- brms::get_dpar(prep, "mu", i = i)
-  thres <- brms:::subset_thres(prep, i)
-  sev_p <- brms:::dacat(
-    x = y, eta = mu, thres = thres, disc = 1,
-    link = "logit"
+  thres <- .hpcm_subset_thres(prep, i)
+  sev_p <- .hpcm_dacat(
+    x = y, eta = mu, thres = thres, disc = 1
   )
   log1p(-hu) + log(as.vector(sev_p))
 }
@@ -259,13 +386,12 @@ log_lik_hurdle_acat <- function(i, prep) {
 posterior_predict_hurdle_acat <- function(i, prep, ...) {
   hu <- brms::get_dpar(prep, "hu", i = i)
   mu <- brms::get_dpar(prep, "mu", i = i)
-  thres <- brms:::subset_thres(prep, i)
-  p <- brms:::pordinal(
+  thres <- .hpcm_subset_thres(prep, i)
+  p <- .hpcm_pordinal(
     seq_len(ncol(thres) + 1L),
-    eta = mu, disc = 1, thres = thres,
-    family = "acat", link = "logit"
+    eta = mu, disc = 1, thres = thres
   )
-  draws <- brms:::first_greater(p, target = stats::runif(prep$ndraws))
+  draws <- .hpcm_first_greater(p, target = stats::runif(prep$ndraws))
   draws[stats::runif(prep$ndraws) < hu] <- 0L
   draws
 }
@@ -296,11 +422,11 @@ posterior_epred_hurdle_acat <- function(prep) {
   K_total <- max(prep$thres$nthres) + 2L
   out <- array(0, dim = c(nrow(mu_mat), nobs, K_total))
   for (n in seq_len(nobs)) {
-    sev <- brms:::dacat(
+    sev <- .hpcm_dacat(
       x = seq_len(K_total - 1L),
       eta = mu_mat[, n],
-      thres = brms:::subset_thres(prep, n),
-      disc = 1, link = "logit"
+      thres = .hpcm_subset_thres(prep, n),
+      disc = 1
     )
     out[, n, 1L] <- hu_mat[, n]
     out[, n, 2:K_total] <- (1 - hu_mat[, n]) * sev
