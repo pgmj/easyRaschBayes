@@ -10,7 +10,7 @@
   - `RMUreliability_hpcm()`
   - `plot_icc_hpcm()`
   - `plot_targeting_hpcm()`
-- Bug fix(ish) - changed post processing functions to use `median_hdci()` 
+- Bug fix - changed post processing functions to use `median_hdci()` 
   instead of `median_hdi()` to avoid issues with multimodal posteriors.
 - Bug fix - corrected the WLE person estimates in `person_parameters()` and 
   `person_parameters_hpcm()`. The polytomous Warm bias correction had the wrong 

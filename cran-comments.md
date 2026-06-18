@@ -6,15 +6,19 @@
 
 ## Test environments
 
-* local: macOS 26.3.1(a), R 4.5.3
+* local: macOS 26.5.1, R 4.5.3
+* rhub::check() - ubuntu-latest, macos-latest
 * devtools::check_win_devel()
-* devtools::check_mac_release()
 
 ## Notes
 
-* Update version 0.2.0 -> 0.2.0.1
+* Update version 0.2.0.1 -> 0.3.0
 
-* Very minor bug fix, two lines of code changed, switching a plus to a minus.
+* Two minor bug fixes
+
+* New custom brms family `hurdle_acat` for hurdle partial credit models (H-PCM).
+
+* New post-processing/helper functions adapted for the H-PCM output.
 
 
 ## Downstream dependencies
