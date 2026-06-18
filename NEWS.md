@@ -1,4 +1,4 @@
-# easyRaschBayes 0.3.0 (development)
+# easyRaschBayes 0.3.0
 
 - New custom brms family `hurdle_acat` for hurdle partial credit models (H-PCM).
   This is written by [Kristoffer Magnusson](https://rpsychologist.com/)
