@@ -93,8 +93,10 @@ A list with the following elements:
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html)
   extending the long `locations` with: `se` (posterior SD), `hdci_lower`
   and `hdci_upper` (highest density continuous interval bounds at the
-  level specified by `prob`), and `n_eff` (effective sample size for the
-  parameter).
+  level specified by `prob`), and `n_eff` (bulk effective sample size
+  from
+  [`posterior::ess_bulk()`](https://mc-stan.org/posterior/reference/ess_bulk.html),
+  which accounts for disagreement between chains).
 
 - item_information:
 

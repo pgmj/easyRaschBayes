@@ -107,11 +107,15 @@ category / partial credit) family with logit link, the density is:
 \tau_j)\bigr)}\$\$ where \\\eta\\ is the linear predictor (i.e., theta
 for a Rasch model with no additional fixed effects) and \\\tau_k\\ are
 the item thresholds. Analogous formulas are used for the `cumulative`,
-`sratio`, and `cratio` families.
+`sratio`, and `cratio` families, with the model's link function (for
+example logit, probit or cloglog). The `acat` family is supported with
+the logit link only, and models that estimate a discrimination parameter
+(`disc`) stop with an error. For rating scale models (common thresholds
+with item effects) each item's thresholds are shifted by its item
+effect.
 
 Posterior uncertainty in the thresholds propagates into credible
-interval ribbons around the category probability curves — a Bayesian
-advantage over point-estimate-based plots.
+interval ribbons around the category probability curves.
 
 ## References
 

@@ -29,8 +29,9 @@ q3_post(
 
 - ci:
 
-  Numeric in \\(0, 1)\\. Width of the credible interval used for the
-  posterior predictive HDI and the slab display. Default is 0.84.
+  Numeric in \\(0, 1)\\. Width of the highest density continuous
+  interval of the replicated (posterior predictive) Q3 distribution,
+  used in the `hdi` table and the slab display. Default is 0.84.
 
 - n_pairs:
 
@@ -62,10 +63,10 @@ A list with three elements:
 
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
   one row per item pair containing: `item_pair`, `item_1`, `item_2`,
-  `ld` (local dependence probability: proportion of draws where observed
-  Q3 exceeds upper HDI bound of replicated distribution), and `lr`
-  (local repulsion probability: proportion of draws where observed Q3
-  falls below lower HDI bound).
+  `ld` (proportion of draws where observed Q3 exceeds the upper HDI
+  bound of the replicated distribution), and `lr` (proportion of draws
+  where observed Q3 falls below the lower HDI bound). See Details for
+  how to read these.
 
 - plot:
 
@@ -91,10 +92,16 @@ Two complementary summary tables are provided:
 
 - `hdi`:
 
-  Reports the probability that the observed Q3 falls above (local
-  dependence) or below (local repulsion) the HDI of the replicated
-  distribution. This provides a more distributional assessment than the
-  ppp alone.
+  Reports the proportion of draws where the observed Q3 falls above
+  (local dependence) or below (local repulsion) the HDI of the
+  replicated distribution. The HDI is computed over all draws, so each
+  draw's observed value is compared to the same fixed interval. The
+  observed Q3 varies across draws only through parameter uncertainty,
+  while the replicated Q3 also varies through the sampling of new
+  responses. The observed distribution is therefore narrower, and these
+  proportions move quickly from near 0 to near 1 as the observed values
+  pass an interval bound. They are exceedance proportions, not posterior
+  probabilities of local dependence.
 
 The plot uses two layers from the ggdist package:
 

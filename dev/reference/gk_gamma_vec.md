@@ -20,6 +20,7 @@ gk_gamma_vec(x, y)
 - y:
 
   Integer or numeric vector of the same length (e.g., rest scores).
+  Pairs where `x` or `y` is `NA` are dropped.
 
 ## Value
 

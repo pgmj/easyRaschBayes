@@ -1,9 +1,6 @@
 # Person-Item Map (Targeting Plot) for Bayesian IRT Models
 
-Plots a person-item map (also known as a Wright map or targeting plot)
-for Bayesian IRT models fitted with brms. The plot consists of three
-vertically stacked panels sharing the same latent variable (theta /
-logit) x-axis:
+Produces a three-panel targeting plot with a shared logit x-axis:
 
 ## Usage
 
@@ -15,12 +12,21 @@ plot_targeting(
   robust = FALSE,
   center = TRUE,
   sort_items = c("data", "location"),
-  bins = 30,
+  bins,
   prob = 0.95,
   palette = NULL,
   person_fill = "#0072B2",
   threshold_fill = "#D55E00",
-  height_ratios = c(3, 2, 5)
+  height_ratios = c(3, 2, 5),
+  panel = c("categories", "thresholds"),
+  person_estimate = c("eap", "wle"),
+  xlim = c(-4, 4),
+  category_labels = NULL,
+  viridis_option = "G",
+  viridis_begin = 0.9,
+  viridis_end = 0.2,
+  row_gap = NULL,
+  output = c("patchwork", "list")
 )
 ```
 
@@ -50,86 +56,175 @@ plot_targeting(
 
 - center:
 
-  Logical. If `TRUE` (the default), the scale is recentered so that the
-  grand mean of all item threshold locations is zero, following the
-  convention in frequentist Rasch analysis. Person estimates are shifted
-  by the same constant. If `FALSE`, the raw brms parameterisation is
-  used.
+  Logical. If `TRUE` (the default), the scale is recentred so that the
+  mean of all item threshold locations is zero. Person locations are
+  shifted by the same constant. If `FALSE`, the raw brms
+  parameterisation is used.
 
 - sort_items:
 
-  Character. How to order items on the y-axis of the bottom panel.
-  `"data"` (the default) preserves the order in which items first appear
-  in the model data, with the first item at the top. `"location"` sorts
-  items by their mean threshold location (easiest at top, hardest at
-  bottom).
+  Character. How to order items in the bottom panel. `"data"` (the
+  default) keeps the order in which items first appear in the model
+  data, with the first item at the top. `"location"` sorts items by
+  their mean threshold location, easiest at the top.
 
 - bins:
 
-  Integer. Number of bins for both histograms. Default is 30.
+  Integer. Number of bins for both histograms. Default is half the
+  maximum possible sum score, rounded up, and at least 11.
 
 - prob:
 
-  Numeric in \\(0, 1)\\. Width of the credible intervals for the item
-  threshold whiskers. Default is 0.95.
+  Numeric in \\(0, 1)\\, or `NULL`. Width of the credible intervals for
+  the item thresholds and of the intervals in the returned `categories`
+  table. Default is 0.95. `NULL` hides the threshold intervals in the
+  plot.
 
 - palette:
 
-  An optional character vector of colors for the response categories. If
-  `NULL` (the default), the `viridis` discrete scale is used.
+  An optional character vector of colours, one per response category.
+  Overrides the viridis colours in both panel types.
 
 - person_fill:
 
-  Fill color for the person histogram. Default is `"#0072B2"` (blue).
+  Fill colour for the person histogram. Default is `"#0072B2"` (blue).
 
 - threshold_fill:
 
-  Fill color for the threshold histogram. Default is `"#D55E00"`
-  (vermillion).
+  Fill colour for the threshold histogram, and for the dichotomous
+  dot-and-whisker panel. Default is `"#D55E00"` (vermillion).
 
 - height_ratios:
 
-  Numeric vector of length 3 specifying the relative heights of the top
-  (person), middle (threshold), and bottom (dot-whisker) panels. Default
-  is `c(3, 2, 5)`.
+  Numeric vector of length 3 giving the relative heights of the top,
+  middle and bottom panels. Default is `c(3, 2, 5)`.
+
+- panel:
+
+  Character. `"categories"` (the default) draws each item as a bar
+  partitioned into response-category bands, with the threshold estimates
+  and their credible intervals below it. `"thresholds"` draws a
+  dot-and-whisker plot of the thresholds.
+
+- person_estimate:
+
+  Character. `"eap"` (the default) uses the posterior means of the
+  person random effects. `"wle"` uses Warm's weighted likelihood
+  estimates from
+  [`person_parameters`](https://pgmj.github.io/easyRaschBayes/dev/reference/person_parameters.md).
+  EAPs are shrunk toward the mean, so their histogram is narrower than
+  that of the WLEs.
+
+- xlim:
+
+  Numeric vector of length 2. Initial limits of the shared x-axis,
+  widened to whole numbers if any person location, threshold or interval
+  falls outside. Default is `c(-4, 4)`.
+
+- category_labels:
+
+  Optional character vector of labels for the response categories, in
+  ascending order and one per category. Used in the legend of the
+  `"categories"` panel. Default `NULL` uses the category scores,
+  starting at 0.
+
+- viridis_option:
+
+  Character. Viridis palette option for the category colours. Default is
+  `"G"` (mako).
+
+- viridis_begin, viridis_end:
+
+  Numeric in \\\[0, 1\]\\. Start and end of the viridis palette.
+  Defaults `0.9` and `0.2` run from light to dark, so higher categories
+  are darker.
+
+- row_gap:
+
+  Numeric. Vertical spacing between item rows in the `"categories"`
+  panel. Default `NULL` uses 1, widened when a category collapses or
+  thresholds are reversed, to make room for their labels.
+
+- output:
+
+  Character. `"patchwork"` (the default) returns the combined plot.
+  `"list"` returns the three panels and the posterior summaries of the
+  category structure.
 
 ## Value
 
-A `patchwork` object (combined `ggplot`).
+With `output = "patchwork"`, a `patchwork` object. With
+`output = "list"`, a list with:
+
+- p1, p2, p3:
+
+  The person histogram, threshold histogram and bottom panel as `ggplot`
+  objects.
+
+- categories:
+
+  A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
+  one row per item and response category: `p_never_modal`, the posterior
+  probability that the category is never the most likely response at any
+  location, and `lower_bound`, `lower_bound_lo`, `lower_bound_hi`, the
+  posterior median and `prob` interval of the location where the
+  category starts to be the most likely response, over the draws where
+  it is (`NA` for category 0).
+
+- reversals:
+
+  A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
+  one row per item and adjacent threshold pair: `p_reversed`, the
+  posterior probability that the higher threshold lies below the lower
+  one.
 
 ## Details
 
-1.  **Top**: A histogram of person ability estimates, with a reference
-    line for the mean (or median) and shading for ±1 SD (or ±1 MAD).
+1.  **Top**: Histogram of person locations, with a reference line for
+    the mean (or median) and shading for ±1 SD (or ±1 MAD).
 
-2.  **Middle**: An inverted histogram of item threshold locations, with
-    a reference line for the mean (or median) and shading for ±1 SD (or
-    ±1 MAD), mirroring the top panel to visualise the overlap between
-    person abilities and item difficulties.
+2.  **Middle**: Inverted histogram of item threshold locations, with the
+    same summary annotations.
 
-3.  **Bottom**: A dot-and-whisker plot of item thresholds by item, with
-    credible intervals and color-coded response categories.
+3.  **Bottom**: One bar per item, either partitioned into
+    response-category bands (`panel = "categories"`, the default) or
+    drawn as a dot-and-whisker plot of the individual thresholds
+    (`panel = "thresholds"`).
 
-Together, the top and middle panels form a half-moon (or back-to-back
-histogram) display that makes it easy to assess whether the test is
-well-targeted to the sample.
+Together, the top and middle panels form a back-to-back histogram that
+shows whether the test is well targeted to the sample. The bottom panel
+places the items on the same scale, so the category bands show which
+response is the most likely one at the locations where the persons are.
+The layout follows `easyRasch2::RMtargeting()`.
 
-**Person estimates** are obtained as the posterior means of the person
-random effects from the fitted model via
-[`ranef`](https://rdrr.io/pkg/nlme/man/random.effects.html).
+**Item thresholds** come from the posterior draws (see
+[`item_parameters`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_parameters.md)).
+Points are posterior means and intervals are equal-tailed credible
+intervals.
 
-**Item thresholds** are extracted from the posterior draws. For models
-with grouped thresholds (`thres(gr = item)`), each item has its own set
-of threshold parameters. For models with a single set of thresholds
-(e.g., dichotomous Rasch with `(1 | item)`), the item random effects are
-subtracted from the global thresholds to obtain item-specific locations.
+**Category bands.** With `panel = "categories"`, each band spans the
+locations at which its response category is the most likely response,
+computed from the posterior mean thresholds. When an item's thresholds
+are ordered these boundaries are the thresholds themselves. When they
+are not, the disordered run is pooled by averaging, and the categories
+it skips over, which are never the most likely response at any location,
+collapse to a red tick labelled with the category number. Red arrows
+below the bar give the size of each threshold reversal in logits. The
+two outer bands fade towards the panel edge, since they are open-ended.
 
-When `center = TRUE` (the default), the grand mean of all item threshold
-posterior means is computed and subtracted from every threshold
-estimate, its credible interval bounds, and every person estimate. This
-is a uniform translation of the entire scale that preserves all relative
-distances and matches the zero-centered item difficulty convention used
-in frequentist CML estimation.
+**Posterior probabilities.** The same category structure is computed for
+every posterior draw. Each red tick is labelled with the posterior
+probability that its category is never the most likely response, and
+each reversal with the posterior probability that the pair is reversed.
+The full tables, including categories and pairs without red marks, are
+returned with `output = "list"`.
+
+**Person locations.** `person_estimate = "eap"` uses the posterior means
+of the person random effects, shifted by the same constant as the
+thresholds. `"wle"` uses the WLEs of
+[`person_parameters`](https://pgmj.github.io/easyRaschBayes/dev/reference/person_parameters.md),
+which are finite at extreme scores and use the items each person
+answered.
 
 ## References
 
@@ -143,8 +238,8 @@ and Stan. *Journal of Statistical Software*, *100*, 1–54.
 
 [`plot_ipf`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_ipf.md)
 for item category probability curves,
-[`ranef`](https://rdrr.io/pkg/nlme/man/random.effects.html),
-[`as_draws_df`](https://mc-stan.org/posterior/reference/draws_df.html).
+[`item_parameters`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_parameters.md),
+[`person_parameters`](https://pgmj.github.io/easyRaschBayes/dev/reference/person_parameters.md).
 
 ## Examples
 
@@ -170,22 +265,31 @@ fit_pcm <- brm(
   family = acat,
   chains = 4,
   cores  = 1, # use more cores if you have
-  iter   = 500 # use at least 2000 
+  iter   = 500 # use at least 2000
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')
 
-# Default: centered, mean ± SD, items in data order
+# Default: category bands, EAP person locations, items in data order
 plot_targeting(fit_pcm)
 #> Error: object 'fit_pcm' not found
 
-# Uncentered (raw brms parameterisation)
-plot_targeting(fit_pcm, center = FALSE)
+# WLE person locations, items sorted by location, labelled categories
+plot_targeting(fit_pcm, person_estimate = "wle", sort_items = "location",
+               category_labels = c("Never", "Sometimes", "Often"))
 #> Error: object 'fit_pcm' not found
 
-# Robust: median ± MAD, items sorted by location
-plot_targeting(fit_pcm, robust = TRUE, sort_items = "location")
+# Dot-and-whisker panel
+plot_targeting(fit_pcm, panel = "thresholds")
 #> Error: object 'fit_pcm' not found
+
+# Panels and posterior summaries of the category structure
+res <- plot_targeting(fit_pcm, output = "list")
+#> Error: object 'fit_pcm' not found
+res$categories
+#> Error: object 'res' not found
+res$reversals
+#> Error: object 'res' not found
 
 # --- Dichotomous Rasch Model ---
 
@@ -200,7 +304,7 @@ fit_rm <- brm(
   family = bernoulli(),
   chains = 4,
   cores  = 1, # use more cores if you have
-  iter   = 500 # use at least 2000 
+  iter   = 500 # use at least 2000
 )
 #> Compiling Stan program...
 #> Error in .fun(model_code = .x1): Boost not found; call install.packages('BH')

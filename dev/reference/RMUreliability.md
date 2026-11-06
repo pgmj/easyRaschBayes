@@ -18,8 +18,7 @@ RMUreliability(input_draws, verbose = FALSE, level = 0.95)
 
 - verbose:
 
-  Logical. Print detailed information about the input data. Default is
-  TRUE.
+  Logical. Print the number of subjects and draws. Default is FALSE.
 
 - level:
 
@@ -28,15 +27,11 @@ RMUreliability(input_draws, verbose = FALSE, level = 0.95)
 
 ## Value
 
-A list containing:
-
-- hdci: A data frame with a point-estimate (posterior mean) and highest
-  density continuous interval for reliability, calculated using the
-  ggdist::mean_hdci function
-
-- reliability_posterior_draws: A numeric vector of posterior draws for
-  reliability, of length K/2 (K = number of columns/draws in your
-  input_draws matrix)
+A data frame from
+[`ggdist::mean_hdci()`](https://mjskay.github.io/ggdist/reference/point_interval.html)
+with one row and the columns `rmu_estimate` (mean of the reliability
+draws), `hdci_lowerbound`, `hdci_upperbound`, `.width`, `.point` and
+`.interval`.
 
 ## Details
 
@@ -52,6 +47,15 @@ tutorial](https://www.bignardi.co.uk/8_bayes_reliability/tutorial_rmu_sum_score_
 For an example of how to apply this function to go/go-no task data using
 brms, see [this
 tutorial](https://www.bignardi.co.uk/8_bayes_reliability/tutorial_calculating_rmu_gonogo.html).
+
+The draws (columns) are shuffled and split into two halves. Each column
+of the first half is correlated with the matching column of the second
+half across subjects, which gives `floor(K / 2)` reliability draws for
+`K` posterior draws. Their mean and highest density continuous interval
+are returned. The split is random, so call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) first for
+reproducible results. Missing values in `input_draws` give a warning and
+an `NA` result.
 
 ## References
 

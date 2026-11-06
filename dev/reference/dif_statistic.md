@@ -35,7 +35,8 @@ dif_statistic(
 
   An unquoted variable name identifying the grouping variable for DIF
   testing (e.g., `gender`). Must be a factor or character variable with
-  exactly 2 levels in the current implementation.
+  exactly 2 levels in the current implementation. The second level (in
+  factor level order) is the focal group, the first the reference group.
 
 - item_var:
 
@@ -59,8 +60,8 @@ dif_statistic(
 - dif_type:
 
   Character. For polytomous ordinal models only. `"uniform"` (the
-  default) tests for a uniform location shift per item via a
-  `group:item` fixed-effect interaction. `"non-uniform"` fits
+  default) tests for a uniform location shift per item via item-specific
+  random slopes of the group indicator. `"non-uniform"` fits
   group-specific thresholds per item and computes per-threshold DIF
   effects as the difference between groups. Ignored for dichotomous
   models.
@@ -103,7 +104,15 @@ A list with the following elements:
   `dif_estimate` (posterior mean), `dif_lower`, `dif_upper` (credible
   interval), `dif_sd` (posterior SD), `pd` (probability of direction),
   `rope_percentage` (proportion inside ROPE), and `flag`
-  (classification).
+  (classification). Positive DIF means the item (or threshold) is easier
+  for the focal group than the model implies given the impact.
+
+- impact:
+
+  A one-row
+  [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
+  the posterior mean, SD and credible interval of the difference in
+  latent means, focal minus reference group, in logits.
 
 - dif_draws:
 
@@ -133,35 +142,60 @@ For polytomous models, two types of DIF can be tested:
 
 - Uniform DIF (`dif_type = "uniform"`, default):
 
-  A single location shift per item across groups, modelled as a
-  `group:item` fixed-effect interaction. This tests whether the average
-  item difficulty differs between groups.
+  A single location shift per item across groups, modelled as an
+  item-specific random slope of the group indicator. This tests whether
+  the average item difficulty differs between groups.
 
 - Non-uniform / threshold-level DIF (`dif_type = "non-uniform"`):
 
-  Each item receives group-specific thresholds via
-  `thres(gr = interaction(item, group))`. DIF effects are computed as
-  the difference in each threshold between groups, revealing whether DIF
+  Each item receives group-specific thresholds. DIF effects are the
+  differences in each threshold between groups, revealing whether DIF
   affects specific response categories.
 
-The function constructs a DIF model by adding a group-by-item
-interaction to the baseline model:
+In all cases a difference between the groups' latent means (impact) is
+estimated separately from DIF, and DIF is defined relative to the
+average item. See Details.
+
+The function constructs a DIF model from the baseline model. In the
+formulas below, `g` is a 0/1 indicator of the focal group that the
+function adds to the data:
 
 - **Dichotomous models** (`family = bernoulli()`): The baseline
   `response ~ 1 + (1 | item) + (1 | id)` becomes
-  `response ~ 1 + group + (1 + group | item) + (1 | id)`, where the
-  group slope varying by item captures item-specific DIF.
+  `response ~ 1 + group + (1 + group | item) + (1 | id)`. The fixed
+  group effect is the impact and the group slope varying by item is the
+  item-specific DIF.
 
 - **Polytomous uniform DIF** (`dif_type = "uniform"`): The baseline
   `response | thres(gr = item) ~ 1 + (1 | id)` becomes
-  `response | thres(gr = item) ~ 1 + group:item + (1 | id)`.
+  `response | thres(gr = item) ~ 1 + (1 | id) + g + (0 + g | item)`. The
+  fixed effect of `g` is the impact and the slope varying by item is the
+  DIF.
 
 - **Polytomous non-uniform DIF** (`dif_type = "non-uniform"`): The
   baseline becomes `response | thres(gr = item_group) ~ 1 + (1 | id)`,
-  where `item_group = interaction(item, group)`. Each item × group
-  combination gets its own thresholds. DIF effects are the differences
-  between group-specific thresholds for each item, computed draw-by-draw
-  from the posterior.
+  where `item_group` identifies each item × group combination, which
+  gets its own thresholds. The person distribution has mean 0 in both
+  groups, so a difference in latent means moves all thresholds of the
+  focal group by the same amount. For each posterior draw, the threshold
+  differences between groups are centred on their mean across items
+  (each item weighted equally). The mean is the impact and the centred
+  differences, with sign reversed, are the DIF.
+
+**Identification.** DIF and a difference in latent means cannot be told
+apart without a constraint, since shifting every item for one group is
+the same as shifting that group's persons. Here DIF is defined relative
+to the average item: it is zero on average across items, by the
+random-effect distribution in the dichotomous and uniform models and
+exactly in the non-uniform model. One item with large DIF therefore
+pulls the other items' estimates slightly in the opposite direction, by
+about its DIF divided by the number of items. Interpret DIF as relative
+to the rest of the scale, not as absolute.
+
+**Sign.** For every DIF type, positive DIF means the item or threshold
+is easier for the focal group (the second factor level) than for the
+reference group at the same latent level, and positive impact means the
+focal group has the higher latent mean.
 
 DIF effects are summarized using:
 
@@ -172,9 +206,10 @@ DIF effects are summarized using:
 
 - ROPE:
 
-  The Region of Practical Equivalence (Kruschke, 2018). If \> 95\\ the
-  DIF effect is practically negligible. If \> 95\\ outside, the effect
-  is practically significant.
+  The Region of Practical Equivalence (Kruschke, 2018). If \> 95% of the
+  posterior falls inside the ROPE, the DIF effect is practically
+  negligible. If \> 95% falls outside, the effect is practically
+  significant.
 
 - Credible Interval:
 

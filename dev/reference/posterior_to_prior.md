@@ -107,6 +107,14 @@ In all cases the person-level SD receives a `normal(mean, sd * mult)`
 prior (brms applies the lower bound of zero automatically for SD
 parameters).
 
+**Independent priors.** Each prior is built from one parameter's
+marginal posterior, so the posterior correlations between parameters are
+not carried over. Thresholds are usually positively correlated through
+the shared location of the scale, so the independent priors are more
+informative about overall location than the posterior was. For example,
+the SD of the mean threshold can be noticeably smaller under the priors
+than under the posterior. Use `mult > 1` to widen them if this matters.
+
 **Link function transformation:** When `target_link` differs from the
 source model's link function, all parameters (means and SDs) are
 rescaled by a factor of approximately 1.7. This uses the well-known

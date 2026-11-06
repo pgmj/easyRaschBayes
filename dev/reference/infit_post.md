@@ -18,13 +18,18 @@ infit_post(infit_draws, ci = 0.84)
 
   A data frame (or tibble) as returned by
   [`infit_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic.md)
-  containing at minimum the columns `item`, `infit` (observed infit per
-  draw), and `infit_rep` (replicated infit per draw).
+  or one element of the output of
+  [`infit_statistic_hpcm`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic_hpcm.md),
+  containing the columns `infit` (observed infit per draw) and
+  `infit_rep` (replicated infit per draw). The item identifier is taken
+  from a column named `item` if there is one, and otherwise from the
+  first column.
 
 - ci:
 
-  Numeric in \\(0, 1)\\. Width of the credible interval used for the
-  posterior predictive HDI and the slab display. Default is 0.84.
+  Numeric in \\(0, 1)\\. Width of the highest density continuous
+  interval of the replicated (posterior predictive) infit distribution,
+  used in the `hdi` table and the slab display. Default is 0.84.
 
 ## Value
 
@@ -34,19 +39,20 @@ A list with three elements:
 
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
   one row per item containing: `item`, `infit_obs` (posterior mean of
-  observed infit), `infit_rep` (posterior mean of replicated infit), and
-  `infit_ppp` (posterior predictive p-value: proportion of draws where
-  the replicated infit exceeds the observed infit). Values near 0.5
-  indicate good fit; values near 0 suggest underfit; values near 1
-  suggest overfit.
+  observed infit), `infit_rep` (mean of replicated infit across draws),
+  and `infit_ppp` (posterior predictive p-value: proportion of draws
+  where the observed infit exceeds the replicated infit, counting ties
+  as one half). Values near 0.5 indicate good fit, values near 1 suggest
+  underfit and values near 0 suggest overfit.
 
 - hdi:
 
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
-  one row per item containing: `item`, `underfit` (posterior probability
-  that the observed infit exceeds the upper HDI bound of the replicated
-  distribution), and `overfit` (posterior probability that the observed
-  infit falls below the lower HDI bound).
+  one row per item containing: `item`, `underfit` (proportion of draws
+  where the observed infit exceeds the upper HDI bound of the replicated
+  distribution), and `overfit` (proportion of draws where the observed
+  infit falls below the lower HDI bound). See Details for how to read
+  these.
 
 - plot:
 
@@ -64,17 +70,28 @@ Two complementary summary tables are provided:
 
   Reports the posterior mean observed and replicated infit values
   alongside the posterior predictive p-value (ppp). The ppp is the
-  proportion of draws where the replicated infit exceeds the observed
-  infit. Under good fit, the ppp should be near 0.5. A ppp near 0
-  indicates the observed infit is consistently larger than expected
-  (underfit); a ppp near 1 indicates it is consistently smaller
-  (overfit).
+  proportion of draws where the observed infit exceeds the replicated
+  infit, with ties counted as one half. Under good fit, the ppp should
+  be near 0.5. A ppp near 1 indicates the observed infit is consistently
+  larger than expected (underfit), and a ppp near 0 that it is
+  consistently smaller (overfit). The direction is the same as for the
+  ppp of
+  [`q3_post`](https://pgmj.github.io/easyRaschBayes/dev/reference/q3_post.md)
+  and
+  [`item_restscore_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md).
 
 - `hdi`:
 
-  Reports the probability that the observed infit falls above (underfit)
-  or below (overfit) the HDI of the replicated distribution. This
-  provides a more distributional assessment than the ppp alone.
+  Reports the proportion of draws where the observed infit falls above
+  (underfit) or below (overfit) the HDI of the replicated distribution.
+  The HDI is computed over all draws, so each draw's observed value is
+  compared to the same fixed interval. The observed infit varies across
+  draws only through parameter uncertainty, while the replicated infit
+  also varies through the sampling of new responses. The observed
+  distribution is therefore narrower, and these proportions move quickly
+  from near 0 to near 1 as the observed values pass an interval bound.
+  They are exceedance proportions, not posterior probabilities of
+  misfit.
 
 The plot uses two layers from the ggdist package:
 
@@ -93,6 +110,14 @@ substantially with the replicated distribution. Items where the observed
 distribution sits systematically above the replicated HDI indicate
 underfit (more variation than expected); items below indicate overfit
 (less variation than expected).
+
+The infit ppp is conservative. Values near 0 or 1 are rarer than for a
+uniform p-value, and misfit can go undetected (see
+[`infit_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic.md)).
+It is suggested to also evaluate item fit with
+[`item_restscore_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md)
+and
+[`item_restscore_post`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_post.md).
 
 ## See also
 

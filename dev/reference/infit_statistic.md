@@ -1,13 +1,13 @@
 # Posterior Predictive Infit Statistic for Bayesian IRT Models
 
-Computes a Bayesian analogue of the conditional item infit statistic (as
-described in Christensen, Kreiner & Mesbah, 2013) for Rasch-family
-models fitted with brms. For each posterior draw, expected values and
-variances are derived from the category probabilities returned by
-[`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html),
-and variance-weighted standardised residuals are computed for both
-observed and replicated data. The result can be summarised into
-posterior predictive p-values to assess item fit.
+Computes item infit (and optionally outfit) for each posterior draw of a
+Rasch-family model fitted with brms, for the observed data and for
+replicated data. By default (`method = "conditional"`) the expected
+values and variances are conditional on each person's total score, as in
+the conditional infit of Christensen et al. (2013) and Kreiner &
+Christensen (2011), and the replicated data keep each person's observed
+total score. With `method = "theta"` they are computed given each draw's
+person locations instead.
 
 ## Usage
 
@@ -17,7 +17,8 @@ infit_statistic(
   item_var = item,
   person_var = id,
   ndraws_use = NULL,
-  outfit = FALSE
+  outfit = FALSE,
+  method = c("conditional", "theta")
 )
 ```
 
@@ -27,8 +28,12 @@ infit_statistic(
 
   A fitted
   [`brmsfit`](https://paulbuerkner.com/brms/reference/brmsfit-class.html)
-  object from an ordinal IRT model (e.g., `family = acat` for a partial
-  credit model or `family = bernoulli()` for a dichotomous Rasch model).
+  object. For `method = "conditional"` it must be a Rasch-family model
+  in which the total score is sufficient for the person location:
+  `family = acat` (partial credit or rating scale model) or
+  `family = bernoulli()` (dichotomous Rasch model), both with the logit
+  link, a person random intercept `(1 | id)`, and no `disc` term.
+  `method = "theta"` accepts any ordinal or Bernoulli model.
 
 - item_var:
 
@@ -52,6 +57,14 @@ infit_statistic(
   Default is `FALSE` (infit only), since outfit is highly sensitive to
   outliers and rarely recommended for Rasch diagnostics.
 
+- method:
+
+  Either `"conditional"` (the default), with expectations conditional on
+  the total score, or `"theta"`, with expectations given each draw's
+  person locations. `"theta"` gives the same computation as
+  [`infit_statistic_hpcm`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic_hpcm.md)
+  and as `infit_statistic()` in easyRaschBayes 0.3.0.
+
 ## Value
 
 A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
@@ -59,7 +72,7 @@ the following columns:
 
 - item:
 
-  The item identifier.
+  The item identifier, named after `item_var`.
 
 - draw:
 
@@ -71,8 +84,7 @@ the following columns:
 
 - infit_rep:
 
-  The replicated infit statistic (based on posterior predicted data) for
-  that item and draw.
+  The replicated infit statistic for that item and draw.
 
 - outfit:
 
@@ -84,33 +96,67 @@ the following columns:
   (Only if `outfit = TRUE`) The replicated outfit statistic for that
   item and draw.
 
-The output is grouped by the item variable. Posterior predictive
-p-values can be obtained by computing, e.g., `mean(infit_rep > infit)`
-within each item.
+The output is grouped by the item variable. Use
+[`infit_post`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_post.md)
+for posterior predictive p-values and a plot.
 
 ## Details
 
-The procedure adapts the conditional infit/outfit statistics
-(Christensen et al., 2013; Kreiner & Christensen, 2011; Müller, 2020) to
-the Bayesian framework:
+Both methods use the infit and outfit mean squares (Christensen et al.,
+2013; Müller, 2020) as discrepancy measures in a posterior predictive
+check. For each posterior draw \\s\\, each observation gets an expected
+value \\E^{(s)}\_{vi}\\ and a variance \\Var^{(s)}\_{vi}\\, and
+\$\$Infit_i^{(s)} = \frac{\sum_v (X\_{vi} - E^{(s)}\_{vi})^2} {\sum_v
+Var^{(s)}\_{vi}}, \qquad Outfit_i^{(s)} = \frac{1}{N_i} \sum_v
+\frac{(X\_{vi} - E^{(s)}\_{vi})^2}{Var^{(s)}\_{vi}}.\$\$ The replicated
+statistics use the same \\E\\ and \\Var\\ with replicated responses in
+place of \\X\\.
 
-1.  For each posterior draw \\s\\, category probabilities
-    \\P^{(s)}(X\_{vi} = c)\\ are obtained from
-    [`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html).
+**Conditional method.** Under a Rasch-family model the total score
+\\R_v\\ is sufficient for the person location. The function takes the
+category probabilities from
+[`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html),
+removes the person location from them, and computes \\E^{(s)}\_{vi} =
+E(X\_{vi} \mid R_v)\\ and \\Var^{(s)}\_{vi} = Var(X\_{vi} \mid R_v)\\
+with elementary symmetric functions of that draw's item parameters.
+Persons with the minimum or maximum total score have zero variance on
+every item and are left out, as in
+[`iarm::out_infit()`](https://rdrr.io/pkg/iarm/man/out_infit.html).
+Replicated responses are drawn conditional on each person's observed
+total score, so the reference distribution does not depend on the person
+locations. Given the same item parameters, the observed values equal the
+conditional infit and outfit of
+[`iarm::out_infit()`](https://rdrr.io/pkg/iarm/man/out_infit.html). The
+observed infit varies across draws only through the uncertainty in the
+item parameters. With missing responses, the total score is the sum over
+the items a person answered, scored from 0, and the conditional
+distribution is computed for each person's set of answered items.
 
-2.  The conditional expected value and variance for each observation are
-    computed as: \$\$E^{(s)}\_{vi} = \sum_c c \cdot P^{(s)}(X\_{vi} =
-    c)\$\$ \$\$Var^{(s)}\_{vi} = \sum_c (c - E^{(s)}\_{vi})^2 \cdot
-    P^{(s)}(X\_{vi} = c)\$\$
+**Theta method.** \\E\\ and \\Var\\ are computed from the category
+probabilities given the person location \\\theta_v^{(s)}\\ of each draw,
+and replicated responses come from
+[`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
+The person locations are estimated from the same data, which makes
+posterior predictive p-values of this kind conservative. They tend to
+cluster around 0.5, so values near 0 or 1 are rarer than p-values of the
+same size would be (Robins et al., 2000).
 
-3.  Standardised squared residuals are: \$\$Z^{2(s)}\_{vi} = (X\_{vi} -
-    E^{(s)}\_{vi})^2 / Var^{(s)}\_{vi}\$\$
+The conditional method is better calibrated than the theta method, but
+its p-values are also conservative, because the item parameters are
+estimated from the same data. In simulations under a fitting Rasch
+model, two-sided p-values below .05 occurred for 0.5% to 2% of items,
+with the lowest rates for polytomous items. Misfit can therefore go
+undetected. It is suggested to also evaluate item fit with
+[`item_restscore_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md),
+whose p-values were close to uniform in the same simulations.
 
-4.  The infit statistic for item \\i\\ is the variance-weighted mean of
-    \\Z^2\\ across persons: \$\$Infit_i^{(s)} = \frac{\sum_v
-    Var\_{vi}^{(s)} Z^{2(s)}\_{vi}} {\sum_v Var\_{vi}^{(s)}}\$\$
+With either method, the posterior predictive p-value is not a measure of
+the size of misfit. For a fixed amount of misfit it moves toward 0 or 1
+as the sample size grows.
 
-5.  If requested, the outfit is the unweighted mean of \\Z^2\\.
+Replication uses random numbers, so call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) first for
+reproducible results.
 
 ## References
 
@@ -124,13 +170,21 @@ Müller, M. (2020). Item fit statistics for Rasch analysis: can we trust
 them? *Journal of Statistical Distributions and Applications*, *7*(1).
 [doi:10.1186/s40488-020-00108-7](https://doi.org/10.1186/s40488-020-00108-7)
 
+Robins, J. M., van der Vaart, A. & Ventura, V. (2000). Asymptotic
+distribution of P values in composite null models. *Journal of the
+American Statistical Association*, *95*(452), 1143–1156.
+[doi:10.1080/01621459.2000.10474310](https://doi.org/10.1080/01621459.2000.10474310)
+
 ## See also
 
+[`infit_post`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_post.md)
+for posterior predictive p-values and a plot,
+[`item_restscore_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md)
+for the item-restscore association,
 [`fit_statistic_pcm`](https://pgmj.github.io/easyRaschBayes/dev/reference/fit_statistic_pcm.md)
-for a general-purpose posterior predictive fit statistic with
-user-supplied criterion functions,
+and
 [`fit_statistic_rm`](https://pgmj.github.io/easyRaschBayes/dev/reference/fit_statistic_rm.md)
-for a general-purpose posterior predictive fit statistic with
+for general-purpose posterior predictive fit statistics with
 user-supplied criterion functions,
 [`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html),
 [`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
