@@ -13,3 +13,6 @@ vignettes/fits/
 /doc/
 /Meta/
 .positai
+dev/results/null_restscore/
+dev/*.log
+Rplots.pdf
