@@ -11,12 +11,21 @@ plot_targeting(
   robust = FALSE,
   center = TRUE,
   sort_items = c("data", "location"),
-  bins = 30,
+  bins,
   prob = 0.95,
   palette = NULL,
   person_fill = "#0072B2",
   threshold_fill = "#D55E00",
-  height_ratios = c(3, 2, 5)
+  height_ratios = c(3, 2, 5),
+  panel = c("categories", "thresholds"),
+  person_estimate = c("eap", "wle"),
+  xlim = c(-4, 4),
+  category_labels = NULL,
+  viridis_option = "G",
+  viridis_begin = 0.9,
+  viridis_end = 0.2,
+  row_gap = NULL,
+  output = c("patchwork", "list")
 )
 }
 \arguments{
@@ -35,84 +44,144 @@ histogram annotations use mean ± SD. If \code{TRUE}, median ±
 MAD is used instead.}
 
 \item{center}{Logical. If \code{TRUE} (the default), the scale is
-recentered so that the grand mean of all item threshold
-locations is zero, following the convention in frequentist
-Rasch analysis. Person estimates are shifted by the same
-constant. If \code{FALSE}, the raw brms parameterisation is
-used.}
+recentred so that the mean of all item threshold locations is
+zero. Person locations are shifted by the same constant. If
+\code{FALSE}, the raw brms parameterisation is used.}
 
-\item{sort_items}{Character. How to order items on the y-axis of
-the bottom panel. \code{"data"} (the default) preserves the
-order in which items first appear in the model data, with the
-first item at the top. \code{"location"} sorts items by their
-mean threshold location (easiest at top, hardest at bottom).}
+\item{sort_items}{Character. How to order items in the bottom
+panel. \code{"data"} (the default) keeps the order in which items
+first appear in the model data, with the first item at the top.
+\code{"location"} sorts items by their mean threshold location,
+easiest at the top.}
 
-\item{bins}{Integer. Number of bins for both histograms. Default
-is 30.}
+\item{bins}{Integer. Number of bins for both histograms. Default is
+half the maximum possible sum score, rounded up, and at least 11.}
 
-\item{prob}{Numeric in \eqn{(0, 1)}. Width of the credible
-intervals for the item threshold whiskers. Default is 0.95.}
+\item{prob}{Numeric in \eqn{(0, 1)}, or \code{NULL}. Width of the
+credible intervals for the item thresholds and of the intervals in
+the returned \code{categories} table. Default is 0.95. \code{NULL}
+hides the threshold intervals in the plot.}
 
-\item{palette}{An optional character vector of colors for the
-response categories. If \code{NULL} (the default), the
-\code{viridis} discrete scale is used.}
+\item{palette}{An optional character vector of colours, one per
+response category. Overrides the viridis colours in both panel
+types.}
 
-\item{person_fill}{Fill color for the person histogram. Default is
+\item{person_fill}{Fill colour for the person histogram. Default is
 \code{"#0072B2"} (blue).}
 
-\item{threshold_fill}{Fill color for the threshold histogram.
-Default is \code{"#D55E00"} (vermillion).}
+\item{threshold_fill}{Fill colour for the threshold histogram, and
+for the dichotomous dot-and-whisker panel. Default is
+\code{"#D55E00"} (vermillion).}
 
-\item{height_ratios}{Numeric vector of length 3 specifying the
-relative heights of the top (person), middle (threshold), and
-bottom (dot-whisker) panels. Default is \code{c(3, 2, 5)}.}
+\item{height_ratios}{Numeric vector of length 3 giving the relative
+heights of the top, middle and bottom panels. Default is
+\code{c(3, 2, 5)}.}
+
+\item{panel}{Character. \code{"categories"} (the default) draws each
+item as a bar partitioned into response-category bands, with the
+threshold estimates and their credible intervals below it.
+\code{"thresholds"} draws a dot-and-whisker plot of the thresholds.}
+
+\item{person_estimate}{Character. \code{"eap"} (the default) uses
+the posterior means of the person random effects.
+\code{"wle"} uses Warm's weighted likelihood estimates from
+\code{\link{person_parameters}}. EAPs are shrunk toward the mean,
+so their histogram is narrower than that of the WLEs.}
+
+\item{xlim}{Numeric vector of length 2. Initial limits of the shared
+x-axis, widened to whole numbers if any person location, threshold
+or interval falls outside. Default is \code{c(-4, 4)}.}
+
+\item{category_labels}{Optional character vector of labels for the
+response categories, in ascending order and one per category. Used
+in the legend of the \code{"categories"} panel. Default \code{NULL}
+uses the category scores, starting at 0.}
+
+\item{viridis_option}{Character. Viridis palette option for the
+category colours. Default is \code{"G"} (mako).}
+
+\item{viridis_begin, viridis_end}{Numeric in \eqn{[0, 1]}. Start and end
+of the viridis palette. Defaults \code{0.9} and \code{0.2} run from
+light to dark, so higher categories are darker.}
+
+\item{row_gap}{Numeric. Vertical spacing between item rows in the
+\code{"categories"} panel. Default \code{NULL} uses 1, widened when
+a category collapses or thresholds are reversed, to make room for
+their labels.}
+
+\item{output}{Character. \code{"patchwork"} (the default) returns the
+combined plot. \code{"list"} returns the three panels and the
+posterior summaries of the category structure.}
 }
 \value{
-A \code{patchwork} object (combined \code{ggplot}).
+With \code{output = "patchwork"}, a \code{patchwork} object.
+With \code{output = "list"}, a list with:
+\describe{
+\item{p1, p2, p3}{The person histogram, threshold histogram and
+bottom panel as \code{ggplot} objects.}
+\item{categories}{A \code{\link[tibble]{tibble}} with one row per
+item and response category: \code{p_never_modal}, the posterior
+probability that the category is never the most likely response
+at any location, and \code{lower_bound}, \code{lower_bound_lo},
+\code{lower_bound_hi}, the posterior median and \code{prob}
+interval of the location where the category starts to be the most
+likely response, over the draws where it is (\code{NA} for
+category 0).}
+\item{reversals}{A \code{\link[tibble]{tibble}} with one row per
+item and adjacent threshold pair: \code{p_reversed}, the
+posterior probability that the higher threshold lies below the
+lower one.}
+}
 }
 \description{
-Plots a person-item map (also known as a Wright map or targeting
-plot) for Bayesian IRT models fitted with \pkg{brms}. The plot
-consists of three vertically stacked panels sharing the same
-latent variable (theta / logit) x-axis:
+Produces a three-panel targeting plot with a shared logit x-axis:
 }
 \details{
 \enumerate{
-\item \strong{Top}: A histogram of person ability estimates,
-with a reference line for the mean (or median) and shading
-for ±1 SD (or ±1 MAD).
-\item \strong{Middle}: An inverted histogram of item threshold
-locations, with a reference line for the mean (or median) and
-shading for ±1 SD (or ±1 MAD), mirroring the top panel to
-visualise the overlap between person abilities and item
-difficulties.
-\item \strong{Bottom}: A dot-and-whisker plot of item thresholds
-by item, with credible intervals and color-coded response
-categories.
+\item \strong{Top}: Histogram of person locations, with a reference
+line for the mean (or median) and shading for ±1 SD (or ±1 MAD).
+\item \strong{Middle}: Inverted histogram of item threshold
+locations, with the same summary annotations.
+\item \strong{Bottom}: One bar per item, either partitioned into
+response-category bands (\code{panel = "categories"}, the
+default) or drawn as a dot-and-whisker plot of the individual
+thresholds (\code{panel = "thresholds"}).
 }
 
-Together, the top and middle panels form a half-moon (or
-back-to-back histogram) display that makes it easy to assess
-whether the test is well-targeted to the sample.
+Together, the top and middle panels form a back-to-back histogram
+that shows whether the test is well targeted to the sample. The
+bottom panel places the items on the same scale, so the category
+bands show which response is the most likely one at the locations
+where the persons are. The layout follows
+\code{easyRasch2::RMtargeting()}.
 
-\strong{Person estimates} are obtained as the posterior means of
-the person random effects from the fitted model via
-\code{\link[brms]{ranef}}.
+\strong{Item thresholds} come from the posterior draws (see
+\code{\link{item_parameters}}). Points are posterior means and
+intervals are equal-tailed credible intervals.
 
-\strong{Item thresholds} are extracted from the posterior draws.
-For models with grouped thresholds (\code{thres(gr = item)}),
-each item has its own set of threshold parameters. For models
-with a single set of thresholds (e.g., dichotomous Rasch with
-\code{(1 | item)}), the item random effects are subtracted from
-the global thresholds to obtain item-specific locations.
+\strong{Category bands.} With \code{panel = "categories"}, each band
+spans the locations at which its response category is the most
+likely response, computed from the posterior mean thresholds. When an
+item's thresholds are ordered these boundaries are the thresholds
+themselves. When they are not, the disordered run is pooled by
+averaging, and the categories it skips over, which are never the
+most likely response at any location, collapse to a red tick
+labelled with the category number. Red arrows below the bar give the
+size of each threshold reversal in logits. The two outer bands fade
+towards the panel edge, since they are open-ended.
 
-When \code{center = TRUE} (the default), the grand mean of all
-item threshold posterior means is computed and subtracted from
-every threshold estimate, its credible interval bounds, and every
-person estimate. This is a uniform translation of the entire
-scale that preserves all relative distances and matches the
-zero-centered item difficulty convention used in frequentist CML
-estimation.
+\strong{Posterior probabilities.} The same category structure is
+computed for every posterior draw. Each red tick is labelled with the
+posterior probability that its category is never the most likely
+response, and each reversal with the posterior probability that the
+pair is reversed. The full tables, including categories and pairs
+without red marks, are returned with \code{output = "list"}.
+
+\strong{Person locations.} \code{person_estimate = "eap"} uses the
+posterior means of the person random effects, shifted by the same
+constant as the thresholds. \code{"wle"} uses the WLEs of
+\code{\link{person_parameters}}, which are finite at extreme scores
+and use the items each person answered.
 }
 \examples{
 \donttest{
@@ -136,17 +205,23 @@ fit_pcm <- brm(
   family = acat,
   chains = 4,
   cores  = 1, # use more cores if you have
-  iter   = 500 # use at least 2000 
+  iter   = 500 # use at least 2000
 )
 
-# Default: centered, mean ± SD, items in data order
+# Default: category bands, EAP person locations, items in data order
 plot_targeting(fit_pcm)
 
-# Uncentered (raw brms parameterisation)
-plot_targeting(fit_pcm, center = FALSE)
+# WLE person locations, items sorted by location, labelled categories
+plot_targeting(fit_pcm, person_estimate = "wle", sort_items = "location",
+               category_labels = c("Never", "Sometimes", "Often"))
 
-# Robust: median ± MAD, items sorted by location
-plot_targeting(fit_pcm, robust = TRUE, sort_items = "location")
+# Dot-and-whisker panel
+plot_targeting(fit_pcm, panel = "thresholds")
+
+# Panels and posterior summaries of the category structure
+res <- plot_targeting(fit_pcm, output = "list")
+res$categories
+res$reversals
 
 # --- Dichotomous Rasch Model ---
 
@@ -161,7 +236,7 @@ fit_rm <- brm(
   family = bernoulli(),
   chains = 4,
   cores  = 1, # use more cores if you have
-  iter   = 500 # use at least 2000 
+  iter   = 500 # use at least 2000
 )
 
 plot_targeting(fit_rm, sort_items = "location")
@@ -178,6 +253,5 @@ brms and Stan. \emph{Journal of Statistical Software}, \emph{100},
 }
 \seealso{
 \code{\link{plot_ipf}} for item category probability curves,
-\code{\link[brms]{ranef}},
-\code{\link[brms]{as_draws_df}}.
+\code{\link{item_parameters}}, \code{\link{person_parameters}}.
 }

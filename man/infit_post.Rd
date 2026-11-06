@@ -8,12 +8,16 @@ infit_post(infit_draws, ci = 0.84)
 }
 \arguments{
 \item{infit_draws}{A data frame (or tibble) as returned by
-\code{\link{infit_statistic}} containing at minimum the columns
-\code{item}, \code{infit} (observed infit per draw), and
-\code{infit_rep} (replicated infit per draw).}
+\code{\link{infit_statistic}} or one element of the output of
+\code{\link{infit_statistic_hpcm}}, containing the columns
+\code{infit} (observed infit per draw) and \code{infit_rep}
+(replicated infit per draw). The item identifier is taken from a
+column named \code{item} if there is one, and otherwise from the
+first column.}
 
-\item{ci}{Numeric in \eqn{(0, 1)}. Width of the credible
-interval used for the posterior predictive HDI and the slab
+\item{ci}{Numeric in \eqn{(0, 1)}. Width of the highest density
+continuous interval of the replicated (posterior predictive)
+infit distribution, used in the \code{hdi} table and the slab
 display. Default is 0.84.}
 }
 \value{
@@ -21,18 +25,18 @@ A list with three elements:
 \describe{
 \item{summary}{A \code{\link[tibble]{tibble}} with one row per
 item containing: \code{item}, \code{infit_obs} (posterior
-mean of observed infit), \code{infit_rep} (posterior mean of
-replicated infit), and \code{infit_ppp} (posterior predictive
-p-value: proportion of draws where the replicated infit
-exceeds the observed infit). Values near 0.5 indicate good
-fit; values near 0 suggest underfit; values near 1 suggest
-overfit.}
+mean of observed infit), \code{infit_rep} (mean of
+replicated infit across draws), and \code{infit_ppp} (posterior
+predictive p-value: proportion of draws where the observed infit
+exceeds the replicated infit, counting ties as one half). Values
+near 0.5 indicate good fit, values near 1 suggest underfit and
+values near 0 suggest overfit.}
 \item{hdi}{A \code{\link[tibble]{tibble}} with one row per
-item containing: \code{item}, \code{underfit} (posterior
-probability that the observed infit exceeds the upper HDI
+item containing: \code{item}, \code{underfit} (proportion
+of draws where the observed infit exceeds the upper HDI
 bound of the replicated distribution), and \code{overfit}
-(posterior probability that the observed infit falls below
-the lower HDI bound).}
+(proportion of draws where the observed infit falls below
+the lower HDI bound). See Details for how to read these.}
 \item{plot}{A \code{\link[ggplot2]{ggplot}} object showing
 the posterior predictive distribution of replicated infit
 (grey filled slab) overlaid with the observed infit
@@ -53,15 +57,24 @@ Two complementary summary tables are provided:
 \item{\code{summary}}{Reports the posterior mean observed and
 replicated infit values alongside the posterior predictive
 p-value (ppp). The ppp is the proportion of draws where the
-replicated infit exceeds the observed infit. Under good fit,
-the ppp should be near 0.5. A ppp near 0 indicates the
-observed infit is consistently larger than expected
-(underfit); a ppp near 1 indicates it is consistently
-smaller (overfit).}
-\item{\code{hdi}}{Reports the probability that the observed
-infit falls above (underfit) or below (overfit) the HDI of
-the replicated distribution. This provides a more
-distributional assessment than the ppp alone.}
+observed infit exceeds the replicated infit, with ties counted
+as one half. Under good fit, the ppp should be near 0.5. A ppp
+near 1 indicates the observed infit is consistently larger
+than expected (underfit), and a ppp near 0 that it is
+consistently smaller (overfit). The direction is the same as
+for the ppp of \code{\link{q3_post}} and
+\code{\link{item_restscore_statistic}}.}
+\item{\code{hdi}}{Reports the proportion of draws where the
+observed infit falls above (underfit) or below (overfit) the
+HDI of the replicated distribution. The HDI is computed over
+all draws, so each draw's observed value is compared to the
+same fixed interval. The observed infit varies across draws
+only through parameter uncertainty, while the replicated
+infit also varies through the sampling of new responses. The
+observed distribution is therefore narrower, and these
+proportions move quickly from near 0 to near 1 as the observed
+values pass an interval bound. They are exceedance
+proportions, not posterior probabilities of misfit.}
 }
 
 The plot uses two layers from the \pkg{ggdist} package:
@@ -79,6 +92,13 @@ overlap substantially with the replicated distribution. Items
 where the observed distribution sits systematically above the
 replicated HDI indicate underfit (more variation than expected);
 items below indicate overfit (less variation than expected).
+
+The infit ppp is conservative. Values near 0 or 1 are rarer than for a
+uniform p-value, and misfit can go undetected (see
+\code{\link{infit_statistic}}).
+It is suggested to also evaluate item fit with
+\code{\link{item_restscore_statistic}} and
+\code{\link{item_restscore_post}}.
 }
 \examples{
 \dontrun{

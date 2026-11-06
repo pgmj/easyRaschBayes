@@ -50,8 +50,9 @@
 #'     \code{locations} with: \code{se} (posterior SD),
 #'     \code{hdci_lower} and \code{hdci_upper} (highest density
 #'     continuous interval bounds at the level specified by
-#'     \code{prob}), and \code{n_eff} (effective sample size for the
-#'     parameter).}
+#'     \code{prob}), and \code{n_eff} (bulk effective sample size from
+#'     \code{posterior::ess_bulk()}, which accounts for disagreement
+#'     between chains).}
 #'   \item{item_information}{A \code{\link[tibble]{tibble}} with one
 #'     row per item containing: \code{item}, \code{location} (mean
 #'     item location, i.e. mean of thresholds for polytomous items),
@@ -267,7 +268,8 @@ item_parameters <- function(
   # ================================================================
   param_draws <- .extract_item_param_draws(
     all_draws, unique_items, item_name,
-    is_ordinal, has_fixed_items
+    is_ordinal, has_fixed_items,
+    item_levels = .item_levels(model, item_name)
   )
   
   # ================================================================
@@ -347,7 +349,7 @@ item_parameters <- function(
       vals <- thresh_list[[k]]
       
       hdci  <- ggdist::mean_hdci(vals, .width = prob)
-      n_eff <- .compute_ess(vals)
+      n_eff <- .compute_ess(vals, all_draws$.chain)
       
       sum_rows[[param_idx]] <- data.frame(
         item       = item_label,
@@ -505,95 +507,16 @@ item_parameters <- function(
 # ── Internal: extract draw-level item threshold parameters ───────
 #' @keywords internal
 .extract_item_param_draws <- function(draws, unique_items, item_name,
-                                      is_ordinal, has_fixed_items) {
-  
-  result <- vector("list", length(unique_items))
+                                      is_ordinal, has_fixed_items,
+                                      item_levels) {
+  # has_fixed_items is kept for the callers' signature; the shared
+  # extractor detects the parameterisation itself.
+  tau <- .item_tau_draws(draws, item_levels, item_name, is_ordinal)
+  result <- lapply(as.character(unique_items), function(it) {
+    m <- tau[[it]]
+    lapply(seq_len(ncol(m)), function(j) as.numeric(m[, j]))
+  })
   names(result) <- unique_items
-  
-  if (is_ordinal) {
-    has_grouped <- any(grepl("^b_Intercept\\[.+,\\d+\\]$", names(draws)))
-    
-    for (item_label in unique_items) {
-      if (has_grouped) {
-        thresh_pattern <- paste0(
-          "^b_Intercept\\[",
-          gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-          ","
-        )
-        thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
-      } else {
-        thresh_cols <- grep("^b_Intercept\\[\\d+\\]$", names(draws),
-                            value = TRUE)
-      }
-      
-      if (length(thresh_cols) == 0) {
-        warning("No threshold parameters found for item '",
-                item_label, "'.", call. = FALSE)
-        result[[item_label]] <- list()
-        next
-      }
-      
-      thresh_nums <- as.numeric(
-        gsub(".*,(\\d+)\\]$|.*\\[(\\d+)\\]$", "\\1\\2", thresh_cols)
-      )
-      thresh_cols <- thresh_cols[order(thresh_nums)]
-      
-      result[[item_label]] <- lapply(
-        thresh_cols,
-        function(col) as.numeric(draws[[col]])
-      )
-    }
-    
-  } else if (has_fixed_items) {
-    for (item_label in unique_items) {
-      col_pattern <- paste0("^b_", item_name,
-                            gsub("([.|()\\^{}+$*?])", "\\\\\\1",
-                                 item_label), "$")
-      col_name <- grep(col_pattern, names(draws), value = TRUE)
-      
-      if (length(col_name) == 0) {
-        warning("Could not find fixed effect for item '",
-                item_label, "'.", call. = FALSE)
-        result[[item_label]] <- list(rep(NA_real_, nrow(draws)))
-        next
-      }
-      
-      result[[item_label]] <- list(-as.numeric(draws[[col_name[1]]]))
-    }
-    
-  } else {
-    intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
-    intercept_draws <- if (length(intercept_col) == 1) {
-      as.numeric(draws[[intercept_col]])
-    } else {
-      rep(0, nrow(draws))
-    }
-    
-    for (item_label in unique_items) {
-      re_col <- paste0("r_", item_name, "[", item_label, ",Intercept]")
-      if (!re_col %in% names(draws)) {
-        re_col_alt <- grep(
-          paste0("^r_", item_name, "\\[",
-                 gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-                 ",Intercept\\]$"),
-          names(draws), value = TRUE
-        )
-        if (length(re_col_alt) == 1) {
-          re_col <- re_col_alt
-        } else {
-          warning("Could not find random effect for item '",
-                  item_label, "'.", call. = FALSE)
-          result[[item_label]] <- list(rep(NA_real_, nrow(draws)))
-          next
-        }
-      }
-      
-      result[[item_label]] <- list(
-        -(intercept_draws + as.numeric(draws[[re_col]]))
-      )
-    }
-  }
-  
   result
 }
 
@@ -617,26 +540,17 @@ item_parameters <- function(
 
 # ── Internal: compute effective sample size ──────────────────────
 #' @keywords internal
-.compute_ess <- function(x) {
-  x <- x[!is.na(x)]
-  n <- length(x)
-  if (n < 4) return(NA_real_)
-  
-  v <- stats::var(x)
-  if (v < .Machine$double.eps) return(n)
-  
-  acf_vals <- stats::acf(x, lag.max = n - 1, plot = FALSE,
-                         demean = TRUE)$acf[, 1, 1]
-  
-  sum_rho <- 0
-  lag <- 2
-  while (lag < length(acf_vals)) {
-    pair_sum <- acf_vals[lag] + acf_vals[lag + 1]
-    if (pair_sum < 0) break
-    sum_rho <- sum_rho + pair_sum
-    lag <- lag + 2
+.compute_ess <- function(x, chain = NULL) {
+  # Bulk effective sample size (rank-normalised, multi-chain) from the
+  # posterior package. Draws are arranged as iterations x chains when the
+  # chain index is available and the chains are of equal length.
+  if (sum(!is.na(x)) < 4) return(NA_real_)
+  if (!is.null(chain) && length(chain) == length(x)) {
+    n_per <- tabulate(chain)
+    n_per <- n_per[n_per > 0]
+    if (length(n_per) > 1L && length(unique(n_per)) == 1L) {
+      x <- matrix(x[order(chain)], ncol = length(n_per))
+    }
   }
-  
-  ess <- n / (1 + 2 * sum_rho)
-  max(1, ess)
+  posterior::ess_bulk(x)
 }

@@ -9,13 +9,19 @@ infit_statistic(
   item_var = item,
   person_var = id,
   ndraws_use = NULL,
-  outfit = FALSE
+  outfit = FALSE,
+  method = c("conditional", "theta")
 )
 }
 \arguments{
-\item{model}{A fitted \code{\link[brms]{brmsfit}} object from an ordinal
-IRT model (e.g., \code{family = acat} for a partial credit model or
-\code{family = bernoulli()} for a dichotomous Rasch model).}
+\item{model}{A fitted \code{\link[brms]{brmsfit}} object. For
+\code{method = "conditional"} it must be a Rasch-family model in which
+the total score is sufficient for the person location:
+\code{family = acat} (partial credit or rating scale model) or
+\code{family = bernoulli()} (dichotomous Rasch model), both with the
+logit link, a person random intercept \code{(1 | id)}, and no
+\code{disc} term. \code{method = "theta"} accepts any ordinal or
+Bernoulli model.}
 
 \item{item_var}{An unquoted variable name identifying the item grouping
 variable in the model data (e.g., \code{item}).}
@@ -31,55 +37,94 @@ all draws are used.}
 alongside infit. Default is \code{FALSE} (infit only), since outfit
 is highly sensitive to outliers and rarely recommended for Rasch
 diagnostics.}
+
+\item{method}{Either \code{"conditional"} (the default), with
+expectations conditional on the total score, or \code{"theta"}, with
+expectations given each draw's person locations. \code{"theta"} gives
+the same computation as \code{\link{infit_statistic_hpcm}} and as
+\code{infit_statistic()} in easyRaschBayes 0.3.0.}
 }
 \value{
 A \code{\link[tibble]{tibble}} with the following columns:
 \describe{
-\item{item}{The item identifier.}
+\item{item}{The item identifier, named after \code{item_var}.}
 \item{draw}{Integer index of the posterior draw.}
 \item{infit}{The observed infit statistic for that item and draw.}
-\item{infit_rep}{The replicated infit statistic (based on posterior
-predicted data) for that item and draw.}
+\item{infit_rep}{The replicated infit statistic for that item and
+draw.}
 \item{outfit}{(Only if \code{outfit = TRUE}) The observed outfit
 statistic for that item and draw.}
 \item{outfit_rep}{(Only if \code{outfit = TRUE}) The replicated
 outfit statistic for that item and draw.}
 }
-The output is grouped by the item variable. Posterior predictive
-p-values can be obtained by computing, e.g.,
-\code{mean(infit_rep > infit)} within each item.
+The output is grouped by the item variable. Use \code{\link{infit_post}}
+for posterior predictive p-values and a plot.
 }
 \description{
-Computes a Bayesian analogue of the conditional item infit statistic
-(as described in Christensen, Kreiner & Mesbah, 2013) for Rasch-family
-models fitted with \pkg{brms}. For each posterior draw, expected values
-and variances are derived from the category probabilities returned by
-\code{\link[brms]{posterior_epred}}, and variance-weighted standardised
-residuals are computed for both observed and replicated data. The result
-can be summarised into posterior predictive p-values to assess item fit.
+Computes item infit (and optionally outfit) for each posterior draw of
+a Rasch-family model fitted with \pkg{brms}, for the observed data and
+for replicated data. By default (\code{method = "conditional"}) the
+expected values and variances are conditional on each person's total
+score, as in the conditional infit of Christensen et al. (2013) and
+Kreiner & Christensen (2011), and the replicated data keep each
+person's observed total score. With \code{method = "theta"} they are
+computed given each draw's person locations instead.
 }
 \details{
-The procedure adapts the conditional infit/outfit statistics
-(Christensen et al., 2013; Kreiner & Christensen, 2011; Müller, 2020)
-to the Bayesian framework:
+Both methods use the infit and outfit mean squares (Christensen et al.,
+2013; Müller, 2020) as discrepancy measures in a posterior predictive
+check. For each posterior draw \eqn{s}, each observation gets an
+expected value \eqn{E^{(s)}_{vi}} and a variance \eqn{Var^{(s)}_{vi}},
+and
+\deqn{Infit_i^{(s)} = \frac{\sum_v (X_{vi} - E^{(s)}_{vi})^2}
+  {\sum_v Var^{(s)}_{vi}}, \qquad
+  Outfit_i^{(s)} = \frac{1}{N_i} \sum_v
+  \frac{(X_{vi} - E^{(s)}_{vi})^2}{Var^{(s)}_{vi}}.}
+The replicated statistics use the same \eqn{E} and \eqn{Var} with
+replicated responses in place of \eqn{X}.
 
-\enumerate{
-\item For each posterior draw \eqn{s}, category probabilities
-\eqn{P^{(s)}(X_{vi} = c)} are obtained from
-\code{\link[brms]{posterior_epred}}.
-\item The conditional expected value and variance for each
-observation are computed as:
-\deqn{E^{(s)}_{vi} = \sum_c c \cdot P^{(s)}(X_{vi} = c)}
-\deqn{Var^{(s)}_{vi} = \sum_c (c - E^{(s)}_{vi})^2 \cdot
-      P^{(s)}(X_{vi} = c)}
-\item Standardised squared residuals are:
-\deqn{Z^{2(s)}_{vi} = (X_{vi} - E^{(s)}_{vi})^2 / Var^{(s)}_{vi}}
-\item The infit statistic for item \eqn{i} is the variance-weighted
-mean of \eqn{Z^2} across persons:
-\deqn{Infit_i^{(s)} = \frac{\sum_v Var_{vi}^{(s)} Z^{2(s)}_{vi}}
-      {\sum_v Var_{vi}^{(s)}}}
-\item If requested, the outfit is the unweighted mean of \eqn{Z^2}.
-}
+\strong{Conditional method.} Under a Rasch-family model the total score
+\eqn{R_v} is sufficient for the person location. The function takes
+the category probabilities from \code{\link[brms]{posterior_epred}},
+removes the person location from them, and computes
+\eqn{E^{(s)}_{vi} = E(X_{vi} \mid R_v)} and
+\eqn{Var^{(s)}_{vi} = Var(X_{vi} \mid R_v)} with elementary symmetric
+functions of that draw's item parameters. Persons with the minimum or
+maximum total score have zero variance on every item and are left out,
+as in \code{iarm::out_infit()}. Replicated responses are drawn
+conditional on each person's observed total score, so the reference
+distribution does not depend on the person locations. Given the same
+item parameters, the observed values equal the conditional infit and
+outfit of \code{iarm::out_infit()}. The observed infit varies across
+draws only through the uncertainty in the item parameters. With
+missing responses, the total score is the sum over the items a person
+answered, scored from 0, and the conditional distribution is computed
+for each person's set of answered items.
+
+\strong{Theta method.} \eqn{E} and \eqn{Var} are computed from the
+category probabilities given the person location
+\eqn{\theta_v^{(s)}} of each draw, and replicated responses come from
+\code{\link[brms]{posterior_predict}}. The person locations are
+estimated from the same data, which makes posterior predictive
+p-values of this kind conservative. They tend to cluster around 0.5,
+so values near 0 or 1 are rarer than p-values of the same size would
+be (Robins et al., 2000).
+
+The conditional method is better calibrated than the theta method, but
+its p-values are also conservative, because the item parameters are
+estimated from the same data. In simulations under a fitting Rasch
+model, two-sided p-values below .05 occurred for 0.5\% to 2\% of items,
+with the lowest rates for polytomous items. Misfit can therefore go
+undetected. It is suggested to also evaluate item fit with
+\code{\link{item_restscore_statistic}}, whose p-values were close to
+uniform in the same simulations.
+
+With either method, the posterior predictive p-value is not a measure
+of the size of misfit. For a fixed amount of misfit it moves toward 0
+or 1 as the sample size grows.
+
+Replication uses random numbers, so call \code{set.seed()} first for
+reproducible results.
 }
 \examples{
 \donttest{
@@ -158,12 +203,19 @@ Müller, M. (2020). Item fit statistics for Rasch analysis: can we
 trust them? \emph{Journal of Statistical Distributions and
 Applications}, \emph{7}(1).
 \doi{10.1186/s40488-020-00108-7}
+
+Robins, J. M., van der Vaart, A. & Ventura, V. (2000). Asymptotic
+distribution of P values in composite null models. \emph{Journal of
+the American Statistical Association}, \emph{95}(452), 1143--1156.
+\doi{10.1080/01621459.2000.10474310}
 }
 \seealso{
-\code{\link{fit_statistic_pcm}} for a general-purpose posterior predictive
-fit statistic with user-supplied criterion functions,
-\code{\link{fit_statistic_rm}} for a general-purpose posterior predictive
-fit statistic with user-supplied criterion functions,
+\code{\link{infit_post}} for posterior predictive p-values and a plot,
+\code{\link{item_restscore_statistic}} for the item-restscore
+association,
+\code{\link{fit_statistic_pcm}} and \code{\link{fit_statistic_rm}} for
+general-purpose posterior predictive fit statistics with user-supplied
+criterion functions,
 \code{\link[brms]{posterior_epred}},
 \code{\link[brms]{posterior_predict}}.
 }

@@ -32,8 +32,8 @@ and person parameters are shifted within each submodel so that
 the mean item parameter is zero. Person traits are shifted by the
 same constant as the items in their submodel.}
 
-\item{theta_range}{A numeric vector of length 2 giving the range for
-the Newton-Raphson WLE search on the hurdle submodel. Default is
+\item{theta_range}{A numeric vector of length 2 giving the search
+range for the WLE on the hurdle submodel. Default is
 \code{c(-7, 7)}.}
 }
 \value{
@@ -42,8 +42,11 @@ A list with three elements:
 \item{\code{hurdle}}{A list with the same structure as
 \code{\link{person_parameters}} for a dichotomous Rasch model:
 \code{person_estimates} (one row per person; \code{sum_score}
-is the number of items with \eqn{Y > 0}; both EAP and Warm's
-WLE are provided), \code{score_table}, and optionally
+is the number of items with \eqn{Y > 0} and \code{n_items} the
+number of items answered; both EAP and Warm's WLE are provided,
+and with missing responses the WLE uses the items the person
+answered), \code{score_table} (persons who answered every
+item), and optionally
 \code{draws_matrix}. The hurdle EAP is the sign-flipped brms
 random effect on \code{hu}, so higher values mean greater
 presence / susceptibility.}
@@ -56,9 +59,9 @@ across items with \eqn{Y_{vi} > 0} for person \eqn{v};
 omitted intentionally (see Details).}
 \item{\code{correlation}}{A \code{\link[tibble]{tibble}}
 summarising the posterior of
-\eqn{\rho(\theta_{hurdle}, \theta_{pcm})}, identical to the
-\code{correlation} element returned by
-\code{\link{item_parameters_hpcm}}.}
+\eqn{\rho(\theta_{hurdle}, \theta_{pcm})} with a 95\% interval,
+the same as the \code{correlation} element returned by
+\code{\link{item_parameters_hpcm}} with \code{prob = 0.95}.}
 }
 }
 \description{

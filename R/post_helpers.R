@@ -6,29 +6,33 @@
 #' predictive distribution.
 #'
 #' @param infit_draws A data frame (or tibble) as returned by
-#'   \code{\link{infit_statistic}} containing at minimum the columns
-#'   \code{item}, \code{infit} (observed infit per draw), and
-#'   \code{infit_rep} (replicated infit per draw).
-#' @param ci Numeric in \eqn{(0, 1)}. Width of the credible
-#'   interval used for the posterior predictive HDI and the slab
+#'   \code{\link{infit_statistic}} or one element of the output of
+#'   \code{\link{infit_statistic_hpcm}}, containing the columns
+#'   \code{infit} (observed infit per draw) and \code{infit_rep}
+#'   (replicated infit per draw). The item identifier is taken from a
+#'   column named \code{item} if there is one, and otherwise from the
+#'   first column.
+#' @param ci Numeric in \eqn{(0, 1)}. Width of the highest density
+#'   continuous interval of the replicated (posterior predictive)
+#'   infit distribution, used in the \code{hdi} table and the slab
 #'   display. Default is 0.84.
 #'
 #' @return A list with three elements:
 #' \describe{
 #'   \item{summary}{A \code{\link[tibble]{tibble}} with one row per
 #'     item containing: \code{item}, \code{infit_obs} (posterior
-#'     mean of observed infit), \code{infit_rep} (posterior mean of
-#'     replicated infit), and \code{infit_ppp} (posterior predictive
-#'     p-value: proportion of draws where the replicated infit
-#'     exceeds the observed infit). Values near 0.5 indicate good
-#'     fit; values near 0 suggest underfit; values near 1 suggest
-#'     overfit.}
+#'     mean of observed infit), \code{infit_rep} (mean of
+#'     replicated infit across draws), and \code{infit_ppp} (posterior
+#'     predictive p-value: proportion of draws where the observed infit
+#'     exceeds the replicated infit, counting ties as one half). Values
+#'     near 0.5 indicate good fit, values near 1 suggest underfit and
+#'     values near 0 suggest overfit.}
 #'   \item{hdi}{A \code{\link[tibble]{tibble}} with one row per
-#'     item containing: \code{item}, \code{underfit} (posterior
-#'     probability that the observed infit exceeds the upper HDI
+#'     item containing: \code{item}, \code{underfit} (proportion
+#'     of draws where the observed infit exceeds the upper HDI
 #'     bound of the replicated distribution), and \code{overfit}
-#'     (posterior probability that the observed infit falls below
-#'     the lower HDI bound).}
+#'     (proportion of draws where the observed infit falls below
+#'     the lower HDI bound). See Details for how to read these.}
 #'   \item{plot}{A \code{\link[ggplot2]{ggplot}} object showing
 #'     the posterior predictive distribution of replicated infit
 #'     (grey filled slab) overlaid with the observed infit
@@ -43,15 +47,24 @@
 #'   \item{\code{summary}}{Reports the posterior mean observed and
 #'     replicated infit values alongside the posterior predictive
 #'     p-value (ppp). The ppp is the proportion of draws where the
-#'     replicated infit exceeds the observed infit. Under good fit,
-#'     the ppp should be near 0.5. A ppp near 0 indicates the
-#'     observed infit is consistently larger than expected
-#'     (underfit); a ppp near 1 indicates it is consistently
-#'     smaller (overfit).}
-#'   \item{\code{hdi}}{Reports the probability that the observed
-#'     infit falls above (underfit) or below (overfit) the HDI of
-#'     the replicated distribution. This provides a more
-#'     distributional assessment than the ppp alone.}
+#'     observed infit exceeds the replicated infit, with ties counted
+#'     as one half. Under good fit, the ppp should be near 0.5. A ppp
+#'     near 1 indicates the observed infit is consistently larger
+#'     than expected (underfit), and a ppp near 0 that it is
+#'     consistently smaller (overfit). The direction is the same as
+#'     for the ppp of \code{\link{q3_post}} and
+#'     \code{\link{item_restscore_statistic}}.}
+#'   \item{\code{hdi}}{Reports the proportion of draws where the
+#'     observed infit falls above (underfit) or below (overfit) the
+#'     HDI of the replicated distribution. The HDI is computed over
+#'     all draws, so each draw's observed value is compared to the
+#'     same fixed interval. The observed infit varies across draws
+#'     only through parameter uncertainty, while the replicated
+#'     infit also varies through the sampling of new responses. The
+#'     observed distribution is therefore narrower, and these
+#'     proportions move quickly from near 0 to near 1 as the observed
+#'     values pass an interval bound. They are exceedance
+#'     proportions, not posterior probabilities of misfit.}
 #' }
 #'
 #' The plot uses two layers from the \pkg{ggdist} package:
@@ -69,6 +82,13 @@
 #' where the observed distribution sits systematically above the
 #' replicated HDI indicate underfit (more variation than expected);
 #' items below indicate overfit (less variation than expected).
+#'
+#' The infit ppp is conservative. Values near 0 or 1 are rarer than for a
+#' uniform p-value, and misfit can go undetected (see
+#' \code{\link{infit_statistic}}).
+#' It is suggested to also evaluate item fit with
+#' \code{\link{item_restscore_statistic}} and
+#' \code{\link{item_restscore_post}}.
 #'
 #' @seealso
 #' \code{\link{infit_statistic}},
@@ -103,20 +123,27 @@ infit_post <- function(infit_draws, ci = 0.84) {
   if (!requireNamespace("ggdist", quietly = TRUE)) {
     stop("Package 'ggdist' is required.", call. = FALSE)
   }
-  if (!all(c("item", "infit", "infit_rep") %in% names(infit_draws))) {
-    stop("'infit_draws' must contain columns 'item', 'infit', ",
-         "and 'infit_rep'.", call. = FALSE)
+  if (!all(c("infit", "infit_rep") %in% names(infit_draws))) {
+    stop("'infit_draws' must contain columns 'infit' and 'infit_rep'.",
+         call. = FALSE)
   }
+  item_col <- if ("item" %in% names(infit_draws)) "item" else names(infit_draws)[1]
+  infit_draws <- dplyr::ungroup(infit_draws)
+  infit_draws$item <- infit_draws[[item_col]]
   
   # --- Summary table: means and ppp ---
   summary_tbl <- infit_draws |>
     dplyr::group_by(.data$item) |>
     dplyr::summarise(
+      # The ppp must be computed before infit_rep is overwritten by its
+      # mean, since later expressions in summarise() see the new column.
+      infit_ppp = round(mean(.data$infit > .data$infit_rep) +
+                          0.5 * mean(.data$infit == .data$infit_rep), 3),
       infit_obs = round(mean(.data$infit), 3),
       infit_rep = round(mean(.data$infit_rep), 3),
-      infit_ppp = round(mean(.data$infit_rep > .data$infit), 3),
       .groups = "drop"
-    )
+    ) |>
+    dplyr::select("item", "infit_obs", "infit_rep", "infit_ppp")
   
   # --- HDI table: over/underfit probabilities ---
   infit_rep_hdi <- infit_draws |>
@@ -173,63 +200,59 @@ infit_post <- function(infit_draws, ci = 0.84) {
       xintercept = 1, linetype = 2
     ) +
     ggplot2::labs(
-      x = "Observed (blue) and expected conditional item infit",
+      x = "Observed (blue) and replicated item infit",
       y = NULL
     ) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "none")
   
+  names(summary_tbl)[names(summary_tbl) == "item"] <- item_col
+  names(hdi_tbl)[names(hdi_tbl) == "item"] <- item_col
   list(summary = summary_tbl, hdi = hdi_tbl, plot = p)
 }
 
 
-#' Summarize and Plot Posterior Predictive Item-Restscore Associations
+#' Summarize and Plot Item-Restscore Associations
 #'
 #' Postprocesses the output of \code{\link{item_restscore_statistic}}
 #' to produce a summary table and a slab plot comparing observed
-#' item-restscore gamma associations to the posterior predictive
-#' distribution.
+#' item-restscore gamma associations to the distribution of gamma in
+#' datasets replicated conditional on the total scores.
 #'
 #' @param item_restscore A list as returned by
-#'   \code{\link{item_restscore_statistic}}, containing at minimum:
-#'   \describe{
-#'     \item{result}{A data frame with columns including \code{item}
-#'       and summary statistics (first 5 columns are used).}
-#'     \item{draws}{A data frame with columns \code{item},
-#'       \code{gamma} (observed gamma per draw), and
-#'       \code{gamma_rep} (replicated gamma per draw).}
-#'   }
+#'   \code{\link{item_restscore_statistic}}, with elements
+#'   \code{result} and \code{draws}. The first column of both is the
+#'   item identifier.
 #'
 #' @return A list with two elements:
 #' \describe{
-#'   \item{summary}{A \code{\link[tibble]{tibble}} with the first 5
-#'     columns of the result table, rounded to 3 decimal places and
-#'     sorted by item.}
-#'   \item{plot}{A \code{\link[ggplot2]{ggplot}} object showing
-#'     the posterior predictive distribution of replicated gamma
-#'     (grey filled slab) with the observed gamma values overlaid
-#'     as orange diamond points.}
+#'   \item{summary}{A \code{\link[tibble]{tibble}} with one row per
+#'     item and the columns item, \code{gamma_obs}, \code{gamma_exp},
+#'     \code{gamma_diff}, \code{ppp} and \code{ppp_adj}, rounded to 3
+#'     decimals and sorted by item.}
+#'   \item{plot}{A \code{\link[ggplot2]{ggplot}} object showing the
+#'     distribution of replicated gamma (grey slab) with the observed
+#'     gamma overlaid as an orange diamond.}
 #' }
 #'
 #' @details
 #' The item-restscore gamma association measures the strength of
 #' the relationship between each item's responses and the rest
 #' score (total score excluding that item). Under good fit, the
-#' observed gamma should fall within the posterior predictive
-#' distribution.
+#' observed gamma should fall within the distribution of replicated
+#' gamma.
 #'
 #' The plot displays:
 #' \describe{
-#'   \item{Grey slab}{The posterior predictive distribution of
-#'     replicated gamma values, shaded by 84\% and 95\% credible
-#'     interval levels.}
-#'   \item{Orange diamonds}{The observed gamma values per draw,
-#'     plotted as points on top of the slab.}
+#'   \item{Grey slab}{The distribution of replicated gamma values,
+#'     shaded at the 84% and 95% interval levels.}
+#'   \item{Orange diamond}{The observed gamma.}
 #' }
 #'
-#' Items where the observed gamma (orange) falls consistently
-#' outside the replicated distribution (grey) indicate poor fit
-#' in terms of item discrimination.
+#' Items where the observed gamma (orange) falls outside the
+#' replicated distribution (grey) indicate poor fit in terms of
+#' item discrimination. See \code{\link{item_restscore_statistic}} for
+#' the definitions of the summary columns.
 #'
 #' @seealso
 #' \code{\link{item_restscore_statistic}},
@@ -248,14 +271,12 @@ infit_post <- function(infit_draws, ci = 0.84) {
 #' result$plot
 #' }
 #'
-#' @importFrom dplyr mutate across where arrange
 #' @importFrom ggdist stat_slab
 #' @importFrom ggplot2 ggplot aes after_stat geom_point labs
-#'   theme_bw theme scale_fill_manual scale_fill_brewer
-#' @importFrom forcats fct_rev
+#'   theme_bw theme scale_fill_manual
 #' @export
 item_restscore_post <- function(item_restscore) {
-  
+
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required.", call. = FALSE)
   }
@@ -267,32 +288,45 @@ item_restscore_post <- function(item_restscore) {
     stop("'item_restscore' must be a list with elements 'result' ",
          "and 'draws'.", call. = FALSE)
   }
-  if (!all(c("item", "gamma", "gamma_rep") %in%
-           names(item_restscore$draws))) {
-    stop("'item_restscore$draws' must contain columns 'item', ",
-         "'gamma', and 'gamma_rep'.", call. = FALSE)
+  summary_cols <- c("gamma_obs", "gamma_exp", "gamma_diff", "ppp", "ppp_adj")
+  if (!all(summary_cols %in% names(item_restscore$result)) ||
+      !"gamma_rep" %in% names(item_restscore$draws)) {
+    stop("'item_restscore' must be the output of ",
+         "item_restscore_statistic() from easyRaschBayes 0.3.0.9000 or ",
+         "later.", call. = FALSE)
   }
-  
+
+  item_col <- names(item_restscore$result)[1]
+
   # --- Summary table ---
-  summary_tbl <- item_restscore$result[, 1:5] |>
-    dplyr::mutate(
-      dplyr::across(dplyr::where(is.numeric), ~ round(.x, 3))
-    ) |>
-    dplyr::arrange(.data$item)
-  
+  summary_tbl <- item_restscore$result[, c(item_col, summary_cols)]
+  summary_tbl[summary_cols] <- lapply(summary_tbl[summary_cols], round, 3)
+  summary_tbl <- summary_tbl[order(summary_tbl[[item_col]]), ]
+
   # --- Plot ---
-  draws_df <- item_restscore$draws
-  
+  draws_df <- data.frame(
+    item      = as.character(item_restscore$draws[[1]]),
+    gamma_rep = item_restscore$draws$gamma_rep
+  )
+  obs_df <- data.frame(
+    item      = as.character(item_restscore$result[[item_col]]),
+    gamma_obs = item_restscore$result$gamma_obs
+  )
+  item_levels <- sort(unique(obs_df$item))
+  draws_df$item <- factor(draws_df$item, levels = rev(item_levels))
+  obs_df$item   <- factor(obs_df$item, levels = rev(item_levels))
+
   p <- ggplot2::ggplot(
     draws_df,
-    ggplot2::aes(x = .data$gamma, y = forcats::fct_rev(.data$item))
+    ggplot2::aes(x = .data$gamma_rep, y = .data$item)
   ) +
     ggdist::stat_slab(
-      ggplot2::aes(x = .data$gamma_rep,
-                   fill = ggplot2::after_stat(level)),
+      ggplot2::aes(fill = ggplot2::after_stat(level)),
       .width = c(0.84, 0.95)
     ) +
     ggplot2::geom_point(
+      data = obs_df,
+      ggplot2::aes(x = .data$gamma_obs, y = .data$item),
       size = 6, shape = 18, colour = "sienna1",
       position = ggplot2::position_nudge(y = 0.08)
     ) +
@@ -300,17 +334,13 @@ item_restscore_post <- function(item_restscore) {
       aesthetics = "fill",
       values = c("grey", "lightgrey")
     ) +
-    ggplot2::scale_fill_brewer(
-      aesthetics = "slab_fill",
-      na.value = "lightblue1"
-    ) +
     ggplot2::labs(
-      x = "Observed (orange) and expected item-restscore gamma",
+      x = "Observed (orange) and replicated item-restscore gamma",
       y = NULL
     ) +
     ggplot2::theme_bw() +
     ggplot2::theme(legend.position = "none")
-  
+
   list(summary = summary_tbl, plot = p)
 }
 
@@ -325,8 +355,9 @@ item_restscore_post <- function(item_restscore) {
 #'   \code{\link{q3_statistic}} containing at minimum the columns
 #'   \code{item_pair}, \code{q3} (observed Q3 per draw), and
 #'   \code{q3_rep} (replicated Q3 per draw).
-#' @param ci Numeric in \eqn{(0, 1)}. Width of the credible
-#'   interval used for the posterior predictive HDI and the slab
+#' @param ci Numeric in \eqn{(0, 1)}. Width of the highest density
+#'   continuous interval of the replicated (posterior predictive) Q3
+#'   distribution, used in the \code{hdi} table and the slab
 #'   display. Default is 0.84.
 #' @param n_pairs Integer. Maximum number of item pairs to display
 #'   in the plot, selected by largest absolute \code{q3_diff}. If
@@ -349,11 +380,11 @@ item_restscore_post <- function(item_restscore) {
 #'     observed Q3 exceeds the replicated Q3).}
 #'   \item{hdi}{A \code{\link[tibble]{tibble}} with one row per
 #'     item pair containing: \code{item_pair}, \code{item_1},
-#'     \code{item_2}, \code{ld} (local dependence probability:
-#'     proportion of draws where observed Q3 exceeds upper HDI
-#'     bound of replicated distribution), and \code{lr} (local
-#'     repulsion probability: proportion of draws where observed
-#'     Q3 falls below lower HDI bound).}
+#'     \code{item_2}, \code{ld} (proportion of draws where observed
+#'     Q3 exceeds the upper HDI bound of the replicated
+#'     distribution), and \code{lr} (proportion of draws where
+#'     observed Q3 falls below the lower HDI bound). See Details for
+#'     how to read these.}
 #'   \item{plot}{A \code{\link[ggplot2]{ggplot}} object showing
 #'     the posterior predictive distribution of replicated Q3
 #'     (grey filled slab) overlaid with the observed Q3
@@ -374,10 +405,18 @@ item_restscore_post <- function(item_restscore) {
 #'     systematically higher than expected (local dependence);
 #'     a ppp close to 0 indicates it is systematically lower
 #'     (local repulsion, e.g., speed-accuracy tradeoffs).}
-#'   \item{\code{hdi}}{Reports the probability that the observed
-#'     Q3 falls above (local dependence) or below (local repulsion)
-#'     the HDI of the replicated distribution. This provides a
-#'     more distributional assessment than the ppp alone.}
+#'   \item{\code{hdi}}{Reports the proportion of draws where the
+#'     observed Q3 falls above (local dependence) or below (local
+#'     repulsion) the HDI of the replicated distribution. The HDI is
+#'     computed over all draws, so each draw's observed value is
+#'     compared to the same fixed interval. The observed Q3 varies
+#'     across draws only through parameter uncertainty, while the
+#'     replicated Q3 also varies through the sampling of new
+#'     responses. The observed distribution is therefore narrower,
+#'     and these proportions move quickly from near 0 to near 1 as
+#'     the observed values pass an interval bound. They are
+#'     exceedance proportions, not posterior probabilities of local
+#'     dependence.}
 #' }
 #'
 #' The plot uses two layers from the \pkg{ggdist} package:
@@ -446,12 +485,17 @@ q3_post <- function(q3_draws,
     dplyr::summarise(
       item_1  = .data$item_1[1],
       item_2  = .data$item_2[1],
-      q3_obs  = round(mean(.data$q3, na.rm = TRUE), 3),
-      q3_rep  = round(mean(.data$q3_rep, na.rm = TRUE), 3),
+      # q3_diff and q3_ppp must be computed before q3_rep is overwritten
+      # by its mean, since later expressions in summarise() see the new
+      # column.
       q3_diff = round(mean(.data$q3 - .data$q3_rep, na.rm = TRUE), 3),
       q3_ppp  = round(mean(.data$q3 > .data$q3_rep, na.rm = TRUE), 3),
+      q3_obs  = round(mean(.data$q3, na.rm = TRUE), 3),
+      q3_rep  = round(mean(.data$q3_rep, na.rm = TRUE), 3),
       .groups = "drop"
     ) |>
+    dplyr::select("item_pair", "item_1", "item_2", "q3_obs", "q3_rep",
+                  "q3_diff", "q3_ppp") |>
     dplyr::arrange(dplyr::desc(.data$q3_diff))
   
   # --- HDI table: LD / LR probabilities ---
@@ -618,6 +662,15 @@ q3_post <- function(q3_draws,
 #' \code{normal(mean, sd * mult)} prior (brms applies the lower
 #' bound of zero automatically for SD parameters).
 #'
+#' \strong{Independent priors.} Each prior is built from one
+#' parameter's marginal posterior, so the posterior correlations
+#' between parameters are not carried over. Thresholds are usually
+#' positively correlated through the shared location of the scale, so
+#' the independent priors are more informative about overall location
+#' than the posterior was. For example, the SD of the mean threshold
+#' can be noticeably smaller under the priors than under the posterior.
+#' Use \code{mult > 1} to widen them if this matters.
+#'
 #' \strong{Link function transformation:} When \code{target_link}
 #' differs from the source model's link function, all parameters
 #' (means and SDs) are rescaled by a factor of approximately 1.7.
@@ -754,30 +807,15 @@ posterior_to_prior <- function(model,
            "item-specific thresholds.", call. = FALSE)
     }
     
-    unique_items <- sort(unique(model$data[[item_name]]))
-    
+    # Thresholds per item, matched to items by brms level order
+    tau <- .item_tau_draws(draws, .item_levels(model, item_name), item_name,
+                           ordinal = TRUE)
+    unique_items <- names(tau)
+
     for (item_label in unique_items) {
-      thresh_pattern <- paste0(
-        "^b_Intercept\\[",
-        gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-        ","
-      )
-      thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
-      
-      if (length(thresh_cols) == 0) {
-        warning("No threshold parameters found for item '", item_label,
-                "'. Skipping.", call. = FALSE)
-        next
-      }
-      
-      # Sort numerically
-      thresh_nums <- as.numeric(
-        gsub(".*,(\\d+)\\]$", "\\1", thresh_cols)
-      )
-      thresh_cols <- thresh_cols[order(thresh_nums)]
-      
-      for (idx in seq_along(thresh_cols)) {
-        vals   <- draws[[thresh_cols[idx]]]
+      thresh_mat <- tau[[item_label]]
+      for (idx in seq_len(ncol(thresh_mat))) {
+        vals   <- thresh_mat[, idx]
         p_mean <- mean(vals) * link_factor
         p_sd   <- stats::sd(vals) * mult * abs(link_factor)
         

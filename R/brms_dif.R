@@ -11,23 +11,27 @@
 #' \describe{
 #'   \item{Uniform DIF (\code{dif_type = "uniform"}, default)}{
 #'     A single location shift per item across groups, modelled as
-#'     a \code{group:item} fixed-effect interaction. This tests
-#'     whether the average item difficulty differs between groups.}
+#'     an item-specific random slope of the group indicator. This
+#'     tests whether the average item difficulty differs between
+#'     groups.}
 #'   \item{Non-uniform / threshold-level DIF
 #'     (\code{dif_type = "non-uniform"})}{Each item receives
-#'     group-specific thresholds via
-#'     \code{thres(gr = interaction(item, group))}. DIF effects
-#'     are computed as the difference in each threshold between
-#'     groups, revealing whether DIF affects specific response
-#'     categories.}
+#'     group-specific thresholds. DIF effects are the differences in
+#'     each threshold between groups, revealing whether DIF affects
+#'     specific response categories.}
 #' }
+#'
+#' In all cases a difference between the groups' latent means
+#' (impact) is estimated separately from DIF, and DIF is defined
+#' relative to the average item. See Details.
 #'
 #' @param model A fitted \code{\link[brms]{brmsfit}} object from
 #'   the baseline (no-DIF) model.
 #' @param group_var An unquoted variable name identifying the
 #'   grouping variable for DIF testing (e.g., \code{gender}).
 #'   Must be a factor or character variable with exactly 2 levels
-#'   in the current implementation.
+#'   in the current implementation. The second level (in factor
+#'   level order) is the focal group, the first the reference group.
 #' @param item_var An unquoted variable name identifying the item
 #'   grouping variable. Default is \code{item}.
 #' @param person_var An unquoted variable name identifying the
@@ -41,8 +45,8 @@
 #'   the original data frame here.
 #' @param dif_type Character. For polytomous ordinal models only.
 #'   \code{"uniform"} (the default) tests for a uniform location
-#'   shift per item via a \code{group:item} fixed-effect
-#'   interaction. \code{"non-uniform"} fits group-specific
+#'   shift per item via item-specific random slopes of the group
+#'   indicator. \code{"non-uniform"} fits group-specific
 #'   thresholds per item and computes per-threshold DIF effects
 #'   as the difference between groups. Ignored for dichotomous
 #'   models.
@@ -71,7 +75,12 @@
 #'     \code{dif_lower}, \code{dif_upper} (credible interval),
 #'     \code{dif_sd} (posterior SD), \code{pd} (probability of
 #'     direction), \code{rope_percentage} (proportion inside ROPE),
-#'     and \code{flag} (classification).}
+#'     and \code{flag} (classification). Positive DIF means the
+#'     item (or threshold) is easier for the focal group than the
+#'     model implies given the impact.}
+#'   \item{impact}{A one-row \code{\link[tibble]{tibble}} with the
+#'     posterior mean, SD and credible interval of the difference in
+#'     latent means, focal minus reference group, in logits.}
 #'   \item{dif_draws}{A matrix of posterior draws for the DIF
 #'     effects (draws × effects), for further analysis.}
 #'   \item{dif_model}{The fitted DIF \code{brmsfit} object (if
@@ -84,29 +93,51 @@
 #' }
 #'
 #' @details
-#' The function constructs a DIF model by adding a group-by-item
-#' interaction to the baseline model:
+#' The function constructs a DIF model from the baseline model. In the
+#' formulas below, \code{g} is a 0/1 indicator of the focal group that
+#' the function adds to the data:
 #'
 #' \itemize{
 #'   \item \strong{Dichotomous models}
 #'     (\code{family = bernoulli()}): The baseline
 #'     \code{response ~ 1 + (1 | item) + (1 | id)} becomes
-#'     \code{response ~ 1 + group + (1 + group | item) + (1 | id)},
-#'     where the group slope varying by item captures item-specific
-#'     DIF.
+#'     \code{response ~ 1 + group + (1 + group | item) + (1 | id)}.
+#'     The fixed group effect is the impact and the group slope
+#'     varying by item is the item-specific DIF.
 #'   \item \strong{Polytomous uniform DIF}
 #'     (\code{dif_type = "uniform"}): The baseline
 #'     \code{response | thres(gr = item) ~ 1 + (1 | id)} becomes
-#'     \code{response | thres(gr = item) ~ 1 + group:item + (1 | id)}.
+#'     \code{response | thres(gr = item) ~ 1 + (1 | id) + g +
+#'     (0 + g | item)}. The fixed effect of \code{g} is the impact and
+#'     the slope varying by item is the DIF.
 #'   \item \strong{Polytomous non-uniform DIF}
 #'     (\code{dif_type = "non-uniform"}): The baseline becomes
-#'     \code{response | thres(gr = item_group) ~ 1 + (1 | id)},
-#'     where \code{item_group = interaction(item, group)}. Each
-#'     item × group combination gets its own thresholds. DIF
-#'     effects are the differences between group-specific
-#'     thresholds for each item, computed draw-by-draw from the
-#'     posterior.
+#'     \code{response | thres(gr = item_group) ~ 1 + (1 | id)}, where
+#'     \code{item_group} identifies each item × group combination,
+#'     which gets its own thresholds. The person distribution has
+#'     mean 0 in both groups, so a difference in latent means moves
+#'     all thresholds of the focal group by the same amount. For each
+#'     posterior draw, the threshold differences between groups are
+#'     centred on their mean across items (each item weighted
+#'     equally). The mean is the impact and the centred differences,
+#'     with sign reversed, are the DIF.
 #' }
+#'
+#' \strong{Identification.} DIF and a difference in latent means
+#' cannot be told apart without a constraint, since shifting every
+#' item for one group is the same as shifting that group's persons.
+#' Here DIF is defined relative to the average item: it is zero on
+#' average across items, by the random-effect distribution in the
+#' dichotomous and uniform models and exactly in the non-uniform
+#' model. One item with large DIF therefore pulls the other items'
+#' estimates slightly in the opposite direction, by about its DIF
+#' divided by the number of items. Interpret DIF as relative to the
+#' rest of the scale, not as absolute.
+#'
+#' \strong{Sign.} For every DIF type, positive DIF means the item or
+#' threshold is easier for the focal group (the second factor level)
+#' than for the reference group at the same latent level, and
+#' positive impact means the focal group has the higher latent mean.
 #'
 #' DIF effects are summarized using:
 #' \describe{
@@ -114,8 +145,8 @@
 #'     posterior on the dominant side of zero. Values > 0.975
 #'     indicate strong directional evidence.}
 #'   \item{ROPE}{The Region of Practical Equivalence (Kruschke,
-#'     2018). If > 95\% of the posterior falls inside the ROPE,
-#'     the DIF effect is practically negligible. If > 95\% falls
+#'     2018). If > 95% of the posterior falls inside the ROPE,
+#'     the DIF effect is practically negligible. If > 95% falls
 #'     outside, the effect is practically significant.}
 #'   \item{Credible Interval}{If the CI excludes zero, there is
 #'     evidence of DIF at the specified credibility level.}
@@ -283,23 +314,35 @@ dif_statistic <- function(
   resp_var <- as.character(base_formula[[2]])
   if (length(resp_var) > 1) resp_var <- resp_var[2]
 
+  # 0/1 indicator for the focal group (group_levels[2]). A numeric
+  # indicator gives one coefficient per item in (0 + ind | item), where a
+  # factor would give one per level and be collinear with the thresholds.
+  ind_name <- "difgroup"
+  while (ind_name %in% names(dif_data)) ind_name <- paste0(ind_name, "x")
+  dif_data[[ind_name]] <- as.numeric(group_vals == group_levels[2])
+
   if (is_ordinal) {
     resp_text <- deparse(base_formula[[2]], width.cutoff = 500)
     rhs_text  <- deparse(base_formula[[3]], width.cutoff = 500)
 
     if (dif_type == "uniform") {
+      # The fixed effect of the indicator carries the group difference in
+      # latent means (impact). The item-specific random slopes are the DIF,
+      # each item's deviation from the common group effect.
       dif_formula_text <- paste0(
-        resp_text, " ~ ", rhs_text, " + ",
-        group_name, ":", item_name
+        resp_text, " ~ ", rhs_text, " + ", ind_name,
+        " + (0 + ", ind_name, " | ", item_name, ")"
       )
       dif_formula <- brms::bf(stats::as.formula(dif_formula_text))
     } else {
-      # Non-uniform: create item_group interaction for thres(gr = ...)
-      ig_var <- ".item_group_dif"
-      dif_data[[ig_var]] <- interaction(
-        dif_data[[item_name]], dif_data[[group_name]],
-        drop = TRUE, sep = "___"
-      )
+      # Non-uniform: thresholds per item x group. Labels are built from
+      # indices so brms does not rename them in parameter names.
+      ig_var <- "difitemgroup"
+      while (ig_var %in% names(dif_data)) ig_var <- paste0(ig_var, "x")
+      item_index  <- match(as.character(dif_data[[item_name]]),
+                           as.character(unique_items))
+      group_index <- match(as.character(group_vals), group_levels)
+      dif_data[[ig_var]] <- factor(paste0("i", item_index, "g", group_index))
 
       dif_formula_text <- paste0(
         resp_var, " | thres(gr = ", ig_var, ") ~ 1 + (1 | ",
@@ -349,25 +392,27 @@ dif_statistic <- function(
   # ================================================================
   # EXTRACT DIF EFFECTS
   # ================================================================
-  draws <- brms::as_draws_df(dif_model)
-  group_level <- group_levels[2]
-
-  if (is_ordinal && dif_type == "uniform") {
-    dif_info <- .extract_dif_uniform(
-      draws, unique_items, item_name, group_name, group_level
-    )
-  } else if (is_ordinal && dif_type == "non-uniform") {
+  if (is_ordinal && dif_type == "non-uniform") {
     dif_info <- .extract_dif_threshold(
-      draws, unique_items, group_levels
+      brms::as_draws_df(dif_model), unique_items
     )
   } else {
-    dif_info <- .extract_dif_dichotomous(
-      draws, unique_items, item_name, group_name, group_level
+    dif_info <- .extract_dif_slopes(
+      dif_model, unique_items, item_name,
+      fixed_coef = if (is_ordinal) ind_name else group_name,
+      exact = is_ordinal
     )
   }
 
   dif_draws_mat <- dif_info$draws_mat
   effect_labels <- dif_info$labels
+  impact_draws  <- dif_info$impact
+  impact <- tibble::tibble(
+    estimate = mean(impact_draws),
+    sd       = stats::sd(impact_draws),
+    lower    = unname(stats::quantile(impact_draws, lower_prob)),
+    upper    = unname(stats::quantile(impact_draws, upper_prob))
+  )
 
   # ================================================================
   # SUMMARIZE DIF EFFECTS
@@ -553,8 +598,9 @@ dif_statistic <- function(
       name   = "DIF status"
     ) +
     ggplot2::labs(
-      x = paste0("DIF effect (", group_levels[2],
-                 " vs. ", group_levels[1], ")"),
+      x = paste0("DIF effect (", group_levels[2], " vs. ",
+                 group_levels[1], "), positive = easier for ",
+                 group_levels[2]),
       y = NULL,
       subtitle = if (rope > 0) {
         paste0(
@@ -581,6 +627,7 @@ dif_statistic <- function(
 
   list(
     summary        = summary_df,
+    impact         = impact,
     dif_draws      = dif_draws_mat,
     dif_model      = dif_model,
     dif_formula    = dif_formula,
@@ -590,169 +637,121 @@ dif_statistic <- function(
 }
 
 
-# ── Internal: extract uniform DIF (fixed interaction) ────────────
+# ── Internal: extract DIF as item random slopes ──────────────────
+# Used for dichotomous DIF, `(1 + group | item)`, and polytomous uniform DIF,
+# `(0 + indicator | item)`. ranef(summary = FALSE) keeps the original item
+# labels, which brms may alter in parameter names. The impact is the fixed
+# effect of the group, the difference in latent means (focal minus
+# reference).
 #' @keywords internal
-.extract_dif_uniform <- function(draws, unique_items, item_name,
-                                 group_name, group_level) {
-  n_draws <- nrow(draws)
-  k <- length(unique_items)
-  dif_draws_mat <- matrix(0, nrow = n_draws, ncol = k)
-  colnames(dif_draws_mat) <- unique_items
+.extract_dif_slopes <- function(dif_model, unique_items, item_name,
+                                fixed_coef, exact) {
+  re <- brms::ranef(dif_model, summary = FALSE)[[item_name]]
+  if (is.null(re)) {
+    stop("Could not find item random effects in the DIF model.",
+         call. = FALSE)
+  }
+  coefs <- setdiff(dimnames(re)[[3]], "Intercept")
+  if (length(coefs) != 1L) {
+    stop("Expected one DIF coefficient per item in the DIF model, found ",
+         length(coefs), ".", call. = FALSE)
+  }
+  labels <- as.character(unique_items)
+  missing_items <- setdiff(labels, dimnames(re)[[2]])
+  if (length(missing_items)) {
+    stop("DIF effects not found for item(s): ",
+         paste(missing_items, collapse = ", "), ".", call. = FALSE)
+  }
+  dif_draws_mat <- matrix(re[, labels, coefs], ncol = length(labels))
+  colnames(dif_draws_mat) <- labels
 
-  for (i in seq_along(unique_items)) {
-    item_label <- unique_items[i]
-    item_esc <- gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label)
-
-    patterns <- c(
-      paste0("^b_", group_name, group_level, ":",
-             item_name, item_label, "$"),
-      paste0("^b_", item_name, item_label, ":",
-             group_name, group_level, "$"),
-      paste0("^b_", group_name, group_level, ":",
-             item_name, item_esc, "$"),
-      paste0("^b_", item_name, item_esc, ":",
-             group_name, group_level, "$")
-    )
-
-    col_found <- NULL
-    for (pat in patterns) {
-      candidates <- grep(pat, names(draws), value = TRUE)
-      if (length(candidates) == 1) {
-        col_found <- candidates
-        break
-      }
-    }
-
-    if (!is.null(col_found)) {
-      dif_draws_mat[, i] <- draws[[col_found]]
-    }
+  fe <- brms::fixef(dif_model, summary = FALSE)
+  fe_col <- if (exact) {
+    fixed_coef
+  } else {
+    setdiff(grep(paste0("^", fixed_coef), colnames(fe), value = TRUE),
+            "Intercept")
+  }
+  if (length(fe_col) != 1L || !fe_col %in% colnames(fe)) {
+    stop("Could not find the group effect in the DIF model.", call. = FALSE)
   }
 
   list(
     draws_mat = dif_draws_mat,
-    labels    = data.frame(item = unique_items,
-                           stringsAsFactors = FALSE)
+    labels    = data.frame(item = labels, stringsAsFactors = FALSE),
+    impact    = as.numeric(fe[, fe_col])
   )
 }
 
 
 # ── Internal: extract threshold-level DIF ────────────────────────
-# For non-uniform DIF with thres(gr = interaction(item, group)):
-# Each item × group gets its own thresholds. DIF = difference
-# between group-specific thresholds for each item, per threshold.
-#
-# brms names these: b_Intercept[ItemLabel___GroupLevel,ThreshNum]
+# For non-uniform DIF with thres(gr = difitemgroup), where the grouping
+# labels are "i<item index>g<group index>". Each item x group gets its own
+# thresholds and the person distribution has mean 0 in both groups, so a
+# difference in latent means moves every threshold of the focal group by
+# the same amount. That common shift is the impact. DIF is identified by
+# taking it out: per draw, the threshold differences are centred on their
+# mean over items (each item weighted equally), so DIF averages zero across
+# items. Signs follow the other DIF types: positive DIF means the threshold
+# is easier (lower) for the focal group, positive impact means the focal
+# group has the higher latent mean.
 #' @keywords internal
-.extract_dif_threshold <- function(draws, unique_items, group_levels) {
-
-  n_draws <- nrow(draws)
-  sep <- "___"
-
-  # Find all threshold columns
-  thresh_cols <- grep("^b_Intercept\\[", names(draws), value = TRUE)
-
+.extract_dif_threshold <- function(draws, unique_items) {
+  thresh_cols <- grep("^b_Intercept\\[i\\d+g[12],\\d+\\]$", names(draws),
+                      value = TRUE)
   if (length(thresh_cols) == 0) {
-    stop("Could not find threshold parameters in DIF model.",
-         call. = FALSE)
+    stop("Could not find item x group threshold parameters in the DIF ",
+         "model.", call. = FALSE)
   }
-
-  # Parse: b_Intercept[ItemLabel___GroupLevel,ThreshNum]
+  inner <- sub("^b_Intercept\\[(.+)\\]$", "\\1", thresh_cols)
   parsed <- data.frame(
-    col   = thresh_cols,
-    inner = gsub("^b_Intercept\\[(.+)\\]$", "\\1", thresh_cols),
+    col    = thresh_cols,
+    item   = as.integer(sub("^i(\\d+)g.*$", "\\1", inner)),
+    group  = as.integer(sub("^i\\d+g(\\d),.*$", "\\1", inner)),
+    thresh = as.integer(sub("^.*,(\\d+)$", "\\1", inner)),
     stringsAsFactors = FALSE
   )
-  parsed$ig_label <- sub(",\\d+$", "", parsed$inner)
-  parsed$thresh   <- as.integer(sub("^.+,(\\d+)$", "\\1", parsed$inner))
 
-  # Split ig_label into item and group
-  parsed$item  <- sub(paste0(sep, ".*$"), "", parsed$ig_label)
-  parsed$group <- sub(paste0("^.*", sep), "", parsed$ig_label)
-
-  # Separate by group
-  items_g1 <- parsed[parsed$group == group_levels[1], ]
-  items_g2 <- parsed[parsed$group == group_levels[2], ]
-
-  # Build DIF draws: for each item × threshold, group2 minus group1
-  result_items  <- character(0)
+  diffs <- list()
+  result_items <- character(0)
   result_thresh <- character(0)
-  result_draws  <- list()
-
-  for (item_label in unique_items) {
-    cols_g1 <- items_g1[items_g1$item == item_label, ]
-    cols_g2 <- items_g2[items_g2$item == item_label, ]
-
-    if (nrow(cols_g1) == 0 || nrow(cols_g2) == 0) next
-
-    cols_g1 <- cols_g1[order(cols_g1$thresh), ]
-    cols_g2 <- cols_g2[order(cols_g2$thresh), ]
-
-    n_thresh <- min(nrow(cols_g1), nrow(cols_g2))
-
-    for (t in seq_len(n_thresh)) {
-      dif_draw <- draws[[cols_g2$col[t]]] - draws[[cols_g1$col[t]]]
-      result_items  <- c(result_items, item_label)
+  item_of_col <- integer(0)
+  uneven <- character(0)
+  for (i in seq_along(unique_items)) {
+    g1 <- parsed[parsed$item == i & parsed$group == 1L, ]
+    g2 <- parsed[parsed$item == i & parsed$group == 2L, ]
+    if (nrow(g1) == 0 || nrow(g2) == 0) {
+      stop("Item '", unique_items[i], "' has no responses in one of the ",
+           "groups, so its DIF cannot be estimated.", call. = FALSE)
+    }
+    g1 <- g1[order(g1$thresh), ]
+    g2 <- g2[order(g2$thresh), ]
+    if (nrow(g1) != nrow(g2)) uneven <- c(uneven, as.character(unique_items[i]))
+    for (t in seq_len(min(nrow(g1), nrow(g2)))) {
+      diffs[[length(diffs) + 1L]] <- draws[[g2$col[t]]] - draws[[g1$col[t]]]
+      result_items  <- c(result_items, as.character(unique_items[i]))
       result_thresh <- c(result_thresh, as.character(t))
-      result_draws[[length(result_draws) + 1]] <- dif_draw
+      item_of_col   <- c(item_of_col, i)
     }
   }
-
-  if (length(result_draws) == 0) {
-    stop("Could not compute threshold-level DIF effects. ",
-         "Check that thres(gr = ...) produced item x group ",
-         "threshold parameters.", call. = FALSE)
+  if (length(uneven)) {
+    warning("The two groups do not use the same response categories for ",
+            "item(s) ", paste(uneven, collapse = ", "), ". Their thresholds ",
+            "are compared up to the smaller number, which may pair ",
+            "different category boundaries.", call. = FALSE)
   }
 
-  dif_draws_mat <- do.call(cbind, result_draws)
+  d <- do.call(cbind, diffs)
+  item_means <- sapply(split(seq_len(ncol(d)), item_of_col),
+                       function(cols) rowMeans(d[, cols, drop = FALSE]))
+  shift <- rowMeans(matrix(item_means, nrow = nrow(d)))
+  dif_draws_mat <- -(d - shift)
   colnames(dif_draws_mat) <- paste0(result_items, "_t", result_thresh)
 
   list(
     draws_mat = dif_draws_mat,
-    labels    = data.frame(
-      item      = result_items,
-      threshold = result_thresh,
-      stringsAsFactors = FALSE
-    )
-  )
-}
-
-
-# ── Internal: extract dichotomous DIF (random slopes) ────────────
-#' @keywords internal
-.extract_dif_dichotomous <- function(draws, unique_items, item_name,
-                                     group_name, group_level) {
-  n_draws <- nrow(draws)
-  k <- length(unique_items)
-  dif_draws_mat <- matrix(0, nrow = n_draws, ncol = k)
-  colnames(dif_draws_mat) <- unique_items
-
-  for (i in seq_along(unique_items)) {
-    item_label <- unique_items[i]
-    item_esc <- gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label)
-
-    re_pattern <- paste0(
-      "^r_", item_name, "\\[", item_esc,
-      ",", group_name, group_level, "\\]$"
-    )
-    re_col <- grep(re_pattern, names(draws), value = TRUE)
-
-    if (length(re_col) == 1) {
-      dif_draws_mat[, i] <- draws[[re_col]]
-    } else {
-      re_col2 <- grep(
-        paste0("^r_", item_name, "\\[", item_esc, ",.*",
-               group_name, ".*\\]$"),
-        names(draws), value = TRUE
-      )
-      if (length(re_col2) == 1) {
-        dif_draws_mat[, i] <- draws[[re_col2]]
-      }
-    }
-  }
-
-  list(
-    draws_mat = dif_draws_mat,
-    labels    = data.frame(item = unique_items,
-                           stringsAsFactors = FALSE)
+    labels    = data.frame(item = result_items, threshold = result_thresh,
+                           stringsAsFactors = FALSE),
+    impact    = -shift
   )
 }

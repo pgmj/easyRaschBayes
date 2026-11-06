@@ -161,6 +161,9 @@ q3_statistic <- function(model, item_var = item, person_var = id,
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
+
+  .check_unique_person_item(model$data[[person_name]], model$data[[item_name]],
+                            person_name, item_name, "q3_statistic")
   
   # --- Determine posterior draw subset ---
   draw_ids <- NULL

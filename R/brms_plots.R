@@ -53,11 +53,15 @@
 #' where \eqn{\eta} is the linear predictor (i.e., theta for a Rasch
 #' model with no additional fixed effects) and \eqn{\tau_k} are the
 #' item thresholds. Analogous formulas are used for the
-#' \code{cumulative}, \code{sratio}, and \code{cratio} families.
+#' \code{cumulative}, \code{sratio}, and \code{cratio} families, with
+#' the model's link function (for example logit, probit or cloglog).
+#' The \code{acat} family is supported with the logit link only, and
+#' models that estimate a discrimination parameter (\code{disc}) stop
+#' with an error. For rating scale models (common thresholds with item
+#' effects) each item's thresholds are shifted by its item effect.
 #'
 #' Posterior uncertainty in the thresholds propagates into credible
-#' interval ribbons around the category probability curves — a
-#' Bayesian advantage over point-estimate-based plots.
+#' interval ribbons around the category probability curves.
 #'
 #' @references
 #' Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
@@ -181,6 +185,8 @@ plot_ipf <- function(
          call. = FALSE)
   }
 
+  linkinv <- .ordinal_linkinv(model, "plot_ipf")
+
   # Use a subsample of draws for speed
   max_draws <- min(n_draws_total, 500)
   draw_sample <- sample(seq_len(n_draws_total), max_draws)
@@ -191,37 +197,14 @@ plot_ipf <- function(
   # --- Compute category probabilities per item ---
   plot_data_list <- list()
 
+  tau_all <- .item_tau_draws(draws, .item_levels(model, item_name),
+                             item_name, ordinal = TRUE)
+
   for (item_label in unique_items) {
-    # Find threshold columns for this item
-    # Grouped thresholds: b_Intercept[item_label,1], etc.
-    thresh_pattern <- paste0(
-      "^b_Intercept\\[",
-      gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-      ","
-    )
-    thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
-
-    if (length(thresh_cols) == 0) {
-      # Ungrouped thresholds: b_Intercept[1], b_Intercept[2], ...
-      thresh_cols <- grep("^b_Intercept\\[\\d+\\]$", names(draws),
-                          value = TRUE)
-    }
-
-    if (length(thresh_cols) == 0) {
-      warning("Could not find threshold parameters for item '",
-              item_label, "'. Skipping.", call. = FALSE)
-      next
-    }
-
-    # Sort thresholds numerically
-    thresh_nums <- as.numeric(
-      gsub(".*,(\\d+)\\]$|.*\\[(\\d+)\\]$", "\\1\\2", thresh_cols)
-    )
-    thresh_cols <- thresh_cols[order(thresh_nums)]
-
-    n_thresholds <- length(thresh_cols)
+    thresh_sub <- tau_all[[as.character(item_label)]][draw_sample, ,
+                                                      drop = FALSE]
+    n_thresholds <- ncol(thresh_sub)
     n_cat <- n_thresholds + 1
-    thresh_sub <- as.matrix(draws[draw_sample, thresh_cols, drop = FALSE])
 
     # Preallocate
     prob_mean  <- matrix(NA_real_, nrow = n_points, ncol = n_cat)
@@ -252,7 +235,7 @@ plot_ipf <- function(
         #   P(Y <= c) = logistic(tau_c - eta)
         for (s in seq_len(max_draws)) {
           tau_s <- thresh_sub[s, ]
-          cum_probs <- stats::plogis(tau_s - theta)
+          cum_probs <- linkinv(tau_s - theta)
           probs <- diff(c(0, cum_probs, 1))
           probs <- pmax(probs, 0)
           prob_draws[s, ] <- probs / sum(probs)
@@ -265,7 +248,7 @@ plot_ipf <- function(
           probs <- numeric(n_cat)
           remaining <- 1
           for (cc in seq_len(n_thresholds)) {
-            p_stop <- stats::plogis(tau_s[cc] - theta)
+            p_stop <- linkinv(tau_s[cc] - theta)
             probs[cc] <- remaining * p_stop
             remaining <- remaining * (1 - p_stop)
           }
@@ -280,7 +263,7 @@ plot_ipf <- function(
           probs <- numeric(n_cat)
           remaining <- 1
           for (cc in seq_len(n_thresholds)) {
-            p_cont <- stats::plogis(theta - tau_s[cc])
+            p_cont <- linkinv(theta - tau_s[cc])
             probs[cc] <- remaining * (1 - p_cont)
             remaining <- remaining * p_cont
           }
@@ -358,13 +341,15 @@ plot_ipf <- function(
   }
 
   p <- p +
-    ggplot2::geom_line(linewidth = line_size) +
+    ggplot2::geom_line(ggplot2::aes(linetype = .data$category),
+                       linewidth = line_size) +
     ggplot2::facet_wrap(~ item, ncol = ncol) +
     ggplot2::labs(
-      x      = expression(theta),
-      y      = "Probability",
-      colour = "Category",
-      fill   = "Category"
+      x        = expression(theta),
+      y        = "Probability",
+      colour   = "Category",
+      fill     = "Category",
+      linetype = "Category"
     ) +
     ggplot2::ylim(0, 1) +
     ggplot2::theme_bw() +
@@ -389,28 +374,25 @@ plot_ipf <- function(
 
 #' Person-Item Map (Targeting Plot) for Bayesian IRT Models
 #'
-#' Plots a person-item map (also known as a Wright map or targeting
-#' plot) for Bayesian IRT models fitted with \pkg{brms}. The plot
-#' consists of three vertically stacked panels sharing the same
-#' latent variable (theta / logit) x-axis:
+#' Produces a three-panel targeting plot with a shared logit x-axis:
 #'
 #' \enumerate{
-#'   \item \strong{Top}: A histogram of person ability estimates,
-#'     with a reference line for the mean (or median) and shading
-#'     for ±1 SD (or ±1 MAD).
-#'   \item \strong{Middle}: An inverted histogram of item threshold
-#'     locations, with a reference line for the mean (or median) and
-#'     shading for ±1 SD (or ±1 MAD), mirroring the top panel to
-#'     visualise the overlap between person abilities and item
-#'     difficulties.
-#'   \item \strong{Bottom}: A dot-and-whisker plot of item thresholds
-#'     by item, with credible intervals and color-coded response
-#'     categories.
+#'   \item \strong{Top}: Histogram of person locations, with a reference
+#'     line for the mean (or median) and shading for ±1 SD (or ±1 MAD).
+#'   \item \strong{Middle}: Inverted histogram of item threshold
+#'     locations, with the same summary annotations.
+#'   \item \strong{Bottom}: One bar per item, either partitioned into
+#'     response-category bands (\code{panel = "categories"}, the
+#'     default) or drawn as a dot-and-whisker plot of the individual
+#'     thresholds (\code{panel = "thresholds"}).
 #' }
 #'
-#' Together, the top and middle panels form a half-moon (or
-#' back-to-back histogram) display that makes it easy to assess
-#' whether the test is well-targeted to the sample.
+#' Together, the top and middle panels form a back-to-back histogram
+#' that shows whether the test is well targeted to the sample. The
+#' bottom panel places the items on the same scale, so the category
+#' bands show which response is the most likely one at the locations
+#' where the persons are. The layout follows
+#' \code{easyRasch2::RMtargeting()}.
 #'
 #' @param model A fitted \code{\link[brms]{brmsfit}} object from an
 #'   ordinal IRT model (e.g., \code{family = acat}) or a dichotomous
@@ -423,52 +405,107 @@ plot_ipf <- function(
 #'   histogram annotations use mean ± SD. If \code{TRUE}, median ±
 #'   MAD is used instead.
 #' @param center Logical. If \code{TRUE} (the default), the scale is
-#'   recentered so that the grand mean of all item threshold
-#'   locations is zero, following the convention in frequentist
-#'   Rasch analysis. Person estimates are shifted by the same
-#'   constant. If \code{FALSE}, the raw brms parameterisation is
-#'   used.
-#' @param sort_items Character. How to order items on the y-axis of
-#'   the bottom panel. \code{"data"} (the default) preserves the
-#'   order in which items first appear in the model data, with the
-#'   first item at the top. \code{"location"} sorts items by their
-#'   mean threshold location (easiest at top, hardest at bottom).
-#' @param bins Integer. Number of bins for both histograms. Default
-#'   is 30.
-#' @param prob Numeric in \eqn{(0, 1)}. Width of the credible
-#'   intervals for the item threshold whiskers. Default is 0.95.
-#' @param palette An optional character vector of colors for the
-#'   response categories. If \code{NULL} (the default), the
-#'   \code{viridis} discrete scale is used.
-#' @param person_fill Fill color for the person histogram. Default is
+#'   recentred so that the mean of all item threshold locations is
+#'   zero. Person locations are shifted by the same constant. If
+#'   \code{FALSE}, the raw brms parameterisation is used.
+#' @param sort_items Character. How to order items in the bottom
+#'   panel. \code{"data"} (the default) keeps the order in which items
+#'   first appear in the model data, with the first item at the top.
+#'   \code{"location"} sorts items by their mean threshold location,
+#'   easiest at the top.
+#' @param bins Integer. Number of bins for both histograms. Default is
+#'   half the maximum possible sum score, rounded up, and at least 11.
+#' @param prob Numeric in \eqn{(0, 1)}, or \code{NULL}. Width of the
+#'   credible intervals for the item thresholds and of the intervals in
+#'   the returned \code{categories} table. Default is 0.95. \code{NULL}
+#'   hides the threshold intervals in the plot.
+#' @param palette An optional character vector of colours, one per
+#'   response category. Overrides the viridis colours in both panel
+#'   types.
+#' @param person_fill Fill colour for the person histogram. Default is
 #'   \code{"#0072B2"} (blue).
-#' @param threshold_fill Fill color for the threshold histogram.
-#'   Default is \code{"#D55E00"} (vermillion).
-#' @param height_ratios Numeric vector of length 3 specifying the
-#'   relative heights of the top (person), middle (threshold), and
-#'   bottom (dot-whisker) panels. Default is \code{c(3, 2, 5)}.
+#' @param threshold_fill Fill colour for the threshold histogram, and
+#'   for the dichotomous dot-and-whisker panel. Default is
+#'   \code{"#D55E00"} (vermillion).
+#' @param height_ratios Numeric vector of length 3 giving the relative
+#'   heights of the top, middle and bottom panels. Default is
+#'   \code{c(3, 2, 5)}.
+#' @param panel Character. \code{"categories"} (the default) draws each
+#'   item as a bar partitioned into response-category bands, with the
+#'   threshold estimates and their credible intervals below it.
+#'   \code{"thresholds"} draws a dot-and-whisker plot of the thresholds.
+#' @param person_estimate Character. \code{"eap"} (the default) uses
+#'   the posterior means of the person random effects.
+#'   \code{"wle"} uses Warm's weighted likelihood estimates from
+#'   \code{\link{person_parameters}}. EAPs are shrunk toward the mean,
+#'   so their histogram is narrower than that of the WLEs.
+#' @param xlim Numeric vector of length 2. Initial limits of the shared
+#'   x-axis, widened to whole numbers if any person location, threshold
+#'   or interval falls outside. Default is \code{c(-4, 4)}.
+#' @param category_labels Optional character vector of labels for the
+#'   response categories, in ascending order and one per category. Used
+#'   in the legend of the \code{"categories"} panel. Default \code{NULL}
+#'   uses the category scores, starting at 0.
+#' @param viridis_option Character. Viridis palette option for the
+#'   category colours. Default is \code{"G"} (mako).
+#' @param viridis_begin,viridis_end Numeric in \eqn{[0, 1]}. Start and end
+#'   of the viridis palette. Defaults \code{0.9} and \code{0.2} run from
+#'   light to dark, so higher categories are darker.
+#' @param row_gap Numeric. Vertical spacing between item rows in the
+#'   \code{"categories"} panel. Default \code{NULL} uses 1, widened when
+#'   a category collapses or thresholds are reversed, to make room for
+#'   their labels.
+#' @param output Character. \code{"patchwork"} (the default) returns the
+#'   combined plot. \code{"list"} returns the three panels and the
+#'   posterior summaries of the category structure.
 #'
-#' @return A \code{patchwork} object (combined \code{ggplot}).
+#' @return With \code{output = "patchwork"}, a \code{patchwork} object.
+#'   With \code{output = "list"}, a list with:
+#' \describe{
+#'   \item{p1, p2, p3}{The person histogram, threshold histogram and
+#'     bottom panel as \code{ggplot} objects.}
+#'   \item{categories}{A \code{\link[tibble]{tibble}} with one row per
+#'     item and response category: \code{p_never_modal}, the posterior
+#'     probability that the category is never the most likely response
+#'     at any location, and \code{lower_bound}, \code{lower_bound_lo},
+#'     \code{lower_bound_hi}, the posterior median and \code{prob}
+#'     interval of the location where the category starts to be the most
+#'     likely response, over the draws where it is (\code{NA} for
+#'     category 0).}
+#'   \item{reversals}{A \code{\link[tibble]{tibble}} with one row per
+#'     item and adjacent threshold pair: \code{p_reversed}, the
+#'     posterior probability that the higher threshold lies below the
+#'     lower one.}
+#' }
 #'
 #' @details
-#' \strong{Person estimates} are obtained as the posterior means of
-#' the person random effects from the fitted model via
-#' \code{\link[brms]{ranef}}.
+#' \strong{Item thresholds} come from the posterior draws (see
+#' \code{\link{item_parameters}}). Points are posterior means and
+#' intervals are equal-tailed credible intervals.
 #'
-#' \strong{Item thresholds} are extracted from the posterior draws.
-#' For models with grouped thresholds (\code{thres(gr = item)}),
-#' each item has its own set of threshold parameters. For models
-#' with a single set of thresholds (e.g., dichotomous Rasch with
-#' \code{(1 | item)}), the item random effects are subtracted from
-#' the global thresholds to obtain item-specific locations.
+#' \strong{Category bands.} With \code{panel = "categories"}, each band
+#' spans the locations at which its response category is the most
+#' likely response, computed from the posterior mean thresholds. When an
+#' item's thresholds are ordered these boundaries are the thresholds
+#' themselves. When they are not, the disordered run is pooled by
+#' averaging, and the categories it skips over, which are never the
+#' most likely response at any location, collapse to a red tick
+#' labelled with the category number. Red arrows below the bar give the
+#' size of each threshold reversal in logits. The two outer bands fade
+#' towards the panel edge, since they are open-ended.
 #'
-#' When \code{center = TRUE} (the default), the grand mean of all
-#' item threshold posterior means is computed and subtracted from
-#' every threshold estimate, its credible interval bounds, and every
-#' person estimate. This is a uniform translation of the entire
-#' scale that preserves all relative distances and matches the
-#' zero-centered item difficulty convention used in frequentist CML
-#' estimation.
+#' \strong{Posterior probabilities.} The same category structure is
+#' computed for every posterior draw. Each red tick is labelled with the
+#' posterior probability that its category is never the most likely
+#' response, and each reversal with the posterior probability that the
+#' pair is reversed. The full tables, including categories and pairs
+#' without red marks, are returned with \code{output = "list"}.
+#'
+#' \strong{Person locations.} \code{person_estimate = "eap"} uses the
+#' posterior means of the person random effects, shifted by the same
+#' constant as the thresholds. \code{"wle"} uses the WLEs of
+#' \code{\link{person_parameters}}, which are finite at extreme scores
+#' and use the items each person answered.
 #'
 #' @references
 #' Wright, B. D. & Stone, M. H. (1979). \emph{Best Test Design}.
@@ -480,8 +517,7 @@ plot_ipf <- function(
 #'
 #' @seealso
 #' \code{\link{plot_ipf}} for item category probability curves,
-#' \code{\link[brms]{ranef}},
-#' \code{\link[brms]{as_draws_df}}.
+#' \code{\link{item_parameters}}, \code{\link{person_parameters}}.
 #'
 #' @examples
 #' \donttest{
@@ -505,17 +541,23 @@ plot_ipf <- function(
 #'   family = acat,
 #'   chains = 4,
 #'   cores  = 1, # use more cores if you have
-#'   iter   = 500 # use at least 2000 
+#'   iter   = 500 # use at least 2000
 #' )
 #'
-#' # Default: centered, mean ± SD, items in data order
+#' # Default: category bands, EAP person locations, items in data order
 #' plot_targeting(fit_pcm)
 #'
-#' # Uncentered (raw brms parameterisation)
-#' plot_targeting(fit_pcm, center = FALSE)
+#' # WLE person locations, items sorted by location, labelled categories
+#' plot_targeting(fit_pcm, person_estimate = "wle", sort_items = "location",
+#'                category_labels = c("Never", "Sometimes", "Often"))
 #'
-#' # Robust: median ± MAD, items sorted by location
-#' plot_targeting(fit_pcm, robust = TRUE, sort_items = "location")
+#' # Dot-and-whisker panel
+#' plot_targeting(fit_pcm, panel = "thresholds")
+#'
+#' # Panels and posterior summaries of the category structure
+#' res <- plot_targeting(fit_pcm, output = "list")
+#' res$categories
+#' res$reversals
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
@@ -530,7 +572,7 @@ plot_ipf <- function(
 #'   family = bernoulli(),
 #'   chains = 4,
 #'   cores  = 1, # use more cores if you have
-#'   iter   = 500 # use at least 2000 
+#'   iter   = 500 # use at least 2000
 #' )
 #'
 #' plot_targeting(fit_rm, sort_items = "location")
@@ -547,12 +589,21 @@ plot_targeting <- function(
     robust = FALSE,
     center = TRUE,
     sort_items = c("data", "location"),
-    bins = 30,
+    bins,
     prob = 0.95,
     palette = NULL,
     person_fill = "#0072B2",
     threshold_fill = "#D55E00",
-    height_ratios = c(3, 2, 5)
+    height_ratios = c(3, 2, 5),
+    panel = c("categories", "thresholds"),
+    person_estimate = c("eap", "wle"),
+    xlim = c(-4, 4),
+    category_labels = NULL,
+    viridis_option = "G",
+    viridis_begin = 0.9,
+    viridis_end = 0.2,
+    row_gap = NULL,
+    output = c("patchwork", "list")
 ) {
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -565,7 +616,10 @@ plot_targeting <- function(
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
 
-  sort_items  <- match.arg(sort_items)
+  sort_items      <- match.arg(sort_items)
+  panel           <- match.arg(panel)
+  person_estimate <- match.arg(person_estimate)
+  output          <- match.arg(output)
   item_name   <- rlang::as_name(rlang::enquo(item_var))
   person_name <- rlang::as_name(rlang::enquo(person_var))
 
@@ -577,238 +631,298 @@ plot_targeting <- function(
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
-
-  lower_prob <- (1 - prob) / 2
-  upper_prob <- 1 - lower_prob
-
-  # ================================================================
-  # PERSON ESTIMATES
-  # ================================================================
-  person_re <- brms::ranef(model)[[person_name]]
-  if (is.null(person_re)) {
-    stop("No random effects found for '", person_name,
-         "'. Check your model formula.", call. = FALSE)
-  }
-  person_theta <- person_re[, "Estimate", "Intercept"]
+  show_ci <- !is.null(prob)
+  ci_prob <- if (show_ci) prob else 0.95
+  lower_prob <- (1 - ci_prob) / 2
 
   # ================================================================
   # ITEM THRESHOLDS
   # ================================================================
-  draws <- brms::as_draws_df(model)
-  unique_items_data_order <- unique(model$data[[item_name]])
-  unique_items <- sort(unique(model$data[[item_name]]))
-  family_name <- stats::family(model)$family
-  is_ordinal <- grepl("acat|cumul|sratio|cratio",
-                      family_name, ignore.case = TRUE)
+  tau <- .model_tau_draws(model, item_name)
+  thr_means <- lapply(tau, colMeans)
+  shift <- if (center) mean(unlist(thr_means)) else 0
+  tau <- lapply(tau, function(m) m - shift)
 
-  threshold_data <- .extract_threshold_data(
-    draws, model, unique_items, item_name, person_name,
-    is_ordinal, lower_prob, upper_prob
-  )
+  item_levels <- names(tau)
+  thr <- do.call(rbind, lapply(item_levels, function(it) {
+    m <- tau[[it]]
+    data.frame(
+      Item      = it,
+      k         = seq_len(ncol(m)),
+      Threshold = paste0("T", seq_len(ncol(m))),
+      Location  = colMeans(m),
+      CI_low    = apply(m, 2, stats::quantile, probs = lower_prob),
+      CI_high   = apply(m, 2, stats::quantile, probs = 1 - lower_prob),
+      stringsAsFactors = FALSE
+    )
+  }))
+  rownames(thr) <- NULL
+  n_cat <- max(thr$k) + 1L
+  max_score <- nrow(thr)
 
   # ================================================================
-  # CENTERING (optional)
+  # PERSON LOCATIONS
   # ================================================================
-  # The entire scale (persons AND thresholds) is shifted by the same
-
-  # constant so that the grand mean of item thresholds = 0.
-  # Both move in the same direction to preserve relative positions.
-  if (center) {
-    shift <- mean(threshold_data$estimate)
-
-    threshold_data$estimate <- threshold_data$estimate - shift
-    threshold_data$lower    <- threshold_data$lower - shift
-    threshold_data$upper    <- threshold_data$upper - shift
-
-    person_theta <- person_theta - shift
+  if (person_estimate == "eap") {
+    person_re <- brms::ranef(model)[[person_name]]
+    if (is.null(person_re)) {
+      stop("No random effects found for '", person_name,
+           "'. Check your model formula.", call. = FALSE)
+    }
+    person_theta <- person_re[, "Estimate", "Intercept"] - shift
+    person_label <- "EAP"
+  } else {
+    pp <- person_parameters(model, item_var = !!rlang::sym(item_name),
+                            person_var = !!rlang::sym(person_name),
+                            center = center)
+    person_theta <- pp$person_estimates$wle
+    person_label <- "WLE"
   }
+  person_theta <- person_theta[is.finite(person_theta)]
+  n_persons <- length(unique(model$data[[person_name]]))
 
   # ================================================================
-  # SUMMARY STATISTICS (computed after centering)
+  # AXIS, BINS AND SUMMARIES
   # ================================================================
+  if (missing(bins)) bins <- max(11L, ceiling(max_score / 2))
+
+  all_values <- c(person_theta, thr$Location)
+  if (show_ci) all_values <- c(all_values, thr$CI_low, thr$CI_high)
+  if (max(all_values, na.rm = TRUE) > xlim[2]) {
+    xlim[2] <- ceiling(max(all_values, na.rm = TRUE))
+  }
+  if (min(all_values, na.rm = TRUE) < xlim[1]) {
+    xlim[1] <- floor(min(all_values, na.rm = TRUE))
+  }
+  x_breaks <- seq(xlim[1], xlim[2], by = 1)
+  x_label <- if (center) "Centred location (logit scale)" else
+    "Location (logit scale)"
+
   if (robust) {
     p_center <- stats::median(person_theta)
     p_spread <- stats::mad(person_theta)
+    t_center <- stats::median(thr$Location)
+    t_spread <- stats::mad(thr$Location)
     center_label <- "Median"
     spread_label <- "MAD"
   } else {
     p_center <- mean(person_theta)
     p_spread <- stats::sd(person_theta)
+    t_center <- mean(thr$Location)
+    t_spread <- stats::sd(thr$Location)
     center_label <- "Mean"
     spread_label <- "SD"
   }
-
-  thresh_locations <- threshold_data$estimate
-  if (robust) {
-    t_center <- stats::median(thresh_locations)
-    t_spread <- stats::mad(thresh_locations)
-  } else {
-    t_center <- mean(thresh_locations)
-    t_spread <- stats::sd(thresh_locations)
+  annot <- function(cn, sp) {
+    paste0(center_label, " = ", round(cn, 2), ", ", spread_label, " = ",
+           round(sp, 2))
   }
 
   # ================================================================
-  # SHARED X-AXIS LIMITS
+  # TOP PANEL: person histogram
   # ================================================================
-  all_values <- c(
-    person_theta,
-    threshold_data$estimate,
-    threshold_data$lower,
-    threshold_data$upper
-  )
-  x_range <- range(all_values, na.rm = TRUE)
-  x_pad   <- diff(x_range) * 0.05
-  x_lim   <- c(x_range[1] - x_pad, x_range[2] + x_pad)
-
-  if (center) {
-    x_label <- expression("Centered latent variable" ~ (theta))
-  } else {
-    x_label <- expression("Latent variable" ~ (theta))
-  }
-
-  # ================================================================
-  # TOP PANEL: Person histogram
-  # ================================================================
-  person_df <- data.frame(theta = person_theta)
-
-  p_top <- ggplot2::ggplot(person_df, ggplot2::aes(x = .data$theta)) +
-    ggplot2::geom_histogram(
-      bins = bins, fill = person_fill, colour = "white", alpha = 0.85
-    ) +
-    ggplot2::annotate(
-      "rect",
-      xmin = p_center - p_spread, xmax = p_center + p_spread,
-      ymin = -Inf, ymax = Inf,
-      fill = person_fill, alpha = 0.12
-    ) +
-    ggplot2::geom_vline(
-      xintercept = p_center, linewidth = 0.8,
-      linetype = "dashed", colour = "grey20"
-    ) +
-    ggplot2::annotate(
-      "text",
-      x = p_center, y = Inf, vjust = -0.5,
-      label = paste0(center_label, " = ", round(p_center, 2),
-                     ", ", spread_label, " = ", round(p_spread, 2)),
-      size = 3.2, colour = "grey20"
-    ) +
-    ggplot2::scale_y_continuous(
-      breaks = function(lim) {
-        seq(0, floor(lim[2]), by = max(1, round(lim[2] / 6)))
-      }
-    ) +
-    ggplot2::coord_cartesian(xlim = x_lim, clip = "off") +
+  p1 <- ggplot2::ggplot(data.frame(theta = person_theta),
+                        ggplot2::aes(x = .data$theta)) +
+    ggplot2::geom_histogram(bins = bins, fill = person_fill,
+                            colour = "white", alpha = 0.85) +
+    ggplot2::annotate("rect", xmin = p_center - p_spread,
+                      xmax = p_center + p_spread, ymin = -Inf, ymax = Inf,
+                      fill = person_fill, alpha = 0.12) +
+    ggplot2::geom_vline(xintercept = p_center, linewidth = 0.8,
+                        linetype = "dashed", colour = "grey20") +
+    ggplot2::annotate("text", x = p_center, y = Inf, vjust = -0.5,
+                      label = annot(p_center, p_spread), size = 3.2,
+                      colour = "grey20") +
+    ggplot2::scale_y_continuous(breaks = function(lim) {
+      seq(0, floor(lim[2]), by = max(1, round(lim[2] / 6)))
+    }) +
+    ggplot2::scale_x_continuous(breaks = x_breaks) +
+    ggplot2::coord_cartesian(xlim = xlim, clip = "off") +
     ggplot2::labs(x = NULL, y = "Persons") +
     ggplot2::theme_bw() +
-    ggplot2::theme(
-      axis.text.x  = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
-      plot.margin  = ggplot2::margin(5, 5, 0, 5)
-    )
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                   axis.ticks.x = ggplot2::element_blank(),
+                   plot.margin = ggplot2::margin(5, 5, 0, 5)) +
+    .erb_caption_theme()
 
   # ================================================================
-  # MIDDLE PANEL: Inverted threshold histogram
+  # MIDDLE PANEL: inverted threshold histogram
   # ================================================================
-  thresh_hist_df <- data.frame(location = thresh_locations)
-
-  p_mid <- ggplot2::ggplot(
-    thresh_hist_df, ggplot2::aes(x = .data$location)
-  ) +
-    ggplot2::geom_histogram(
-      bins = bins, fill = threshold_fill, colour = "white", alpha = 0.85
-    ) +
-    ggplot2::annotate(
-      "rect",
-      xmin = t_center - t_spread, xmax = t_center + t_spread,
-      ymin = -Inf, ymax = Inf,
-      fill = threshold_fill, alpha = 0.12
-    ) +
-    ggplot2::geom_vline(
-      xintercept = t_center, linewidth = 0.8,
-      linetype = "dashed", colour = "grey20"
-    ) +
-    ggplot2::annotate(
-      "text",
-      x = t_center, y = -Inf, vjust = 1.5,
-      label = paste0(center_label, " = ", round(t_center, 2),
-                     ", ", spread_label, " = ", round(t_spread, 2)),
-      size = 3.2, colour = "grey20"
-    ) +
-    ggplot2::scale_y_reverse(
-      breaks = function(lim) {
-        max_val <- abs(floor(lim[1]))
-        seq(0, max_val, by = max(1, round(max_val / 4)))
-      }
-    ) +
-    ggplot2::coord_cartesian(xlim = x_lim, clip = "off") +
+  p2 <- ggplot2::ggplot(data.frame(location = thr$Location),
+                        ggplot2::aes(x = .data$location)) +
+    ggplot2::geom_histogram(bins = bins, fill = threshold_fill,
+                            colour = "white", alpha = 0.85) +
+    ggplot2::annotate("rect", xmin = t_center - t_spread,
+                      xmax = t_center + t_spread, ymin = -Inf, ymax = Inf,
+                      fill = threshold_fill, alpha = 0.12) +
+    ggplot2::geom_vline(xintercept = t_center, linewidth = 0.8,
+                        linetype = "dashed", colour = "grey20") +
+    ggplot2::annotate("text", x = t_center, y = -Inf, vjust = 1.5,
+                      label = annot(t_center, t_spread), size = 3.2,
+                      colour = "grey20") +
+    ggplot2::scale_y_reverse(minor_breaks = NULL, breaks = function(lim) {
+      max_val <- abs(floor(lim[1]))
+      seq(0, max_val, by = max(1, round(max_val / 4)))
+    }) +
+    ggplot2::scale_x_continuous(breaks = x_breaks) +
+    ggplot2::coord_cartesian(xlim = xlim, clip = "off") +
     ggplot2::labs(x = NULL, y = "Thresholds") +
     ggplot2::theme_bw() +
-    ggplot2::theme(
-      axis.text.x  = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
-      plot.margin  = ggplot2::margin(0, 5, 0, 5)
-    )
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+                   axis.ticks.x = ggplot2::element_blank(),
+                   axis.ticks.y = ggplot2::element_blank(),
+                   plot.margin = ggplot2::margin(0, 5, 0, 5)) +
+    .erb_caption_theme()
 
   # ================================================================
-  # BOTTOM PANEL: Dot-and-whisker by item
+  # BOTTOM PANEL
   # ================================================================
+  # ggplot draws the first factor level at the bottom, so the order is
+  # reversed to put the first (or easiest) item at the top
   if (sort_items == "location") {
-    item_means <- stats::aggregate(
-      estimate ~ item, data = threshold_data, FUN = mean
-    )
-    # Reverse: easiest (lowest location) at top, hardest at bottom
-    item_order <- item_means$item[order(item_means$estimate)]
+    item_means <- tapply(thr$Location, thr$Item, mean)
+    item_order <- rev(names(item_means)[order(item_means)])
   } else {
-    # Reverse data order: first item in data at top of y-axis
-    # ggplot places the first factor level at the bottom, so we
-    # reverse so that the last level (= first item) is at the top
-    item_order <- rev(unique_items_data_order)
-  }
-  threshold_data$item <- factor(threshold_data$item, levels = item_order)
-
-  p_bot <- ggplot2::ggplot(
-    threshold_data,
-    ggplot2::aes(
-      x      = .data$estimate,
-      y      = .data$item,
-      colour = .data$category,
-      xmin   = .data$lower,
-      xmax   = .data$upper
-    )
-  ) +
-    ggplot2::geom_errorbarh(
-      width = 0.25, linewidth = 0.5,
-      position = ggplot2::position_dodge(width = 0.4)
-    ) +
-    ggplot2::geom_point(
-      size = 2.5,
-      position = ggplot2::position_dodge(width = 0.4)
-    ) +
-    ggplot2::coord_cartesian(xlim = x_lim) +
-    ggplot2::labs(
-      x      = x_label,
-      y      = NULL,
-      colour = "Threshold"
-    ) +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      legend.position = "bottom",
-      plot.margin     = ggplot2::margin(0, 5, 5, 5)
-    )
-
-  if (!is.null(palette)) {
-    p_bot <- p_bot + ggplot2::scale_colour_manual(values = palette)
-  } else {
-    p_bot <- p_bot + ggplot2::scale_colour_viridis_d(end = 0.9)
+    data_order <- as.character(unique(model$data[[item_name]]))
+    item_order <- rev(data_order)
   }
 
-  # ================================================================
-  # COMBINE
-  # ================================================================
-  combined <- p_top / p_mid / p_bot +
-    patchwork::plot_layout(heights = height_ratios)
+  if (is.null(category_labels)) {
+    category_labels <- as.character(seq_len(n_cat) - 1L)
+  } else if (length(category_labels) != n_cat) {
+    stop("`category_labels` must have one label per response category. ",
+         "The model has ", n_cat, " categories and ",
+         length(category_labels), " labels were supplied.", call. = FALSE)
+  }
+  fills <- if (!is.null(palette)) {
+    if (length(palette) < n_cat) {
+      stop("`palette` needs at least ", n_cat, " colours.", call. = FALSE)
+    }
+    palette[seq_len(n_cat)]
+  } else {
+    scales::viridis_pal(option = viridis_option, begin = viridis_begin,
+                        end = viridis_end)(n_cat)
+  }
 
-  combined
+  cat_post <- .category_posterior(tau, ci_prob)
+
+  caption_body <- paste0(
+    "Person location (", person_label, ") ", tolower(center_label), ": ",
+    round(p_center, 2), " (", spread_label, " ", round(p_spread, 2),
+    "). Item threshold location ", tolower(center_label), ": ",
+    round(t_center, 2), " (", spread_label, " ", round(t_spread, 2),
+    "). n = ", n_persons, " persons."
+  )
+
+  if (panel == "categories") {
+    bands_preview <- .category_bands(thr, item_order, xlim)
+    revs_preview <- .threshold_reversals(thr, item_order)
+    if (is.null(row_gap)) {
+      # Room for tick labels above and reversal labels below the bars
+      n_rev_max <- if (is.null(revs_preview)) 0L else
+        max(table(revs_preview$Item))
+      # Tick labels above the bar are only needed for collapses that are
+      # not explained by a reversal (those are labelled on the arrow)
+      drops_above <- !is.null(bands_preview$drops) && (
+        is.null(revs_preview) ||
+          !all(paste(bands_preview$drops$Item, bands_preview$drops$cat) %in%
+                 paste(revs_preview$Item, revs_preview$k)))
+      row_gap <- 1 + 0.3 * drops_above + 0.36 * n_rev_max
+    }
+    band_caption <- paste(
+      "Bands span the locations at which each response category is the",
+      "most likely response, from the posterior mean thresholds. Outer",
+      "bands fade because they are open-ended."
+    )
+    if (show_ci) {
+      band_caption <- paste(band_caption, sprintf(paste(
+        "Points and intervals below each bar are the thresholds with %d%%",
+        "credible intervals, coloured by the category entered."
+      ), round(ci_prob * 100)))
+    }
+    if (!is.null(bands_preview$drops)) {
+      band_caption <- paste(
+        band_caption,
+        "A red tick marks a category that is never the most likely",
+        "response, with its number and the posterior probability of that."
+      )
+    }
+    if (!is.null(revs_preview)) {
+      band_caption <- paste(
+        band_caption,
+        "Red arrows give the size in logits of each threshold reversal and",
+        "the posterior probability that the pair is reversed. When a",
+        "reversal makes a category collapse, the arrow is labelled",
+        "'category: size (P)' instead, with the probability that the",
+        "category is never the most likely response."
+      )
+    }
+    p3 <- .targeting_category_panel(
+      thr = thr, item_order = item_order, xlim = xlim,
+      category_labels = category_labels, fills = fills, show_ci = show_ci,
+      row_gap = row_gap,
+      caption_text = .erb_caption(paste(caption_body, band_caption)),
+      x_label = x_label,
+      drop_prob = cat_post$categories, rev_prob = cat_post$reversals
+    )
+  } else {
+    thr$Item <- factor(thr$Item, levels = item_order)
+    ci_caption <- if (show_ci) {
+      sprintf("Error bars show %d%% credible intervals.",
+              round(ci_prob * 100))
+    } else ""
+    caption_text <- .erb_caption(paste(caption_body, ci_caption))
+    if (n_cat == 2L) {
+      p3 <- ggplot2::ggplot(thr, ggplot2::aes(x = .data$Location,
+                                              y = .data$Item)) +
+        ggplot2::geom_point(size = 3, colour = threshold_fill)
+      if (show_ci) {
+        p3 <- p3 + ggplot2::geom_errorbar(
+          ggplot2::aes(xmin = .data$CI_low, xmax = .data$CI_high),
+          width = 0.25, linewidth = 0.5, colour = threshold_fill,
+          orientation = "y"
+        )
+      }
+    } else {
+      thr$Threshold <- factor(thr$Threshold,
+                              levels = paste0("T", seq_len(n_cat - 1L)))
+      thr_cols <- .ci_contrast(fills[-1])
+      shape_vals <- rep(c(16, 17, 15, 18, 8, 3, 4, 1, 2, 0),
+                        length.out = n_cat - 1L)
+      p3 <- ggplot2::ggplot(thr, ggplot2::aes(
+        x = .data$Location, y = .data$Item,
+        colour = .data$Threshold, shape = .data$Threshold
+      ))
+      if (show_ci) {
+        p3 <- p3 + ggplot2::geom_errorbar(
+          ggplot2::aes(xmin = .data$CI_low, xmax = .data$CI_high),
+          width = 0.25, linewidth = 0.5,
+          position = ggplot2::position_dodge(width = 0.4),
+          orientation = "y"
+        )
+      }
+      p3 <- p3 +
+        ggplot2::geom_point(size = 2.5,
+                            position = ggplot2::position_dodge(width = 0.4)) +
+        ggplot2::scale_colour_manual(values = thr_cols, name = "Threshold") +
+        ggplot2::scale_shape_manual(values = shape_vals, name = "Threshold")
+    }
+    p3 <- p3 +
+      ggplot2::scale_x_continuous(breaks = x_breaks) +
+      ggplot2::coord_cartesian(xlim = xlim) +
+      ggplot2::labs(x = x_label, y = NULL, caption = caption_text) +
+      ggplot2::theme_bw() +
+      ggplot2::theme(legend.position = "bottom",
+                     plot.margin = ggplot2::margin(0, 5, 5, 5)) +
+      .erb_caption_theme()
+  }
+
+  if (output == "list") {
+    return(list(p1 = p1, p2 = p2, p3 = p3,
+                categories = cat_post$categories,
+                reversals = cat_post$reversals))
+  }
+  p1 / p2 / p3 + patchwork::plot_layout(heights = height_ratios)
 }
 
 
@@ -817,81 +931,23 @@ plot_targeting <- function(
 .extract_threshold_data <- function(draws, model, unique_items,
                                     item_name, person_name,
                                     is_ordinal, lower_prob, upper_prob) {
-
+  tau <- .item_tau_draws(draws, .item_levels(model, item_name), item_name,
+                         is_ordinal)
   result_list <- list()
-
-  if (is_ordinal) {
-    has_grouped <- any(grepl("^b_Intercept\\[.+,\\d+\\]$", names(draws)))
-
-    for (item_label in unique_items) {
-      if (has_grouped) {
-        thresh_pattern <- paste0(
-          "^b_Intercept\\[",
-          gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-          ","
-        )
-        thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
-      } else {
-        thresh_cols <- grep("^b_Intercept\\[\\d+\\]$", names(draws),
-                            value = TRUE)
-      }
-
-      if (length(thresh_cols) == 0) next
-
-      thresh_nums <- as.numeric(
-        gsub(".*,(\\d+)\\]$|.*\\[(\\d+)\\]$", "\\1\\2", thresh_cols)
-      )
-      thresh_cols <- thresh_cols[order(thresh_nums)]
-
-      for (idx in seq_along(thresh_cols)) {
-        vals <- draws[[thresh_cols[idx]]]
-        result_list[[length(result_list) + 1]] <- data.frame(
-          item     = item_label,
-          category = as.character(idx),
-          estimate = mean(vals),
-          lower    = stats::quantile(vals, probs = lower_prob),
-          upper    = stats::quantile(vals, probs = upper_prob),
-          stringsAsFactors = FALSE
-        )
-      }
-    }
-  } else {
-    intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
-    if (length(intercept_col) == 0) {
-      stop("Could not find intercept parameter.", call. = FALSE)
-    }
-
-    for (item_label in unique_items) {
-      re_col <- paste0("r_", item_name, "[",  item_label, ",Intercept]")
-      if (!re_col %in% names(draws)) {
-        re_col_alt <- grep(
-          paste0("^r_", item_name, "\\[",
-                 gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-                 ",Intercept\\]$"),
-          names(draws), value = TRUE
-        )
-        if (length(re_col_alt) == 1) {
-          re_col <- re_col_alt
-        } else {
-          warning("Could not find random effect for item '",
-                  item_label, "'. Skipping.", call. = FALSE)
-          next
-        }
-      }
-
-      item_location <- -(draws[[intercept_col]] + draws[[re_col]])
-
+  for (item_label in as.character(unique_items)) {
+    m <- tau[[item_label]]
+    for (idx in seq_len(ncol(m))) {
+      vals <- m[, idx]
       result_list[[length(result_list) + 1]] <- data.frame(
         item     = item_label,
-        category = "1",
-        estimate = mean(item_location),
-        lower    = stats::quantile(item_location, probs = lower_prob),
-        upper    = stats::quantile(item_location, probs = upper_prob),
+        category = as.character(idx),
+        estimate = mean(vals),
+        lower    = unname(stats::quantile(vals, probs = lower_prob)),
+        upper    = unname(stats::quantile(vals, probs = upper_prob)),
         stringsAsFactors = FALSE
       )
     }
   }
-
   result <- do.call(rbind, result_list)
   rownames(result) <- NULL
   result

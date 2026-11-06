@@ -44,7 +44,7 @@ the model the priors will be used with. One of \code{"logit"},
 and no transformation is applied. When different from the source
 model's link, all location and scale parameters are rescaled
 using the approximation \eqn{\beta_{\text{probit}} \approx
-  \beta_{\text{logit}} / 1.7}. This is useful when transferring
+\beta_{\text{logit}} / 1.7}. This is useful when transferring
 priors from a logit-fitted model to a probit model or vice versa.}
 }
 \value{
@@ -89,6 +89,15 @@ effect (e.g., \code{b_itemI1}) receives its own
 In all cases the person-level SD receives a
 \code{normal(mean, sd * mult)} prior (brms applies the lower
 bound of zero automatically for SD parameters).
+
+\strong{Independent priors.} Each prior is built from one
+parameter's marginal posterior, so the posterior correlations
+between parameters are not carried over. Thresholds are usually
+positively correlated through the shared location of the scale, so
+the independent priors are more informative about overall location
+than the posterior was. For example, the SD of the mean threshold
+can be noticeably smaller under the priors than under the posterior.
+Use \code{mult > 1} to widen them if this matters.
 
 \strong{Link function transformation:} When \code{target_link}
 differs from the source model's link function, all parameters

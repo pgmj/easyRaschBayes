@@ -74,7 +74,10 @@ dot-and-whisker with the credible interval given by
 for the partial credit submodel: \eqn{\theta_{pcm}} histogram,
 PCM threshold histogram (inverted), and a per-item
 dot-and-whisker with one row per item and one coloured marker
-per threshold within item.}
+per threshold within item. Persons who answered 0 on every item
+gave no severity responses and are left out of the
+\eqn{\theta_{pcm}} histogram, with a caption giving their
+number.}
 }
 }
 \description{

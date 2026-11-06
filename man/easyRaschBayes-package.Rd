@@ -6,7 +6,7 @@
 \alias{easyRaschBayes-package}
 \title{easyRaschBayes: Bayesian Rasch Analysis Using 'brms'}
 \description{
-Reproduces classic Rasch psychometric analysis features using Bayesian item response theory models fitted with 'brms' following Bürkner (2021) \doi{10.18637/jss.v100.i05} and Bürkner (2020) \doi{10.3390/jintelligence8010005}. Supports both dichotomous and polytomous Rasch models. Features include posterior predictive item fit, conditional infit, item-restscore associations, person fit, differential item functioning, local dependence assessment via Q3 residual correlations, dimensionality assessment with residual principal components analysis, person-item targeting plots, item category probability curves, and reliability using relative measurement uncertainty following Bignardi et al. (2025) \doi{10.31234/osf.io/h54k8_v1}.
+Reproduces classic Rasch psychometric analysis features using Bayesian item response theory models fitted with 'brms' following Bürkner (2021) \doi{10.18637/jss.v100.i05} and Bürkner (2020) \doi{10.3390/jintelligence8010005}. Supports dichotomous and polytomous Rasch models, and a hurdle partial credit model. Features include posterior predictive item fit, including infit and item-restscore associations conditional on the total score, person fit, differential item functioning, local dependence assessment via Q3 residual correlations, dimensionality assessment with residual principal components analysis, person-item targeting plots, item category probability curves, and reliability using relative measurement uncertainty following Bignardi et al. (2025) \doi{10.31234/osf.io/h54k8_v1}.
 }
 \seealso{
 Useful links:
@@ -19,6 +19,11 @@ Useful links:
 }
 \author{
 \strong{Maintainer}: Magnus Johansson \email{pgmj@pm.me} (\href{https://orcid.org/0000-0003-1669-592X}{ORCID})
+
+Authors:
+\itemize{
+  \item Magnus Johansson \email{pgmj@pm.me} (\href{https://orcid.org/0000-0003-1669-592X}{ORCID})
+}
 
 Other contributors:
 \itemize{

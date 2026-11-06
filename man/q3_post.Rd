@@ -17,8 +17,9 @@ q3_post(
 \code{item_pair}, \code{q3} (observed Q3 per draw), and
 \code{q3_rep} (replicated Q3 per draw).}
 
-\item{ci}{Numeric in \eqn{(0, 1)}. Width of the credible
-interval used for the posterior predictive HDI and the slab
+\item{ci}{Numeric in \eqn{(0, 1)}. Width of the highest density
+continuous interval of the replicated (posterior predictive) Q3
+distribution, used in the \code{hdi} table and the slab
 display. Default is 0.84.}
 
 \item{n_pairs}{Integer. Maximum number of item pairs to display
@@ -44,11 +45,11 @@ item pair containing: \code{item_pair}, \code{item_1},
 observed Q3 exceeds the replicated Q3).}
 \item{hdi}{A \code{\link[tibble]{tibble}} with one row per
 item pair containing: \code{item_pair}, \code{item_1},
-\code{item_2}, \code{ld} (local dependence probability:
-proportion of draws where observed Q3 exceeds upper HDI
-bound of replicated distribution), and \code{lr} (local
-repulsion probability: proportion of draws where observed
-Q3 falls below lower HDI bound).}
+\code{item_2}, \code{ld} (proportion of draws where observed
+Q3 exceeds the upper HDI bound of the replicated
+distribution), and \code{lr} (proportion of draws where
+observed Q3 falls below the lower HDI bound). See Details for
+how to read these.}
 \item{plot}{A \code{\link[ggplot2]{ggplot}} object showing
 the posterior predictive distribution of replicated Q3
 (grey filled slab) overlaid with the observed Q3
@@ -75,10 +76,18 @@ close to 1 indicates the observed correlation is
 systematically higher than expected (local dependence);
 a ppp close to 0 indicates it is systematically lower
 (local repulsion, e.g., speed-accuracy tradeoffs).}
-\item{\code{hdi}}{Reports the probability that the observed
-Q3 falls above (local dependence) or below (local repulsion)
-the HDI of the replicated distribution. This provides a
-more distributional assessment than the ppp alone.}
+\item{\code{hdi}}{Reports the proportion of draws where the
+observed Q3 falls above (local dependence) or below (local
+repulsion) the HDI of the replicated distribution. The HDI is
+computed over all draws, so each draw's observed value is
+compared to the same fixed interval. The observed Q3 varies
+across draws only through parameter uncertainty, while the
+replicated Q3 also varies through the sampling of new
+responses. The observed distribution is therefore narrower,
+and these proportions move quickly from near 0 to near 1 as
+the observed values pass an interval bound. They are
+exceedance proportions, not posterior probabilities of local
+dependence.}
 }
 
 The plot uses two layers from the \pkg{ggdist} package:

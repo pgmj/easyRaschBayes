@@ -44,8 +44,8 @@ observations with \eqn{Y_{obs} > 0}.}
 }
 }
 \description{
-Computes conditional item infit statistics separately for the two
-submodels of a hurdle partial credit model fitted with \pkg{brms}
+Computes posterior predictive item infit statistics separately for
+the two submodels of a hurdle partial credit model fitted with \pkg{brms}
 using the \code{\link{hurdle_acat}} custom family: (i) the
 \emph{hurdle} submodel for \eqn{P(Y > 0)} (Bernoulli) and (ii) the
 \emph{partial credit} severity submodel for
@@ -53,7 +53,11 @@ using the \code{\link{hurdle_acat}} custom family: (i) the
 posterior draw, expected values and variances are derived from the
 submodel-specific category probabilities, and variance-weighted
 standardised residuals are computed for both observed and
-replicated data.
+replicated data. Expectations are given each draw's person
+parameters, as in \code{infit_statistic(method = "theta")}, since the
+hurdle model has no sufficient total score. Use that method for a
+Rasch-family model when results should be comparable with this
+function.
 }
 \details{
 The hurdle PCM splits the generative process into:
@@ -79,7 +83,8 @@ scores are \eqn{1[Y_{obs} > 0]} and \eqn{1[Y_{rep} > 0]} with
 \eqn{Y_{obs} > 0} contribute. Conditional probabilities are
 \deqn{P(Y = k \mid Y > 0) = epred[, , k+1] / (1 - hu),
   \quad k = 1, \ldots, K - 1.}
-The conditional expected value and variance use category scores
+The expected value and variance under these probabilities use
+category scores
 \eqn{1, \ldots, K - 1}. Replicated severity values are drawn
 independently for each (draw, observation) from these conditional
 probabilities via inverse-CDF sampling, so the partial credit PPC

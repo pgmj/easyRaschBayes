@@ -7,6 +7,7 @@
 #'
 #' @param x Integer or numeric vector (e.g., item scores).
 #' @param y Integer or numeric vector of the same length (e.g., rest scores).
+#'   Pairs where \code{x} or \code{y} is \code{NA} are dropped.
 #'
 #' @return A scalar: the gamma coefficient in \eqn{[-1, 1]}, or
 #'   \code{NA_real_} if the table has fewer than 2 rows or 2 columns.
@@ -18,6 +19,12 @@
 #'
 #' @keywords internal
 gk_gamma_vec <- function(x, y) {
+  # Pairs with a missing value carry no ordering information
+  ok <- !is.na(x) & !is.na(y)
+  if (!all(ok)) {
+    x <- x[ok]
+    y <- y[ok]
+  }
   # Fast manual tabulation
   ux <- sort.int(unique.default(x), method = "quick")
   uy <- sort.int(unique.default(y), method = "quick")

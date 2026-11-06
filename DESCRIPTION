@@ -1,6 +1,6 @@
 Package: easyRaschBayes
 Title: Bayesian Rasch Analysis Using 'brms'
-Version: 0.3.0
+Version: 0.3.0.9000
 Authors@R: c(
     person("Magnus", "Johansson",
            role = c("aut", "cre"),
@@ -17,17 +17,18 @@ Authors@R: c(
 Description: Reproduces classic Rasch psychometric analysis features
     using Bayesian item response theory models fitted with 'brms' following 
     Bürkner (2021) <doi:10.18637/jss.v100.i05> and Bürkner (2020) <doi:10.3390/jintelligence8010005>.
-    Supports both dichotomous and polytomous Rasch models. 
-    Features include posterior predictive item fit, conditional infit, item-restscore
-    associations, person fit, differential item functioning, local dependence
+    Supports dichotomous and polytomous Rasch models, and a hurdle
+    partial credit model. Features include posterior predictive item fit,
+    including infit and item-restscore associations conditional on the
+    total score, person fit, differential item functioning, local dependence
     assessment via Q3 residual correlations, dimensionality assessment with
     residual principal components analysis, person-item targeting plots,
     item category probability curves, and reliability using relative
     measurement uncertainty following Bignardi et al. (2025) <doi:10.31234/osf.io/h54k8_v1>.
 License: GPL (>= 3)
 Encoding: UTF-8
+LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1.0)
 Imports:
@@ -40,11 +41,14 @@ Imports:
     stats,
     grDevices,
     ggplot2 (>= 3.4.0),
-    forcats
+    forcats,
+    posterior,
+    scales
 Suggests:
     ggrepel,
     patchwork,
     eRm,
+    iarm,
     testthat (>= 3.0.0),
     knitr,
     rmarkdown
@@ -52,3 +56,4 @@ URL: https://github.com/pgmj/easyRaschBayes, https://pgmj.github.io/easyRaschBay
 BugReports: https://github.com/pgmj/easyRaschBayes/issues
 VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.1

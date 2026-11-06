@@ -32,8 +32,10 @@ grouping variable in the model data. Default is \code{item}.}
 grouping variable in the model data. Default is \code{id}.}
 
 \item{center}{Logical. If \code{TRUE} (the default), item
-locations are mean-centered to zero, matching the convention
-used in \code{\link{plot_targeting}}.}
+locations (the mean of each item's thresholds) are centred to
+mean zero. \code{\link{plot_targeting}} centres on the mean of all
+thresholds instead, so the two differ by a constant when items
+have different numbers of categories.}
 
 \item{prob}{Numeric in \eqn{(0, 1)}. Width of the credible
 intervals for both loading and location whiskers. Default is
@@ -44,12 +46,13 @@ draws to use. If \code{NULL} (the default), up to 500 draws
 are used.}
 
 \item{style}{Character. Visual style for displaying uncertainty.
-\code{"density"} (the default) overlays filled 2D density
+\code{"density"} overlays filled 2D density
 contours per item computed from the draw-level location and
 loading values, showing the full joint posterior uncertainty.
 \code{"crosshair"} shows point estimates with horizontal and
 vertical credible interval bars.
-\code{"both"} displays density contours with crosshairs on top.}
+\code{"both"} (the default) displays density contours with
+crosshairs on top.}
 
 \item{density_alpha}{Numeric in \eqn{[0, 1]}. Maximum opacity
 of the density contours when \code{style} is \code{"density"}

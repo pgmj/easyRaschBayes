@@ -25,6 +25,9 @@ parameterisations:
 \item{Dichotomous 1PL (fixed items)}{e.g.,
 \code{response ~ 0 + item + (1 | id)} with
 \code{family = bernoulli()}.}
+\item{Rating scale model}{\code{family = acat} with common
+thresholds and item effects, e.g.,
+\code{response ~ 1 + (1 | item) + (1 | id)}.}
 }}
 
 \item{item_var}{An unquoted variable name identifying the item
@@ -44,14 +47,17 @@ frequentist CML Rasch estimation. If \code{FALSE}, raw brms
 parameterisation is used.}
 
 \item{theta_range}{A numeric vector of length 2 specifying the
-range for the Newton-Raphson WLE search. Default is
+search range for the WLE. A WLE outside it is set to the nearer
+bound with an \code{NA} standard error. Default is
 \code{c(-7, 7)}.}
 }
 \value{
 A list with the following elements:
 \describe{
 \item{person_estimates}{A \code{\link[tibble]{tibble}} with one
-row per person containing: the person ID, \code{sum_score},
+row per person containing: the person ID, \code{n_items}
+(number of items answered), \code{sum_score} (sum of the item
+scores, each scored from 0),
 \code{eap} (posterior mean of person random effect),
 \code{eap_se} (posterior SD), \code{wle} (Warm's weighted
 likelihood estimate), and \code{wle_se} (asymptotic SE
@@ -59,10 +65,10 @@ of the WLE). Rows are ordered to match the original person
 order in the model data (i.e., the order of first appearance
 of each person ID).}
 \item{score_table}{A \code{\link[tibble]{tibble}} mapping each
-observed ordinal sum score to its mean EAP, mean EAP SE,
-WLE, and WLE SE. Extreme scores (0 and maximum) receive
-WLE estimates at the boundary of \code{theta_range} with
-\code{NA} standard errors.}
+sum score observed among persons who answered every item to
+the number of such persons, their mean EAP and mean EAP SE,
+and the WLE and WLE SE for that score on the complete item
+set.}
 \item{draws_matrix}{(Only if \code{draws = TRUE}) A numeric
 matrix with rows = persons and columns = posterior draws.
 Row names are person IDs. Rows are ordered to match the
@@ -85,23 +91,21 @@ as the standard error. These are the standard Bayesian point
 estimates and reflect shrinkage toward the population mean.
 
 \strong{WLE estimates} (Warm, 1989) are computed from the
-posterior mean item parameters using Newton-Raphson iteration
-with adaptive step damping on the Warm-corrected likelihood.
-WLE adds a bias correction term \eqn{J(\theta) / (2 I(\theta))}
-to the score equations, where \eqn{I(\theta)} is the test
+posterior mean item parameters by solving the Warm-corrected
+score equation
+\deqn{r - E(\theta) + J(\theta) / (2 I(\theta)) = 0}
+with \code{\link[stats]{uniroot}}, where \eqn{r} is the sum score,
+\eqn{E(\theta)} the expected sum score, \eqn{I(\theta)} the test
 information and \eqn{J(\theta) = \sum_i \sum_c (c - E_i)^3 P_{ic}}
-is the sum of third central moments. This produces estimates with
-reduced finite-sample bias compared to MLE, especially at
-extreme scores (Warm, 1989).
+the sum of third central moments. The correction reduces the
+finite-sample bias of the MLE and keeps the estimate finite at the
+minimum and maximum scores. The standard error is
+\eqn{1 / \sqrt{I(\theta)}}.
 
-The Newton-Raphson algorithm uses adaptive step damping following
-the approach in \pkg{iarm} (Mueller): the maximum allowed step
-size shrinks by a factor of 1.05 each iteration, preventing
-overshoot and ensuring convergence for near-extreme scores.
-
-For extreme scores (sum score = 0 or maximum possible), the
-WLE is not well-defined. These cases are assigned the boundary
-values of \code{theta_range} with \code{NA} standard errors.
+A sum score only has a WLE relative to the items that make it up.
+Persons with missing responses therefore get the WLE for their sum
+score on the items they answered, computed separately for each set
+of answered items.
 
 When \code{center = TRUE} (the default), item difficulty
 parameters are shifted so their mean is zero, and EAP person

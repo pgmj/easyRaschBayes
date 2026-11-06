@@ -17,8 +17,10 @@
 #' @param person_var An unquoted variable name identifying the person
 #'   grouping variable in the model data. Default is \code{id}.
 #' @param center Logical. If \code{TRUE} (the default), item
-#'   locations are mean-centered to zero, matching the convention
-#'   used in \code{\link{plot_targeting}}.
+#'   locations (the mean of each item's thresholds) are centred to
+#'   mean zero. \code{\link{plot_targeting}} centres on the mean of all
+#'   thresholds instead, so the two differ by a constant when items
+#'   have different numbers of categories.
 #' @param prob Numeric in \eqn{(0, 1)}. Width of the credible
 #'   intervals for both loading and location whiskers. Default is
 #'   0.95.
@@ -26,12 +28,13 @@
 #'   draws to use. If \code{NULL} (the default), up to 500 draws
 #'   are used.
 #' @param style Character. Visual style for displaying uncertainty.
-#'   \code{"density"} (the default) overlays filled 2D density
+#'   \code{"density"} overlays filled 2D density
 #'   contours per item computed from the draw-level location and
 #'   loading values, showing the full joint posterior uncertainty.
 #'   \code{"crosshair"} shows point estimates with horizontal and
 #'   vertical credible interval bars.
-#'   \code{"both"} displays density contours with crosshairs on top.
+#'   \code{"both"} (the default) displays density contours with
+#'   crosshairs on top.
 #' @param density_alpha Numeric in \eqn{[0, 1]}. Maximum opacity
 #'   of the density contours when \code{style} is \code{"density"}
 #'   or \code{"both"}. Default is 0.3.
@@ -208,6 +211,9 @@ plot_residual_pca <- function(
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
+
+  .check_unique_person_item(model$data[[person_name]], model$data[[item_name]],
+                            person_name, item_name, "plot_residual_pca")
   
   resp_var <- as.character(formula(model)$formula[[2]])
   if (length(resp_var) > 1) resp_var <- resp_var[2]
@@ -290,6 +296,14 @@ plot_residual_pca <- function(
   varexp_obs_draws   <- rep(NA_real_, n_draws)
   varexp_rep_draws   <- rep(NA_real_, n_draws)
   
+  # The eigen decomposition needs a complete person x item matrix
+  n_incomplete <- sum(tabulate(person_idx, nbins = n_persons) < k)
+  if (n_incomplete > 0) {
+    message("plot_residual_pca() uses the ", n_persons - n_incomplete,
+            " persons who answered every item. ", n_incomplete,
+            " with missing responses are left out.")
+  }
+
   for (s in seq_len(n_draws)) {
     # Scatter residuals into person x item matrix via linear index
     resid_obs_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
@@ -325,16 +339,12 @@ plot_residual_pca <- function(
   if (is.na(ref_idx)) {
     stop("Could not compute residual PCA for any draw.", call. = FALSE)
   }
-  ref_sign <- sign(loadings_obs_draws[ref_idx, ])
-  
-  for (s in seq_len(n_draws)) {
-    if (is.na(loadings_obs_draws[s, 1])) next
-    agreement <- sum(sign(loadings_obs_draws[s, ]) == ref_sign,
-                     na.rm = TRUE)
-    if (agreement < k / 2) {
-      loadings_obs_draws[s, ] <- -loadings_obs_draws[s, ]
-    }
-  }
+  # Align each draw's eigenvector with a reference direction by the sign
+  # of their dot product, so that strongly loading items dominate the
+  # decision and many near-zero loadings cannot outvote them. The
+  # reference starts as the first valid draw and is then replaced by the
+  # mean of the aligned draws until no draw changes sign.
+  loadings_obs_draws <- .align_eigenvectors(loadings_obs_draws, ref_idx)
   
   # =================================================================
   # Item locations with full posterior (draw-level)
@@ -546,147 +556,31 @@ plot_residual_pca <- function(
 .extract_item_location_draws <- function(draws, model, unique_items,
                                          item_name, person_name,
                                          is_ordinal) {
-  
-  result <- vector("list", length(unique_items))
+  tau <- .item_tau_draws(draws, .item_levels(model, item_name), item_name,
+                         is_ordinal)
+  # Item location = mean of its thresholds, per draw
+  result <- lapply(as.character(unique_items), function(it) rowMeans(tau[[it]]))
   names(result) <- unique_items
-  
-  if (is_ordinal) {
-    has_grouped <- any(grepl("^b_Intercept\\[.+,\\d+\\]$", names(draws)))
-    
-    for (i in seq_along(unique_items)) {
-      item_label <- unique_items[i]
-      
-      if (has_grouped) {
-        thresh_pattern <- paste0(
-          "^b_Intercept\\[",
-          gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-          ","
-        )
-        thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
-      } else {
-        thresh_cols <- grep("^b_Intercept\\[\\d+\\]$", names(draws),
-                            value = TRUE)
-      }
-      
-      if (length(thresh_cols) == 0) {
-        result[[i]] <- rep(NA_real_, nrow(draws))
-        next
-      }
-      
-      thresh_mat <- as.matrix(draws[, thresh_cols, drop = FALSE])
-      result[[i]] <- rowMeans(thresh_mat)
-    }
-  } else {
-    intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
-    intercept_draws <- draws[[intercept_col]]
-    
-    for (i in seq_along(unique_items)) {
-      item_label <- unique_items[i]
-      
-      re_col <- paste0("r_", item_name, "[", item_label, ",Intercept]")
-      if (!re_col %in% names(draws)) {
-        re_col_alt <- grep(
-          paste0("^r_", item_name, "\\[",
-                 gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-                 ",Intercept\\]$"),
-          names(draws), value = TRUE
-        )
-        if (length(re_col_alt) == 1) re_col <- re_col_alt
-        else {
-          result[[i]] <- rep(NA_real_, nrow(draws))
-          next
-        }
-      }
-      
-      result[[i]] <- -(intercept_draws + draws[[re_col]])
-    }
-  }
-  
   result
 }
 
 
-# ── Internal: extract threshold data (used by plot_targeting) ──────────
+# ── Internal: resolve eigenvector sign indeterminacy across draws ──
+# rows = draws, columns = items. Rows with NA are left as they are.
 #' @keywords internal
-.extract_threshold_data <- function(draws, model, unique_items,
-                                    item_name, person_name,
-                                    is_ordinal, lower_prob, upper_prob) {
-  
-  result_list <- list()
-  
-  if (is_ordinal) {
-    has_grouped <- any(grepl("^b_Intercept\\[.+,\\d+\\]$", names(draws)))
-    
-    for (item_label in unique_items) {
-      if (has_grouped) {
-        thresh_pattern <- paste0(
-          "^b_Intercept\\[",
-          gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-          ","
-        )
-        thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
-      } else {
-        thresh_cols <- grep("^b_Intercept\\[\\d+\\]$", names(draws),
-                            value = TRUE)
-      }
-      
-      if (length(thresh_cols) == 0) next
-      
-      thresh_nums <- as.numeric(
-        gsub(".*,(\\d+)\\]$|.*\\[(\\d+)\\]$", "\\1\\2", thresh_cols)
-      )
-      thresh_cols <- thresh_cols[order(thresh_nums)]
-      
-      for (idx in seq_along(thresh_cols)) {
-        vals <- draws[[thresh_cols[idx]]]
-        result_list[[length(result_list) + 1]] <- data.frame(
-          item     = item_label,
-          category = as.character(idx),
-          estimate = mean(vals),
-          lower    = stats::quantile(vals, probs = lower_prob),
-          upper    = stats::quantile(vals, probs = upper_prob),
-          stringsAsFactors = FALSE
-        )
-      }
-    }
-  } else {
-    intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
-    if (length(intercept_col) == 0) {
-      stop("Could not find intercept parameter.", call. = FALSE)
-    }
-    
-    for (item_label in unique_items) {
-      re_col <- paste0("r_", item_name, "[", item_label, ",Intercept]")
-      if (!re_col %in% names(draws)) {
-        re_col_alt <- grep(
-          paste0("^r_", item_name, "\\[",
-                 gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-                 ",Intercept\\]$"),
-          names(draws), value = TRUE
-        )
-        if (length(re_col_alt) == 1) {
-          re_col <- re_col_alt
-        } else {
-          warning("Could not find random effect for item '",
-                  item_label, "'. Skipping.", call. = FALSE)
-          next
-        }
-      }
-      
-      item_location <- -(draws[[intercept_col]] + draws[[re_col]])
-      
-      result_list[[length(result_list) + 1]] <- data.frame(
-        item     = item_label,
-        category = "1",
-        estimate = mean(item_location),
-        lower    = stats::quantile(item_location, probs = lower_prob),
-        upper    = stats::quantile(item_location, probs = upper_prob),
-        stringsAsFactors = FALSE
-      )
-    }
+.align_eigenvectors <- function(v, ref_idx = 1L, max_iter = 20L) {
+  ok <- !is.na(v[, 1])
+  ref <- v[ref_idx, ]
+  flip_prev <- rep(FALSE, nrow(v))
+  for (iter in seq_len(max_iter)) {
+    flip <- ok & (v %*% ref)[, 1] < 0
+    flip[is.na(flip)] <- FALSE
+    if (iter > 1L && identical(flip, flip_prev)) break
+    flip_prev <- flip
+    aligned <- v
+    aligned[flip, ] <- -aligned[flip, ]
+    ref <- colMeans(aligned[ok, , drop = FALSE])
   }
-  
-  result <- do.call(rbind, result_list)
-  rownames(result) <- NULL
-  result
+  v[flip, ] <- -v[flip, ]
+  v
 }

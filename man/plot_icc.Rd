@@ -9,7 +9,7 @@ plot_icc(
   item_var = item,
   person_var = id,
   items = NULL,
-  n_intervals = 5,
+  class_intervals = 5,
   theta_range = c(-4, 4),
   n_points = 200,
   center = TRUE,
@@ -23,7 +23,10 @@ plot_icc(
   dif_labels = NULL,
   dif_stats = TRUE,
   min_n = 5,
-  palette = NULL
+  palette = NULL,
+  method = c("quantile", "width", "score", "manual"),
+  score_breaks = NULL,
+  n_intervals = NULL
 )
 }
 \arguments{
@@ -41,8 +44,10 @@ person grouping variable in the model data. Default is
 \item{items}{An optional character vector of item names to plot.
 If \code{NULL} (the default), all items are plotted.}
 
-\item{n_intervals}{Integer. The number of class intervals into
-which persons are binned along the sum score. Default is 5.}
+\item{class_intervals}{Integer >= 2. The number of class intervals
+for \code{method = "quantile"} and \code{method = "width"}.
+Default is 5. Ignored by \code{method = "score"} and
+\code{method = "manual"}.}
 
 \item{theta_range}{A numeric vector of length 2 specifying the
 range of theta for the expected curve. Default is
@@ -95,6 +100,23 @@ Default is 5.}
 
 \item{palette}{An optional character vector of colors. If
 \code{NULL}, viridis colors are used.}
+
+\item{method}{How persons are grouped along the sum score (see
+\emph{Class intervals} in Details). \code{"quantile"} (the default)
+forms \code{class_intervals} groups of about equal numbers of
+persons. \code{"width"} forms \code{class_intervals} intervals of
+equal width over the observed sum-score range. \code{"score"} makes
+every observed sum score its own group. \code{"manual"} uses the
+groups given by \code{score_breaks}.}
+
+\item{score_breaks}{Integer vector for \code{method = "manual"}: the
+sum scores at which a new group starts, in increasing order. Extreme
+scores are left out, so the first group starts at 1 and the last
+ends at the maximum score minus 1. For example,
+\code{score_breaks = c(3, 6)} with a maximum score of 9 gives the
+groups 1-2, 3-5 and 6-8. Default \code{NULL}.}
+
+\item{n_intervals}{Deprecated. Use \code{class_intervals}.}
 }
 \value{
 A \code{\link[ggplot2]{ggplot}} object.
@@ -126,13 +148,24 @@ across posterior draws.
 \strong{Class intervals:} Following the approach in
 \code{iarm::ICCplot()}, persons are binned into class intervals
 by their ordinal \emph{sum score} (the sufficient statistic in
-Rasch models), not by their EAP theta estimate. Within each
+Rasch models), not by their EAP theta estimate. The grouping rules
+are the same as in \code{RMitemICCPlot()} in the \pkg{easyRasch2}
+package, except that extreme sum scores are left out here. With
+\code{method = "quantile"}, tied sum scores at the quantile
+boundaries can give fewer groups than requested. Equal-width and
+manual grouping can define groups that no person falls into. If
+fewer than two groups can be formed, the quantile and width methods
+fall back to one group per sum score. The plot caption states the
+grouping that was used. Within each
 interval, the mean observed item response is computed and
 plotted at the theta value corresponding to the mean sum score
 in that interval, obtained by inverting the posterior-mean
 expected total score function. Persons with extreme sum scores
 (0 and maximum) are excluded from the class intervals, as their
-theta positions cannot be estimated.
+theta positions cannot be estimated. Sum scores are only comparable
+across persons who answered the same items, so, as in \pkg{iarm},
+persons with missing responses are left out of the class intervals
+and the partial gamma, with a message giving their number.
 
 \strong{Uncertainty around observed points:} For each class
 interval, the standard error of the mean observed response is
@@ -152,7 +185,9 @@ when DIF is requested), the Goodman-Kruskal partial gamma
 coefficient is displayed in each item panel. This measures the
 ordinal association between item response and DIF group,
 stratified by total score. Values near 0 indicate no DIF;
-values near \eqn{\pm 1} indicate strong DIF. The computation
+values near \eqn{\pm 1} indicate strong DIF. Positive values mean
+higher item scores, at the same total score, in the group whose
+label sorts second (as \code{factor()} orders the levels). The computation
 reuses the concordant/discordant pair counting algorithm from
 \code{\link{gk_gamma}}.
 }
@@ -181,8 +216,11 @@ fit_pcm <- brm(
 # Basic ICC plot with 5 class intervals
 plot_icc(fit_pcm)
 
-# Select specific items, more intervals
-plot_icc(fit_pcm, items = c("I1", "I2"), n_intervals = 5)
+# Select specific items, one group per sum score
+plot_icc(fit_pcm, items = c("I1", "I2"), method = "score")
+
+# Groups defined by hand: sum scores 1-3, 4 and 5-7
+plot_icc(fit_pcm, method = "manual", score_breaks = c(4, 5))
 
 # With DIF overlay and partial gamma annotation
 
@@ -194,7 +232,7 @@ df_pcm <- eRm::pcmdat2 \%>\%
   pivot_longer(!c(id,gender), names_to = "item", values_to = "response")
   
 plot_icc(fit_pcm, dif_var = gender, dif_data = df_pcm,
-         dif_labels = c("Female", "Male"), n_intervals = 5)
+         dif_labels = c("Female", "Male"), class_intervals = 5)
 }
 
 }

@@ -64,8 +64,9 @@ and \code{location} columns are present.}
 \code{locations} with: \code{se} (posterior SD),
 \code{hdci_lower} and \code{hdci_upper} (highest density
 continuous interval bounds at the level specified by
-\code{prob}), and \code{n_eff} (effective sample size for the
-parameter).}
+\code{prob}), and \code{n_eff} (bulk effective sample size from
+\code{posterior::ess_bulk()}, which accounts for disagreement
+between chains).}
 \item{item_information}{A \code{\link[tibble]{tibble}} with one
 row per item containing: \code{item}, \code{location} (mean
 item location, i.e. mean of thresholds for polytomous items),

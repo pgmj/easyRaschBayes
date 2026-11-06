@@ -17,6 +17,9 @@
 #'     \item{Dichotomous 1PL (fixed items)}{e.g.,
 #'       \code{response ~ 0 + item + (1 | id)} with
 #'       \code{family = bernoulli()}.}
+#'     \item{Rating scale model}{\code{family = acat} with common
+#'       thresholds and item effects, e.g.,
+#'       \code{response ~ 1 + (1 | item) + (1 | id)}.}
 #'   }
 #' @param item_var An unquoted variable name identifying the item
 #'   grouping variable in the model data. Default is \code{item}.
@@ -31,13 +34,16 @@
 #'   frequentist CML Rasch estimation. If \code{FALSE}, raw brms
 #'   parameterisation is used.
 #' @param theta_range A numeric vector of length 2 specifying the
-#'   range for the Newton-Raphson WLE search. Default is
+#'   search range for the WLE. A WLE outside it is set to the nearer
+#'   bound with an \code{NA} standard error. Default is
 #'   \code{c(-7, 7)}.
 #'
 #' @return A list with the following elements:
 #' \describe{
 #'   \item{person_estimates}{A \code{\link[tibble]{tibble}} with one
-#'     row per person containing: the person ID, \code{sum_score},
+#'     row per person containing: the person ID, \code{n_items}
+#'     (number of items answered), \code{sum_score} (sum of the item
+#'     scores, each scored from 0),
 #'     \code{eap} (posterior mean of person random effect),
 #'     \code{eap_se} (posterior SD), \code{wle} (Warm's weighted
 #'     likelihood estimate), and \code{wle_se} (asymptotic SE
@@ -45,10 +51,10 @@
 #'     order in the model data (i.e., the order of first appearance
 #'     of each person ID).}
 #'   \item{score_table}{A \code{\link[tibble]{tibble}} mapping each
-#'     observed ordinal sum score to its mean EAP, mean EAP SE,
-#'     WLE, and WLE SE. Extreme scores (0 and maximum) receive
-#'     WLE estimates at the boundary of \code{theta_range} with
-#'     \code{NA} standard errors.}
+#'     sum score observed among persons who answered every item to
+#'     the number of such persons, their mean EAP and mean EAP SE,
+#'     and the WLE and WLE SE for that score on the complete item
+#'     set.}
 #'   \item{draws_matrix}{(Only if \code{draws = TRUE}) A numeric
 #'     matrix with rows = persons and columns = posterior draws.
 #'     Row names are person IDs. Rows are ordered to match the
@@ -64,23 +70,21 @@
 #' estimates and reflect shrinkage toward the population mean.
 #'
 #' \strong{WLE estimates} (Warm, 1989) are computed from the
-#' posterior mean item parameters using Newton-Raphson iteration
-#' with adaptive step damping on the Warm-corrected likelihood.
-#' WLE adds a bias correction term \eqn{J(\theta) / (2 I(\theta))}
-#' to the score equations, where \eqn{I(\theta)} is the test
+#' posterior mean item parameters by solving the Warm-corrected
+#' score equation
+#' \deqn{r - E(\theta) + J(\theta) / (2 I(\theta)) = 0}
+#' with \code{\link[stats]{uniroot}}, where \eqn{r} is the sum score,
+#' \eqn{E(\theta)} the expected sum score, \eqn{I(\theta)} the test
 #' information and \eqn{J(\theta) = \sum_i \sum_c (c - E_i)^3 P_{ic}}
-#' is the sum of third central moments. This produces estimates with
-#' reduced finite-sample bias compared to MLE, especially at
-#' extreme scores (Warm, 1989).
+#' the sum of third central moments. The correction reduces the
+#' finite-sample bias of the MLE and keeps the estimate finite at the
+#' minimum and maximum scores. The standard error is
+#' \eqn{1 / \sqrt{I(\theta)}}.
 #'
-#' The Newton-Raphson algorithm uses adaptive step damping following
-#' the approach in \pkg{iarm} (Mueller): the maximum allowed step
-#' size shrinks by a factor of 1.05 each iteration, preventing
-#' overshoot and ensuring convergence for near-extreme scores.
-#'
-#' For extreme scores (sum score = 0 or maximum possible), the
-#' WLE is not well-defined. These cases are assigned the boundary
-#' values of \code{theta_range} with \code{NA} standard errors.
+#' A sum score only has a WLE relative to the items that make it up.
+#' Persons with missing responses therefore get the WLE for their sum
+#' score on the items they answered, computed separately for each set
+#' of answered items.
 #'
 #' When \code{center = TRUE} (the default), item difficulty
 #' parameters are shifted so their mean is zero, and EAP person
@@ -207,46 +211,18 @@ person_parameters <- function(
   original_order    <- unique(person_col_data)
   
   # ================================================================
-  # DETECT MODEL PARAMETERISATION
+  # ITEM PARAMETERS (posterior means)
   # ================================================================
-  fe_pattern <- paste0("^b_", item_name)
-  fe_cols    <- grep(fe_pattern, names(all_draws), value = TRUE)
-  fe_cols    <- setdiff(fe_cols, "b_Intercept")
-  
-  has_fixed_items  <- !is_ordinal && length(fe_cols) > 0
-  has_random_items <- !is_ordinal && any(grepl(
-    paste0("^r_", item_name, "\\["), names(all_draws)
-  ))
-  
-  if (!is_ordinal && !has_fixed_items && !has_random_items) {
-    stop("Could not detect item parameters in the model. ",
-         "Supported parameterisations:\n",
-         "  - response ~ 0 + item + (1 | id)    [fixed items]\n",
-         "  - response ~ 1 + (1 | item) + (1 | id)  [random items]\n",
-         "  - response | thres(gr = item) ~ 1 + (1 | id) [PCM/acat]",
-         call. = FALSE)
-  }
-  
-  # ================================================================
-  # EXTRACT ITEM PARAMETERS (posterior means)
-  # ================================================================
-  unique_items <- sort(unique(model$data[[item_name]]))
+  tau_draws <- .model_tau_draws(model, item_name, draws = all_draws)
+  unique_items <- names(tau_draws)
   n_items <- length(unique_items)
-  
+
   if (is_ordinal) {
-    item_params <- .extract_item_params_ordinal(
-      all_draws, unique_items, item_name
-    )
-  } else if (has_fixed_items) {
-    item_params <- .extract_item_params_fixed(
-      all_draws, fe_cols, unique_items, item_name
-    )
+    item_params <- list(thresholds = lapply(tau_draws, colMeans))
   } else {
-    item_params <- .extract_item_params_random(
-      all_draws, unique_items, item_name
-    )
+    item_params <- list(difficulties = vapply(tau_draws, mean, numeric(1)))
   }
-  
+
   # ================================================================
   # CENTERING
   # ================================================================
@@ -285,72 +261,59 @@ person_parameters <- function(
   eap_se <- eap_se_raw
   
   # ================================================================
-  # COMPUTE SUM SCORES
+  # SUM SCORES AND ANSWERED ITEMS
   # ================================================================
+  # Scores from 0. brms ordinal responses are categories 1..C (category 1
+  # is the base of the thresholds), and an ordered factor is stored as such
+  # in model$data.
   dat <- model$data
-  sum_scores <- stats::aggregate(
-    stats::as.formula(paste(resp_var, "~", person_name)),
-    data = dat,
-    FUN  = sum,
-    na.rm = TRUE
-  )
-  colnames(sum_scores) <- c("person_id", "sum_score")
-  
-  # For ordinal models, the minimum response category may be > 0
-  # (brms acat uses 1-based coding). Adjust sum scores to be
-  # 0-based for the WLE computation.
-  min_resp <- min(dat[[resp_var]], na.rm = TRUE)
-  if (min_resp > 0) {
-    n_obs_per_person <- stats::aggregate(
-      stats::as.formula(paste(resp_var, "~", person_name)),
-      data = dat,
-      FUN  = length
-    )
-    colnames(n_obs_per_person) <- c("person_id", "n_obs")
-    sum_scores <- merge(sum_scores, n_obs_per_person, by = "person_id")
-    sum_scores$sum_score <- sum_scores$sum_score -
-      (min_resp * sum_scores$n_obs)
-    sum_scores$n_obs <- NULL
-  }
-  
+  resp <- dat[[resp_var]]
+  score <- if (is.factor(resp)) as.integer(resp) else as.numeric(resp)
+  if (is_ordinal) score <- score - 1
+
+  pid <- as.character(dat[[person_name]])
+  iid <- match(as.character(dat[[item_name]]), unique_items)
+  persons <- unique(pid)
+  pidx <- match(pid, persons)
+  sum_score <- as.numeric(tapply(score, factor(pidx, levels = seq_along(persons)),
+                                 sum))
+  answered <- matrix(FALSE, nrow = length(persons), ncol = n_items)
+  answered[cbind(pidx, iid)] <- TRUE
+  n_answered <- as.integer(rowSums(answered))
+
   # ================================================================
-  # WLE COMPUTATION
+  # WLE COMPUTATION, per set of answered items
   # ================================================================
-  if (is_ordinal) {
-    max_score <- sum(vapply(
-      item_params$thresholds, length, integer(1)
-    ))
-    wle_results <- .compute_wle_polytomous(
-      item_params$thresholds, max_score, theta_range
-    )
-  } else {
-    max_score <- n_items
-    wle_results <- .compute_wle_dichotomous(
-      item_params$difficulties, theta_range
-    )
+  # A sum score only has a WLE relative to the items that make it up, so
+  # persons are grouped by the set of items they answered and each set gets
+  # its own score-to-WLE table.
+  wle_table <- function(items) {
+    if (is_ordinal) {
+      thr <- item_params$thresholds[items]
+      .compute_wle_polytomous(thr, sum(lengths(thr)), theta_range)
+    } else {
+      .compute_wle_dichotomous(item_params$difficulties[items], theta_range)
+    }
   }
-  
+  wb <- .wle_by_pattern(answered, sum_score, wle_table)
+  wle <- wb$wle
+  wle_se <- wb$wle_se
+  full_table <- wle_table(seq_len(n_items))
+
   # ================================================================
   # BUILD PERSON-LEVEL TABLE (in ranef order first, then reorder)
   # ================================================================
+  m <- match(ranef_ids, persons)
   person_df <- tibble::tibble(
     person_id = ranef_ids,
-    sum_score = sum_scores$sum_score[
-      match(ranef_ids, as.character(sum_scores$person_id))
-    ],
-    eap    = round(as.numeric(eap), 4),
-    eap_se = round(as.numeric(eap_se), 4)
+    n_items   = n_answered[m],
+    sum_score = sum_score[m],
+    eap       = round(as.numeric(eap), 4),
+    eap_se    = round(as.numeric(eap_se), 4),
+    wle       = round(wle[m], 4),
+    wle_se    = round(wle_se[m], 4)
   )
-  
-  # Match WLE to persons via sum score
-  wle_lookup <- tibble::tibble(
-    sum_score = wle_results$scores,
-    wle       = round(wle_results$wle, 4),
-    wle_se    = round(wle_results$wle_se, 4)
-  )
-  
-  person_df <- dplyr::left_join(person_df, wle_lookup, by = "sum_score")
-  
+
   # Rename the person_id column to the actual variable name
   colnames(person_df)[1] <- person_name
   
@@ -361,16 +324,18 @@ person_parameters <- function(
   # ================================================================
   # BUILD SCORE TABLE (sum score -> EAP and WLE)
   # ================================================================
-  score_table <- person_df |>
+  # Only persons who answered every item share one sum-score scale.
+  score_table <- person_df[person_df$n_items == n_items, ] |>
     dplyr::group_by(.data$sum_score) |>
     dplyr::summarise(
       n       = dplyr::n(),
       eap     = round(mean(.data$eap, na.rm = TRUE), 4),
       eap_se  = round(mean(.data$eap_se, na.rm = TRUE), 4),
-      wle     = round(mean(.data$wle, na.rm = TRUE), 4),
-      wle_se  = round(mean(.data$wle_se, na.rm = TRUE), 4),
       .groups = "drop"
     )
+  fm <- match(score_table$sum_score, full_table$scores)
+  score_table$wle    <- round(full_table$wle[fm], 4)
+  score_table$wle_se <- round(full_table$wle_se[fm], 4)
   
   # ================================================================
   # FULL POSTERIOR DRAWS (optional)
@@ -411,88 +376,21 @@ person_parameters <- function(
 }
 
 
-# ══════════════════════════════════════════════════════════════════
-# ITEM PARAMETER EXTRACTION HELPERS
-# ══════════════════════════════════════════════════════════════════
-
-# ── Internal: extract item parameters for ordinal (acat/PCM) ─────
+# ── Internal: WLE per set of answered items ─────────────────────
+# answered: persons x items logical matrix, score: sum score per person,
+# table_fun(items) returns list(scores, wle, wle_se) for those items.
 #' @keywords internal
-.extract_item_params_ordinal <- function(draws, unique_items,
-                                         item_name) {
-  thresholds <- list()
-  
-  for (item_label in unique_items) {
-    thresh_pattern <- paste0(
-      "^b_Intercept\\[",
-      gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-      ","
-    )
-    thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
-    
-    if (length(thresh_cols) == 0) {
-      warning("No threshold parameters found for item '",
-              item_label, "'.", call. = FALSE)
-      next
-    }
-    
-    thresh_nums <- as.numeric(
-      gsub(".*,(\\d+)\\]$", "\\1", thresh_cols)
-    )
-    thresh_cols <- thresh_cols[order(thresh_nums)]
-    
-    thresholds[[item_label]] <- vapply(
-      thresh_cols,
-      function(col) mean(draws[[col]]),
-      numeric(1)
-    )
+.wle_by_pattern <- function(answered, score, table_fun) {
+  pattern <- apply(answered, 1, function(x) paste(which(x), collapse = ","))
+  wle <- wle_se <- rep(NA_real_, nrow(answered))
+  for (pat in unique(pattern)) {
+    who <- which(pattern == pat)
+    tab <- table_fun(which(answered[who[1], ]))
+    m <- match(score[who], tab$scores)
+    wle[who]    <- tab$wle[m]
+    wle_se[who] <- tab$wle_se[m]
   }
-  
-  list(thresholds = thresholds)
-}
-
-
-# ── Internal: extract item params for fixed-effects dichotomous ──
-#' @keywords internal
-.extract_item_params_fixed <- function(draws, fe_cols, unique_items,
-                                       item_name) {
-  difficulties <- vapply(
-    fe_cols,
-    function(col) -mean(draws[[col]]),
-    numeric(1)
-  )
-  names(difficulties) <- unique_items
-  list(difficulties = difficulties)
-}
-
-
-# ── Internal: extract item params for random-effects dichotomous ─
-#' @keywords internal
-.extract_item_params_random <- function(draws, unique_items,
-                                        item_name) {
-  intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
-  intercept_mean <- if (length(intercept_col) == 1) {
-    mean(draws[[intercept_col]])
-  } else {
-    0
-  }
-  
-  difficulties <- vapply(unique_items, function(item_label) {
-    re_col <- paste0("r_", item_name, "[", item_label, ",Intercept]")
-    if (!re_col %in% names(draws)) {
-      re_col_alt <- grep(
-        paste0("^r_", item_name, "\\[",
-               gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-               ",Intercept\\]$"),
-        names(draws), value = TRUE
-      )
-      if (length(re_col_alt) == 1) re_col <- re_col_alt
-      else return(NA_real_)
-    }
-    -(intercept_mean + mean(draws[[re_col]]))
-  }, numeric(1))
-  
-  names(difficulties) <- unique_items
-  list(difficulties = difficulties)
+  list(wle = wle, wle_se = wle_se)
 }
 
 

@@ -20,6 +20,8 @@ navbar:
       menu:
       - text: Rasch Partial Credit Model
         href: articles/pcm-rasch-analysis.html
+      - text: Hurdle Partial Credit Model
+        href: articles/hpcm-rasch-analysis.html
       - text: Comparing Rasch with CML/MML and `brms`
         href: https://pgmj.github.io/rasch_bayes_comp.html
     news:
@@ -68,6 +70,10 @@ reference:
   - item_parameters
   - person_parameters
   - posterior_to_prior
+- title: Data
+  contents:
+  - phq9
+  - phq9_nhanes
 - title: Hurdle-PCM specific
   contents:
   - hurdle_acat

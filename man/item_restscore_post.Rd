@@ -2,58 +2,52 @@
 % Please edit documentation in R/post_helpers.R
 \name{item_restscore_post}
 \alias{item_restscore_post}
-\title{Summarize and Plot Posterior Predictive Item-Restscore Associations}
+\title{Summarize and Plot Item-Restscore Associations}
 \usage{
 item_restscore_post(item_restscore)
 }
 \arguments{
 \item{item_restscore}{A list as returned by
-\code{\link{item_restscore_statistic}}, containing at minimum:
-\describe{
-\item{result}{A data frame with columns including \code{item}
-and summary statistics (first 5 columns are used).}
-\item{draws}{A data frame with columns \code{item},
-\code{gamma} (observed gamma per draw), and
-\code{gamma_rep} (replicated gamma per draw).}
-}}
+\code{\link{item_restscore_statistic}}, with elements
+\code{result} and \code{draws}. The first column of both is the
+item identifier.}
 }
 \value{
 A list with two elements:
 \describe{
-\item{summary}{A \code{\link[tibble]{tibble}} with the first 5
-columns of the result table, rounded to 3 decimal places and
-sorted by item.}
-\item{plot}{A \code{\link[ggplot2]{ggplot}} object showing
-the posterior predictive distribution of replicated gamma
-(grey filled slab) with the observed gamma values overlaid
-as orange diamond points.}
+\item{summary}{A \code{\link[tibble]{tibble}} with one row per
+item and the columns item, \code{gamma_obs}, \code{gamma_exp},
+\code{gamma_diff}, \code{ppp} and \code{ppp_adj}, rounded to 3
+decimals and sorted by item.}
+\item{plot}{A \code{\link[ggplot2]{ggplot}} object showing the
+distribution of replicated gamma (grey slab) with the observed
+gamma overlaid as an orange diamond.}
 }
 }
 \description{
 Postprocesses the output of \code{\link{item_restscore_statistic}}
 to produce a summary table and a slab plot comparing observed
-item-restscore gamma associations to the posterior predictive
-distribution.
+item-restscore gamma associations to the distribution of gamma in
+datasets replicated conditional on the total scores.
 }
 \details{
 The item-restscore gamma association measures the strength of
 the relationship between each item's responses and the rest
 score (total score excluding that item). Under good fit, the
-observed gamma should fall within the posterior predictive
-distribution.
+observed gamma should fall within the distribution of replicated
+gamma.
 
 The plot displays:
 \describe{
-\item{Grey slab}{The posterior predictive distribution of
-replicated gamma values, shaded by 84\\% and 95\\% credible
-interval levels.}
-\item{Orange diamonds}{The observed gamma values per draw,
-plotted as points on top of the slab.}
+\item{Grey slab}{The distribution of replicated gamma values,
+shaded at the 84\% and 95\% interval levels.}
+\item{Orange diamond}{The observed gamma.}
 }
 
-Items where the observed gamma (orange) falls consistently
-outside the replicated distribution (grey) indicate poor fit
-in terms of item discrimination.
+Items where the observed gamma (orange) falls outside the
+replicated distribution (grey) indicate poor fit in terms of
+item discrimination. See \code{\link{item_restscore_statistic}} for
+the definitions of the summary columns.
 }
 \examples{
 \dontrun{

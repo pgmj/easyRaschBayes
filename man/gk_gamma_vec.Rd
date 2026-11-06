@@ -9,7 +9,8 @@ gk_gamma_vec(x, y)
 \arguments{
 \item{x}{Integer or numeric vector (e.g., item scores).}
 
-\item{y}{Integer or numeric vector of the same length (e.g., rest scores).}
+\item{y}{Integer or numeric vector of the same length (e.g., rest scores).
+Pairs where \code{x} or \code{y} is \code{NA} are dropped.}
 }
 \value{
 A scalar: the gamma coefficient in \eqn{[-1, 1]}, or

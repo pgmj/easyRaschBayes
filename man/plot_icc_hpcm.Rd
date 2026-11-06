@@ -9,7 +9,7 @@ plot_icc_hpcm(
   item_var = item,
   person_var = id,
   items = NULL,
-  n_intervals = 5,
+  class_intervals = 5,
   theta_range = c(-4, 4),
   n_points = 200,
   center = TRUE,
@@ -18,7 +18,8 @@ plot_icc_hpcm(
   line_size = 0.8,
   ribbon_alpha = 0.3,
   point_size = 2.5,
-  min_n = 5
+  min_n = 5,
+  n_intervals = NULL
 )
 }
 \arguments{
@@ -34,8 +35,8 @@ grouping variable in the model data. Default is \code{id}.}
 \item{items}{An optional character vector of item names to plot.
 If \code{NULL} (the default), all items are plotted.}
 
-\item{n_intervals}{Integer. The number of class intervals into
-which persons are binned within each submodel. Default is 5.}
+\item{class_intervals}{Integer >= 2. The number of class intervals
+into which persons are binned within each submodel. Default is 5.}
 
 \item{theta_range}{A numeric vector of length 2 specifying the
 range of theta for the expected curves. Default is
@@ -67,6 +68,8 @@ is 2.5.}
 \item{min_n}{Integer. Minimum number of observations required in
 a class interval (per item, per submodel) for the observed mean
 to be plotted. Default is 5.}
+
+\item{n_intervals}{Deprecated. Use \code{class_intervals}.}
 }
 \value{
 A list with two elements:
@@ -123,7 +126,15 @@ items varies across persons; see
 the inverse-CDF construction and avoids privileging any particular
 summary score. Within each interval, the observed mean response for
 an item is computed \emph{only} over persons with \eqn{Y > 0} on
-that item — i.e., the cells the PCM submodel actually applies to.
+that item, the cells the PCM submodel applies to.
+
+EAPs are shrunk toward the mean and are estimated from the same
+responses that are plotted, so the observed points can sit off the
+curve under good fit. The PCM panel therefore also shows, for each
+interval, the model-expected mean severity for the same responses
+(orange diamonds), computed from \code{posterior_epred()} and
+averaged over each person's posterior (up to 200 draws). Compare the
+observed points with the diamonds rather than with the curve.
 
 \strong{Uncertainty.} Each expected curve carries a credible
 interval ribbon at width \code{prob}. Observed points have

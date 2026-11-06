@@ -20,3 +20,14 @@ test_that("exported functions exist and are functions", {
   expect_true(is.function(q3_post))
   expect_true(is.function(q3_statistic))
 })
+
+test_that("duplicated person x item cells are rejected", {
+  persons <- c("p1", "p1", "p2", "p2")
+  items_ok  <- c("i1", "i2", "i1", "i2")
+  items_dup <- c("i1", "i1", "i1", "i2")
+  expect_true(.check_unique_person_item(persons, items_ok, "id", "item", "q3_statistic"))
+  expect_error(
+    .check_unique_person_item(persons, items_dup, "id", "item", "q3_statistic"),
+    "one response per id x item combination"
+  )
+})

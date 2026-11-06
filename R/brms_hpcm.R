@@ -422,18 +422,28 @@ posterior_epred_hurdle_acat <- function(prep) {
   K_total <- max(prep$thres$nthres) + 2L
   out <- array(0, dim = c(nrow(mu_mat), nobs, K_total))
   for (n in seq_len(nobs)) {
-    sev <- .hpcm_dacat(
-      x = seq_len(K_total - 1L),
+    # Items with fewer thresholds than the maximum have fewer categories.
+    # Their probabilities fill the first columns and the rest stay 0, as
+    # in brms's posterior_epred for ordinal families.
+    sev <- .hpcm_acat_probs(
       eta = mu_mat[, n],
       thres = .hpcm_subset_thres(prep, n),
       disc = 1
     )
     out[, n, 1L] <- hu_mat[, n]
-    out[, n, 2:K_total] <- (1 - hu_mat[, n]) * sev
+    out[, n, 1L + seq_len(ncol(sev))] <- (1 - hu_mat[, n]) * sev
   }
   out
 }
 
+
+# Response scores 0..K-1 as brms codes them for hurdle_acat: numeric
+# responses as they are, ordered factors as their integer code minus 1.
+#' @keywords internal
+#' @noRd
+.hpcm_response_scores <- function(x) {
+  if (is.factor(x)) as.integer(x) - 1L else as.numeric(x)
+}
 
 # ============================================================================
 # 3. Posterior-predictive infit (per-submodel)
@@ -441,8 +451,8 @@ posterior_epred_hurdle_acat <- function(prep) {
 
 #' Posterior Predictive Infit Statistic for the Hurdle Partial Credit Model
 #'
-#' Computes conditional item infit statistics separately for the two
-#' submodels of a hurdle partial credit model fitted with \pkg{brms}
+#' Computes posterior predictive item infit statistics separately for
+#' the two submodels of a hurdle partial credit model fitted with \pkg{brms}
 #' using the \code{\link{hurdle_acat}} custom family: (i) the
 #' \emph{hurdle} submodel for \eqn{P(Y > 0)} (Bernoulli) and (ii) the
 #' \emph{partial credit} severity submodel for
@@ -450,7 +460,11 @@ posterior_epred_hurdle_acat <- function(prep) {
 #' posterior draw, expected values and variances are derived from the
 #' submodel-specific category probabilities, and variance-weighted
 #' standardised residuals are computed for both observed and
-#' replicated data.
+#' replicated data. Expectations are given each draw's person
+#' parameters, as in \code{infit_statistic(method = "theta")}, since the
+#' hurdle model has no sufficient total score. Use that method for a
+#' Rasch-family model when results should be comparable with this
+#' function.
 #'
 #' @param model A fitted \code{\link[brms]{brmsfit}} object using the
 #'   \code{\link{hurdle_acat}} custom family (i.e.,
@@ -501,7 +515,8 @@ posterior_epred_hurdle_acat <- function(prep) {
 #' \eqn{Y_{obs} > 0} contribute. Conditional probabilities are
 #' \deqn{P(Y = k \mid Y > 0) = epred[, , k+1] / (1 - hu),
 #'   \quad k = 1, \ldots, K - 1.}
-#' The conditional expected value and variance use category scores
+#' The expected value and variance under these probabilities use
+#' category scores
 #' \eqn{1, \ldots, K - 1}. Replicated severity values are drawn
 #' independently for each (draw, observation) from these conditional
 #' probabilities via inverse-CDF sampling, so the partial credit PPC
@@ -600,12 +615,12 @@ infit_statistic_hpcm <- function(model,
   K_total <- dim(epred_array)[3]
   K_sev   <- K_total - 1L  # number of positive (severity) categories
 
-  obs_response <- model$data[[resp_var]]
+  obs_response <- .hpcm_response_scores(model$data[[resp_var]])
 
   # =================================================================
   # HURDLE submodel: Bernoulli on 1[Y > 0]
   # =================================================================
-  hu_mat       <- epred_array[, , 1L]              # S x N: P(Y = 0)
+  hu_mat       <- matrix(epred_array[, , 1L], nrow = n_draws)  # S x N: P(Y = 0)
   E_hurdle     <- 1 - hu_mat                       # S x N: P(Y > 0)
   Var_hurdle   <- hu_mat * (1 - hu_mat)            # S x N
   Var_hurdle[Var_hurdle < 1e-12] <- 1e-12
@@ -647,8 +662,13 @@ infit_statistic_hpcm <- function(model,
   pcm_rows <- which(hurdle_obs_vec == 1L)
   if (length(pcm_rows) > 0L) {
     for (n in pcm_rows) {
-      probs_sn <- cond_p_array[, n, , drop = TRUE]   # S x K_sev
-      cum_p    <- t(apply(probs_sn, 1, cumsum))
+      probs_sn <- matrix(cond_p_array[, n, ], nrow = n_draws)  # S x K_sev
+      # Column-wise cumulative sum, valid for any number of draws and
+      # categories
+      cum_p    <- probs_sn
+      if (ncol(cum_p) > 1L) {
+        for (j in 2:ncol(cum_p)) cum_p[, j] <- cum_p[, j - 1L] + cum_p[, j]
+      }
       u        <- stats::runif(n_draws)
       yrep_pcm_mat[, n] <- max.col(cum_p >= u, ties.method = "first")
     }
@@ -884,6 +904,9 @@ q3_statistic_hpcm <- function(model,
          call. = FALSE)
   }
 
+  .check_unique_person_item(model$data[[person_name]], model$data[[item_name]],
+                            person_name, item_name, "q3_statistic_hpcm")
+
   # --- Determine posterior draw subset ---
   draw_ids <- NULL
   total_draws <- brms::ndraws(model)
@@ -914,12 +937,12 @@ q3_statistic_hpcm <- function(model,
   K_total <- dim(epred_array)[3]
   K_sev   <- K_total - 1L
 
-  obs_response <- model$data[[resp_var]]
+  obs_response <- .hpcm_response_scores(model$data[[resp_var]])
 
   # =================================================================
   # HURDLE submodel residuals (Bernoulli on 1[Y > 0])
   # =================================================================
-  hu_mat   <- epred_array[, , 1L]            # S x N: P(Y = 0)
+  hu_mat   <- matrix(epred_array[, , 1L], nrow = n_draws)  # S x N: P(Y = 0)
   E_hurdle <- 1 - hu_mat                     # S x N: P(Y > 0)
 
   hurdle_obs_vec <- as.integer(obs_response > 0)
@@ -952,8 +975,13 @@ q3_statistic_hpcm <- function(model,
   pcm_rows <- which(hurdle_obs_vec == 1L)
   if (length(pcm_rows) > 0L) {
     for (n in pcm_rows) {
-      probs_sn <- cond_p_array[, n, , drop = TRUE]
-      cum_p    <- t(apply(probs_sn, 1, cumsum))
+      probs_sn <- matrix(cond_p_array[, n, ], nrow = n_draws)
+      # Column-wise cumulative sum, valid for any number of draws and
+      # categories
+      cum_p    <- probs_sn
+      if (ncol(cum_p) > 1L) {
+        for (j in 2:ncol(cum_p)) cum_p[, j] <- cum_p[, j - 1L] + cum_p[, j]
+      }
       u        <- stats::runif(n_draws)
       yrep_pcm_mat[, n] <- max.col(cum_p >= u, ties.method = "first")
     }
@@ -1235,7 +1263,8 @@ item_parameters_hpcm <- function(model,
   # ---------------------------------------------------------------
   pcm_param_draws <- .extract_item_param_draws(
     all_draws, unique_items, item_name,
-    is_ordinal = TRUE, has_fixed_items = FALSE
+    is_ordinal = TRUE, has_fixed_items = FALSE,
+    item_levels = .item_levels(model, item_name)
   )
 
   pcm_shift <- if (center) {
@@ -1349,8 +1378,8 @@ item_parameters_hpcm <- function(model,
 #'   and person parameters are shifted within each submodel so that
 #'   the mean item parameter is zero. Person traits are shifted by the
 #'   same constant as the items in their submodel.
-#' @param theta_range A numeric vector of length 2 giving the range for
-#'   the Newton-Raphson WLE search on the hurdle submodel. Default is
+#' @param theta_range A numeric vector of length 2 giving the search
+#'   range for the WLE on the hurdle submodel. Default is
 #'   \code{c(-7, 7)}.
 #'
 #' @return A list with three elements:
@@ -1358,8 +1387,11 @@ item_parameters_hpcm <- function(model,
 #'   \item{\code{hurdle}}{A list with the same structure as
 #'     \code{\link{person_parameters}} for a dichotomous Rasch model:
 #'     \code{person_estimates} (one row per person; \code{sum_score}
-#'     is the number of items with \eqn{Y > 0}; both EAP and Warm's
-#'     WLE are provided), \code{score_table}, and optionally
+#'     is the number of items with \eqn{Y > 0} and \code{n_items} the
+#'     number of items answered; both EAP and Warm's WLE are provided,
+#'     and with missing responses the WLE uses the items the person
+#'     answered), \code{score_table} (persons who answered every
+#'     item), and optionally
 #'     \code{draws_matrix}. The hurdle EAP is the sign-flipped brms
 #'     random effect on \code{hu}, so higher values mean greater
 #'     presence / susceptibility.}
@@ -1372,9 +1404,9 @@ item_parameters_hpcm <- function(model,
 #'     omitted intentionally (see Details).}
 #'   \item{\code{correlation}}{A \code{\link[tibble]{tibble}}
 #'     summarising the posterior of
-#'     \eqn{\rho(\theta_{hurdle}, \theta_{pcm})}, identical to the
-#'     \code{correlation} element returned by
-#'     \code{\link{item_parameters_hpcm}}.}
+#'     \eqn{\rho(\theta_{hurdle}, \theta_{pcm})} with a 95% interval,
+#'     the same as the \code{correlation} element returned by
+#'     \code{\link{item_parameters_hpcm}} with \code{prob = 0.95}.}
 #' }
 #'
 #' @details
@@ -1471,14 +1503,15 @@ person_parameters_hpcm <- function(model,
   all_draws    <- tibble::as_tibble(brms::as_draws_df(model))
   unique_items <- sort(unique(model$data[[item_name]]))
   dat          <- model$data
-  obs_response <- dat[[resp_var]]
+  obs_response <- .hpcm_response_scores(dat[[resp_var]])
 
   # ---------------------------------------------------------------
   # Item parameters (needed for centering shifts and hurdle WLE)
   # ---------------------------------------------------------------
   pcm_param_draws <- .extract_item_param_draws(
     all_draws, unique_items, item_name,
-    is_ordinal = TRUE, has_fixed_items = FALSE
+    is_ordinal = TRUE, has_fixed_items = FALSE,
+    item_levels = .item_levels(model, item_name)
   )
   pcm_thresh_means_uncentered <- lapply(pcm_param_draws, function(item_list) {
     vapply(item_list, mean, numeric(1))
@@ -1558,14 +1591,27 @@ person_parameters_hpcm <- function(model,
   # ---------------------------------------------------------------
   # Hurdle WLE (dichotomous Rasch on 1[Y > 0])
   # ---------------------------------------------------------------
-  hurdle_wle_res <- .compute_wle_dichotomous(
-    difficulties = hurdle_diff,
-    theta_range  = theta_range
-  )
+  # A sum score only has a WLE relative to the items that make it up, so
+  # each set of answered items gets its own score-to-WLE table.
+  n_it <- length(unique_items)
+  persons_u <- unique(person_col_data)
+  answered <- matrix(FALSE, nrow = length(persons_u), ncol = n_it)
+  answered[cbind(match(person_col_data, persons_u),
+                 match(as.character(dat[[item_name]]),
+                       as.character(unique_items)))] <- TRUE
+  hu_score <- hurdle_sum$sum_score[match(persons_u,
+                                         as.character(hurdle_sum$person_id))]
+  wb <- .wle_by_pattern(answered, hu_score, function(items) {
+    .compute_wle_dichotomous(difficulties = hurdle_diff[items],
+                             theta_range  = theta_range)
+  })
+  hu_wle <- wb$wle
+  hu_wle_se <- wb$wle_se
   hurdle_wle_lookup <- tibble::tibble(
-    sum_score = hurdle_wle_res$scores,
-    wle       = round(hurdle_wle_res$wle, 4),
-    wle_se    = round(hurdle_wle_res$wle_se, 4)
+    person_id = persons_u,
+    n_items   = as.integer(rowSums(answered)),
+    wle       = round(hu_wle, 4),
+    wle_se    = round(hu_wle_se, 4)
   )
 
   # ---------------------------------------------------------------
@@ -1579,7 +1625,9 @@ person_parameters_hpcm <- function(model,
     eap_se    = round(eap_hu_se, 4)
   )
   hurdle_df <- dplyr::left_join(hurdle_df, hurdle_wle_lookup,
-                                by = "sum_score")
+                                by = "person_id")
+  hurdle_df <- hurdle_df[, c("person_id", "n_items", "sum_score", "eap",
+                             "eap_se", "wle", "wle_se")]
   colnames(hurdle_df)[1] <- person_name
   hurdle_df <- hurdle_df[match(original_order,
                                hurdle_df[[person_name]]), ]
@@ -1599,7 +1647,8 @@ person_parameters_hpcm <- function(model,
   # ---------------------------------------------------------------
   # Score tables
   # ---------------------------------------------------------------
-  hurdle_score_table <- hurdle_df |>
+  # Only persons who answered every item share one sum-score scale.
+  hurdle_score_table <- hurdle_df[hurdle_df$n_items == n_it, ] |>
     dplyr::group_by(.data$sum_score) |>
     dplyr::summarise(
       n      = dplyr::n(),
@@ -1679,33 +1728,28 @@ person_parameters_hpcm <- function(model,
 # ── Extract hurdle item draws keyed by item label ────────────────
 #' @keywords internal
 .extract_hurdle_item_draws <- function(draws, unique_items, item_name) {
-  esc <- function(x) gsub("([.|()\\^{}+$*?])", "\\\\\\1", x)
-
-  # Try `0 + factor(item)` pattern first, then `0 + item`.
-  patterns <- c(
-    paste0("^b_hu_factor", item_name, esc(unique_items), "$"),
-    paste0("^b_hu_",                  item_name, esc(unique_items), "$")
-  )
-
-  out <- vector("list", length(unique_items))
-  names(out) <- unique_items
-  for (i in seq_along(unique_items)) {
-    candidates <- c(
-      grep(paste0("^b_hu_factor", item_name, esc(unique_items[i]), "$"),
-           names(draws), value = TRUE),
-      grep(paste0("^b_hu_", item_name, esc(unique_items[i]), "$"),
-           names(draws), value = TRUE)
-    )
-    if (length(candidates) == 0) {
-      stop("Could not find a brms posterior column matching ",
-           "'b_hu_factor", item_name, unique_items[i], "' or ",
-           "'b_hu_", item_name, unique_items[i],
-           "'. Is the hurdle submodel specified as ",
-           "`hu ~ 0 + factor(", item_name, ") + ...` ?",
-           call. = FALSE)
-    }
-    out[[i]] <- as.numeric(draws[[candidates[1]]])
+  # Hurdle item effects from `hu ~ 0 + factor(item)` or `hu ~ 0 + item`.
+  # brms orders them by factor level and may alter labels in the names, so
+  # they are matched to items by position (see .check_label_map()).
+  levs <- levels(factor(unique_items))
+  nm <- names(draws)
+  cols <- character(0)
+  for (prefix in c(paste0("b_hu_factor", item_name), paste0("b_hu_", item_name))) {
+    pat <- paste0("^", prefix, "(.+)$")
+    cols <- grep(pat, nm, value = TRUE)
+    if (length(cols)) break
   }
+  if (length(cols) != length(levs)) {
+    stop("Could not find one hurdle parameter per item (found ",
+         length(cols), " for ", length(levs), " items). Is the hurdle ",
+         "submodel specified as `hu ~ 0 + factor(", item_name, ") + ...` ?",
+         call. = FALSE)
+  }
+  .check_label_map(sub(pat, "\\1", cols), levs, "hurdle item parameters")
+  out <- lapply(as.character(unique_items), function(it) {
+    as.numeric(draws[[cols[match(it, levs)]]])
+  })
+  names(out) <- unique_items
   out
 }
 
@@ -1768,7 +1812,7 @@ person_parameters_hpcm <- function(model,
     for (k in seq_along(thresh_list)) {
       vals  <- thresh_list[[k]]
       hdci  <- ggdist::mean_hdci(vals, .width = prob)
-      n_eff <- .compute_ess(vals)
+      n_eff <- .compute_ess(vals, all_draws$.chain)
       sum_rows[[length(sum_rows) + 1]] <- data.frame(
         item       = item_label,
         threshold  = as.integer(k),
@@ -2162,8 +2206,8 @@ RMUreliability_hpcm <- function(x,
 #'   grouping variable in the model data. Default is \code{id}.
 #' @param items An optional character vector of item names to plot.
 #'   If \code{NULL} (the default), all items are plotted.
-#' @param n_intervals Integer. The number of class intervals into
-#'   which persons are binned within each submodel. Default is 5.
+#' @param class_intervals Integer >= 2. The number of class intervals
+#'   into which persons are binned within each submodel. Default is 5.
 #' @param theta_range A numeric vector of length 2 specifying the
 #'   range of theta for the expected curves. Default is
 #'   \code{c(-4, 4)}.
@@ -2183,6 +2227,7 @@ RMUreliability_hpcm <- function(x,
 #'   credible interval ribbons. Default is 0.3.
 #' @param point_size Numeric. Size of observed score points. Default
 #'   is 2.5.
+#' @param n_intervals Deprecated. Use \code{class_intervals}.
 #' @param min_n Integer. Minimum number of observations required in
 #'   a class interval (per item, per submodel) for the observed mean
 #'   to be plotted. Default is 5.
@@ -2230,7 +2275,15 @@ RMUreliability_hpcm <- function(x,
 #' the inverse-CDF construction and avoids privileging any particular
 #' summary score. Within each interval, the observed mean response for
 #' an item is computed \emph{only} over persons with \eqn{Y > 0} on
-#' that item — i.e., the cells the PCM submodel actually applies to.
+#' that item, the cells the PCM submodel applies to.
+#'
+#' EAPs are shrunk toward the mean and are estimated from the same
+#' responses that are plotted, so the observed points can sit off the
+#' curve under good fit. The PCM panel therefore also shows, for each
+#' interval, the model-expected mean severity for the same responses
+#' (orange diamonds), computed from \code{posterior_epred()} and
+#' averaged over each person's posterior (up to 200 draws). Compare the
+#' observed points with the diamonds rather than with the curve.
 #'
 #' \strong{Uncertainty.} Each expected curve carries a credible
 #' interval ribbon at width \code{prob}. Observed points have
@@ -2269,7 +2322,7 @@ plot_icc_hpcm <- function(model,
                            item_var     = item,
                            person_var   = id,
                            items        = NULL,
-                           n_intervals  = 5,
+                           class_intervals = 5,
                            theta_range  = c(-4, 4),
                            n_points     = 200,
                            center       = TRUE,
@@ -2278,13 +2331,23 @@ plot_icc_hpcm <- function(model,
                            line_size    = 0.8,
                            ribbon_alpha = 0.3,
                            point_size   = 2.5,
-                           min_n        = 5) {
+                           min_n        = 5,
+                           n_intervals  = NULL) {
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required.", call. = FALSE)
   }
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
+  }
+  if (!is.null(n_intervals)) {
+    warning("`n_intervals` is deprecated. Use `class_intervals`.",
+            call. = FALSE)
+    class_intervals <- n_intervals
+  }
+  if (!is.numeric(class_intervals) || length(class_intervals) != 1L ||
+      !is.finite(class_intervals) || class_intervals < 2) {
+    stop("`class_intervals` must be a single integer >= 2.", call. = FALSE)
   }
 
   # Some brms versions report a custom family's family() as the literal
@@ -2313,30 +2376,8 @@ plot_icc_hpcm <- function(model,
 
   model_data        <- model$data
   obs_response_raw  <- model_data[[resp_var]]
-  # Normalize response to numeric 0..K-1 (0 = hurdle category):
-  # - factor: convert via character to preserve the numeric value of
-  #   each level (rather than the 1-based factor code, which would
-  #   silently shift "0" -> 1).
-  # - integer/numeric: cast to numeric.
-  # - if minimum > 0 the response has been stored with a 1-based shift
-  #   (some brms versions do this for ordinal families); undo so 0
-  #   continues to denote the hurdle category.
-  if (is.factor(obs_response_raw)) {
-    obs_response <- suppressWarnings(
-      as.numeric(as.character(obs_response_raw))
-    )
-  } else {
-    obs_response <- as.numeric(obs_response_raw)
-  }
-  if (any(is.na(obs_response) & !is.na(obs_response_raw))) {
-    stop("Response variable '", resp_var, "' could not be converted ",
-         "to numeric. plot_icc_hpcm() expects integer responses ",
-         "0..K-1.", call. = FALSE)
-  }
-  min_resp <- min(obs_response, na.rm = TRUE)
-  if (is.finite(min_resp) && min_resp > 0L) {
-    obs_response <- obs_response - min_resp
-  }
+  # Responses 0..K-1 with 0 the hurdle category, coded as brms does
+  obs_response <- .hpcm_response_scores(obs_response_raw)
   unique_items <- sort(unique(model_data[[item_name]]))
 
   if (!is.null(items)) {
@@ -2362,14 +2403,12 @@ plot_icc_hpcm <- function(model,
   hu_shift      <- if (center) mean(hu_diff_means) else 0
   hu_diff_centered <- hu_diff_means - hu_shift
 
-  pcm_thresh_means_uncentered <- vector("list", length(unique_items))
+  # PCM thresholds per item, matched to items by brms level order
+  pcm_tau <- .item_tau_draws(draws, levels(factor(model_data[[item_name]])),
+                             item_name, ordinal = TRUE)
+  pcm_thresh_means_uncentered <- lapply(as.character(unique_items),
+                                        function(it) colMeans(pcm_tau[[it]]))
   names(pcm_thresh_means_uncentered) <- unique_items
-  for (item_label in unique_items) {
-    tc <- .find_thresh_cols(draws, item_label)
-    pcm_thresh_means_uncentered[[item_label]] <- vapply(
-      tc, function(col) mean(draws[[col]]), numeric(1)
-    )
-  }
   pcm_shift <- if (center) {
     mean(unlist(pcm_thresh_means_uncentered))
   } else 0
@@ -2408,6 +2447,17 @@ plot_icc_hpcm <- function(model,
     sum_hurdle = hurdle_sum_per,
     stringsAsFactors = FALSE
   )
+  # Hurdle class intervals compare counts of Y > 0 across persons, which
+  # requires the same items for everyone: complete responders only.
+  n_obs_per <- tabulate(match(person_col, unique_persons),
+                        nbins = length(unique_persons))
+  complete_hu <- n_obs_per == length(unique_items)
+  if (!all(complete_hu)) {
+    message("plot_icc_hpcm() uses the ", sum(complete_hu), " persons who ",
+            "answered every item for the hurdle panel. ", sum(!complete_hu),
+            " with missing responses are left out.")
+    hurdle_sum_df <- hurdle_sum_df[complete_hu, , drop = FALSE]
+  }
 
   pcm_n_active <- vapply(unique_persons, function(pid) {
     sum(obs_response[person_col == pid] > 0)
@@ -2455,15 +2505,8 @@ plot_icc_hpcm <- function(model,
     )
 
     # --- PCM expected curve (conditional on Y > 0) ---
-    tc <- .find_thresh_cols(draws, item_label)
-    if (length(tc) == 0) {
-      warning("Could not find PCM threshold parameters for item '",
-              item_label, "'. Skipping PCM panel.", call. = FALSE)
-      next
-    }
-    thresh_sub <- as.matrix(
-      draws[draw_sample, tc, drop = FALSE]
-    ) - pcm_shift
+    thresh_sub <- pcm_tau[[as.character(item_label)]][draw_sample, ,
+                                                      drop = FALSE] - pcm_shift
     n_thresh   <- ncol(thresh_sub)
     cats_pos   <- seq_len(n_thresh + 1L)   # severity scores 1..K-1
 
@@ -2515,7 +2558,7 @@ plot_icc_hpcm <- function(model,
       idx <- which.min(abs(e_total_hu - s))
       theta_grid_fine[idx]
     },
-    n_intervals    = n_intervals,
+    class_intervals = class_intervals,
     plot_items     = plot_items,
     model_data     = model_data,
     item_name      = item_name,
@@ -2538,11 +2581,27 @@ plot_icc_hpcm <- function(model,
   pcm_ci <- pcm_ci[pcm_ci$n_active > 0 & !is.na(pcm_ci$eap_theta), ,
                    drop = FALSE]
 
+  # Model-expected severity for the same observations, averaged over
+  # each person's posterior: E(Y | Y > 0) per draw from posterior_epred,
+  # then the posterior mean. Comparing the observed bin means with these
+  # expected bin means does not depend on where the bin is placed on the
+  # x-axis, so EAP shrinkage does not distort the comparison.
+  epred_draws <- draw_sample[seq_len(min(length(draw_sample), 200L))]
+  epred <- brms::posterior_epred(model, draw_ids = epred_draws)
+  n_cat_total <- dim(epred)[3L]
+  p_pos <- 1 - epred[, , 1L, drop = FALSE][, , 1L]
+  e_sev <- 0
+  for (k in seq_len(n_cat_total - 1L)) {
+    e_sev <- e_sev + k * epred[, , k + 1L]
+  }
+  pcm_expected_obs <- colMeans(matrix(e_sev / p_pos, nrow = length(epred_draws)))
+  rm(epred)
+
   pcm_observed_data <- .build_hpcm_observed(
     person_ci      = pcm_ci,
     sum_col        = "eap_theta",
     bin_to_theta   = identity,  # bins already in theta_pcm scale
-    n_intervals    = n_intervals,
+    class_intervals = class_intervals,
     plot_items     = plot_items,
     model_data     = model_data,
     item_name      = item_name,
@@ -2550,7 +2609,8 @@ plot_icc_hpcm <- function(model,
     obs_response   = obs_response,
     response_fn    = function(y) as.numeric(y),
     min_n          = min_n,
-    restrict_to_y_pos = TRUE
+    restrict_to_y_pos = TRUE,
+    expected_obs   = pcm_expected_obs
   )
 
   # ---------------------------------------------------------------
@@ -2630,6 +2690,15 @@ plot_icc_hpcm <- function(model,
           mapping = ggplot2::aes(x = .data$theta, y = .data$response),
           colour = "#1F78B4", size = point_size
         )
+      if (any(is.finite(observed_data$expected))) {
+        p <- p + ggplot2::geom_point(
+          data = observed_data[is.finite(observed_data$expected), ,
+                               drop = FALSE],
+          mapping = ggplot2::aes(x = .data$theta, y = .data$expected),
+          shape = 23, fill = "white", colour = "#D55E00",
+          size = point_size, stroke = 0.9
+        )
+      }
     }
 
     p +
@@ -2670,7 +2739,16 @@ plot_icc_hpcm <- function(model,
     y_lim_max     = NA_real_,
     error_floor   = 1,
     error_ceil    = pcm_max_cat
-  )
+  ) +
+    ggplot2::labs(caption = .erb_caption(paste(
+      "Blue circles: observed mean severity in each class interval of",
+      "the severity EAP, among responses above 0, with 95% intervals.",
+      "Orange diamonds: the model-expected mean for the same responses,",
+      "averaged over each person's posterior. Compare the circles with",
+      "the diamonds. The curve is evaluated at the mean EAP of each",
+      "interval, and EAPs are shrunk toward the mean, so the circles can",
+      "sit off the curve when the model fits."))) +
+    .erb_caption_theme()
 
   list(hurdle = hurdle_plot, pcm = pcm_plot)
 }
@@ -2688,15 +2766,16 @@ plot_icc_hpcm <- function(model,
 #   contribute (PCM submodel only).
 #' @keywords internal
 .build_hpcm_observed <- function(person_ci, sum_col, bin_to_theta,
-                                 n_intervals, plot_items, model_data,
+                                 class_intervals, plot_items, model_data,
                                  item_name, person_name, obs_response,
                                  response_fn, min_n,
-                                 restrict_to_y_pos) {
+                                 restrict_to_y_pos,
+                                 expected_obs = NULL) {
   if (nrow(person_ci) == 0) return(NULL)
 
   values <- person_ci[[sum_col]]
   breaks <- stats::quantile(values,
-                            probs = seq(0, 1, length.out = n_intervals + 1))
+                            probs = seq(0, 1, length.out = class_intervals + 1))
   breaks <- unique(breaks)
 
   if (length(breaks) >= 3) {
@@ -2742,17 +2821,24 @@ plot_icc_hpcm <- function(model,
     item_persons <- as.character(model_data[[person_name]][item_rows])
     item_y       <- as.numeric(obs_response[item_rows])
     item_response <- response_fn(item_y)
+    item_expected <- if (is.null(expected_obs)) {
+      rep(NA_real_, length(item_rows))
+    } else {
+      expected_obs[item_rows]
+    }
 
     if (restrict_to_y_pos) {
       keep <- item_y > 0
       if (!any(keep)) next
       item_persons  <- item_persons[keep]
       item_response <- item_response[keep]
+      item_expected <- item_expected[keep]
     }
 
     item_df <- data.frame(
       person_id = item_persons,
       response  = item_response,
+      expected  = item_expected,
       stringsAsFactors = FALSE
     )
     item_df <- merge(item_df, person_ci, by = "person_id")
@@ -2767,6 +2853,7 @@ plot_icc_hpcm <- function(model,
           interval = d$interval[1],
           theta    = d$theta[1],
           response = mean(d$response, na.rm = TRUE),
+          expected = mean(d$expected),
           n        = n_obs,
           se       = if (n_obs > 1L) {
             stats::sd(d$response, na.rm = TRUE) / sqrt(n_obs)
@@ -2847,7 +2934,10 @@ plot_icc_hpcm <- function(model,
 #'     for the partial credit submodel: \eqn{\theta_{pcm}} histogram,
 #'     PCM threshold histogram (inverted), and a per-item
 #'     dot-and-whisker with one row per item and one coloured marker
-#'     per threshold within item.}
+#'     per threshold within item. Persons who answered 0 on every item
+#'     gave no severity responses and are left out of the
+#'     \eqn{\theta_{pcm}} histogram, with a caption giving their
+#'     number.}
 #' }
 #'
 #' @details
@@ -3019,6 +3109,17 @@ plot_targeting_hpcm <- function(model,
   pcm_threshold_data$lower    <- pcm_threshold_data$lower    - pcm_shift
   pcm_threshold_data$upper    <- pcm_threshold_data$upper    - pcm_shift
   pcm_theta <- pcm_theta_raw - pcm_shift
+  # Persons who answered 0 on every item gave no severity responses, so
+  # their severity EAP comes from the prior and the correlation with the
+  # hurdle trait only. Leave them out of the severity histogram.
+  resp_var <- as.character(stats::formula(model)$formula[[2]])
+  if (length(resp_var) > 1) resp_var <- resp_var[2]
+  y_scores <- .hpcm_response_scores(model$data[[resp_var]])
+  n_active <- tapply(y_scores > 0, as.character(model$data[[person_name]]),
+                     sum, na.rm = TRUE)
+  active <- n_active[rownames(person_re)] > 0
+  n_inactive <- sum(!active)
+  pcm_theta <- pcm_theta[active]
 
   hu_threshold_data$estimate <- hu_threshold_data$estimate - hu_shift
   hu_threshold_data$lower    <- hu_threshold_data$lower    - hu_shift
@@ -3063,6 +3164,16 @@ plot_targeting_hpcm <- function(model,
     palette         = palette,
     subtitle        = "PCM"
   )
+  if (n_inactive > 0) {
+    pcm_plot <- pcm_plot + patchwork::plot_annotation(
+      caption = .erb_caption(paste0(
+        "The person histogram shows the ", sum(active), " persons with at ",
+        "least one response above 0. ", n_inactive, " persons who answered ",
+        "0 on every item are left out, since they gave no severity ",
+        "responses.")),
+      theme = .erb_caption_theme()
+    )
+  }
 
   list(hurdle = hurdle_plot, pcm = pcm_plot)
 }

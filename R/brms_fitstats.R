@@ -552,17 +552,23 @@ fit_statistic_rm <- function(model, criterion, group,
 
 #' Posterior Predictive Infit Statistic for Bayesian IRT Models
 #'
-#' Computes a Bayesian analogue of the conditional item infit statistic
-#' (as described in Christensen, Kreiner & Mesbah, 2013) for Rasch-family
-#' models fitted with \pkg{brms}. For each posterior draw, expected values
-#' and variances are derived from the category probabilities returned by
-#' \code{\link[brms]{posterior_epred}}, and variance-weighted standardised
-#' residuals are computed for both observed and replicated data. The result
-#' can be summarised into posterior predictive p-values to assess item fit.
+#' Computes item infit (and optionally outfit) for each posterior draw of
+#' a Rasch-family model fitted with \pkg{brms}, for the observed data and
+#' for replicated data. By default (\code{method = "conditional"}) the
+#' expected values and variances are conditional on each person's total
+#' score, as in the conditional infit of Christensen et al. (2013) and
+#' Kreiner & Christensen (2011), and the replicated data keep each
+#' person's observed total score. With \code{method = "theta"} they are
+#' computed given each draw's person locations instead.
 #'
-#' @param model A fitted \code{\link[brms]{brmsfit}} object from an ordinal
-#'   IRT model (e.g., \code{family = acat} for a partial credit model or
-#'   \code{family = bernoulli()} for a dichotomous Rasch model).
+#' @param model A fitted \code{\link[brms]{brmsfit}} object. For
+#'   \code{method = "conditional"} it must be a Rasch-family model in which
+#'   the total score is sufficient for the person location:
+#'   \code{family = acat} (partial credit or rating scale model) or
+#'   \code{family = bernoulli()} (dichotomous Rasch model), both with the
+#'   logit link, a person random intercept \code{(1 | id)}, and no
+#'   \code{disc} term. \code{method = "theta"} accepts any ordinal or
+#'   Bernoulli model.
 #' @param item_var An unquoted variable name identifying the item grouping
 #'   variable in the model data (e.g., \code{item}).
 #' @param person_var An unquoted variable name identifying the person
@@ -574,45 +580,82 @@ fit_statistic_rm <- function(model, criterion, group,
 #'   alongside infit. Default is \code{FALSE} (infit only), since outfit
 #'   is highly sensitive to outliers and rarely recommended for Rasch
 #'   diagnostics.
+#' @param method Either \code{"conditional"} (the default), with
+#'   expectations conditional on the total score, or \code{"theta"}, with
+#'   expectations given each draw's person locations. \code{"theta"} gives
+#'   the same computation as \code{\link{infit_statistic_hpcm}} and as
+#'   \code{infit_statistic()} in easyRaschBayes 0.3.0.
 #'
 #' @return A \code{\link[tibble]{tibble}} with the following columns:
 #' \describe{
-#'   \item{item}{The item identifier.}
+#'   \item{item}{The item identifier, named after \code{item_var}.}
 #'   \item{draw}{Integer index of the posterior draw.}
 #'   \item{infit}{The observed infit statistic for that item and draw.}
-#'   \item{infit_rep}{The replicated infit statistic (based on posterior
-#'     predicted data) for that item and draw.}
+#'   \item{infit_rep}{The replicated infit statistic for that item and
+#'     draw.}
 #'   \item{outfit}{(Only if \code{outfit = TRUE}) The observed outfit
 #'     statistic for that item and draw.}
 #'   \item{outfit_rep}{(Only if \code{outfit = TRUE}) The replicated
 #'     outfit statistic for that item and draw.}
 #' }
-#' The output is grouped by the item variable. Posterior predictive
-#' p-values can be obtained by computing, e.g.,
-#' \code{mean(infit_rep > infit)} within each item.
+#' The output is grouped by the item variable. Use \code{\link{infit_post}}
+#' for posterior predictive p-values and a plot.
 #'
 #' @details
-#' The procedure adapts the conditional infit/outfit statistics
-#' (Christensen et al., 2013; Kreiner & Christensen, 2011; Müller, 2020)
-#' to the Bayesian framework:
+#' Both methods use the infit and outfit mean squares (Christensen et al.,
+#' 2013; Müller, 2020) as discrepancy measures in a posterior predictive
+#' check. For each posterior draw \eqn{s}, each observation gets an
+#' expected value \eqn{E^{(s)}_{vi}} and a variance \eqn{Var^{(s)}_{vi}},
+#' and
+#' \deqn{Infit_i^{(s)} = \frac{\sum_v (X_{vi} - E^{(s)}_{vi})^2}
+#'   {\sum_v Var^{(s)}_{vi}}, \qquad
+#'   Outfit_i^{(s)} = \frac{1}{N_i} \sum_v
+#'   \frac{(X_{vi} - E^{(s)}_{vi})^2}{Var^{(s)}_{vi}}.}
+#' The replicated statistics use the same \eqn{E} and \eqn{Var} with
+#' replicated responses in place of \eqn{X}.
 #'
-#' \enumerate{
-#'   \item For each posterior draw \eqn{s}, category probabilities
-#'     \eqn{P^{(s)}(X_{vi} = c)} are obtained from
-#'     \code{\link[brms]{posterior_epred}}.
-#'   \item The conditional expected value and variance for each
-#'     observation are computed as:
-#'     \deqn{E^{(s)}_{vi} = \sum_c c \cdot P^{(s)}(X_{vi} = c)}
-#'     \deqn{Var^{(s)}_{vi} = \sum_c (c - E^{(s)}_{vi})^2 \cdot
-#'       P^{(s)}(X_{vi} = c)}
-#'   \item Standardised squared residuals are:
-#'     \deqn{Z^{2(s)}_{vi} = (X_{vi} - E^{(s)}_{vi})^2 / Var^{(s)}_{vi}}
-#'   \item The infit statistic for item \eqn{i} is the variance-weighted
-#'     mean of \eqn{Z^2} across persons:
-#'     \deqn{Infit_i^{(s)} = \frac{\sum_v Var_{vi}^{(s)} Z^{2(s)}_{vi}}
-#'       {\sum_v Var_{vi}^{(s)}}}
-#'   \item If requested, the outfit is the unweighted mean of \eqn{Z^2}.
-#' }
+#' \strong{Conditional method.} Under a Rasch-family model the total score
+#' \eqn{R_v} is sufficient for the person location. The function takes
+#' the category probabilities from \code{\link[brms]{posterior_epred}},
+#' removes the person location from them, and computes
+#' \eqn{E^{(s)}_{vi} = E(X_{vi} \mid R_v)} and
+#' \eqn{Var^{(s)}_{vi} = Var(X_{vi} \mid R_v)} with elementary symmetric
+#' functions of that draw's item parameters. Persons with the minimum or
+#' maximum total score have zero variance on every item and are left out,
+#' as in \code{iarm::out_infit()}. Replicated responses are drawn
+#' conditional on each person's observed total score, so the reference
+#' distribution does not depend on the person locations. Given the same
+#' item parameters, the observed values equal the conditional infit and
+#' outfit of \code{iarm::out_infit()}. The observed infit varies across
+#' draws only through the uncertainty in the item parameters. With
+#' missing responses, the total score is the sum over the items a person
+#' answered, scored from 0, and the conditional distribution is computed
+#' for each person's set of answered items.
+#'
+#' \strong{Theta method.} \eqn{E} and \eqn{Var} are computed from the
+#' category probabilities given the person location
+#' \eqn{\theta_v^{(s)}} of each draw, and replicated responses come from
+#' \code{\link[brms]{posterior_predict}}. The person locations are
+#' estimated from the same data, which makes posterior predictive
+#' p-values of this kind conservative. They tend to cluster around 0.5,
+#' so values near 0 or 1 are rarer than p-values of the same size would
+#' be (Robins et al., 2000).
+#'
+#' The conditional method is better calibrated than the theta method, but
+#' its p-values are also conservative, because the item parameters are
+#' estimated from the same data. In simulations under a fitting Rasch
+#' model, two-sided p-values below .05 occurred for 0.5% to 2% of items,
+#' with the lowest rates for polytomous items. Misfit can therefore go
+#' undetected. It is suggested to also evaluate item fit with
+#' \code{\link{item_restscore_statistic}}, whose p-values were close to
+#' uniform in the same simulations.
+#'
+#' With either method, the posterior predictive p-value is not a measure
+#' of the size of misfit. For a fixed amount of misfit it moves toward 0
+#' or 1 as the sample size grows.
+#'
+#' Replication uses random numbers, so call \code{set.seed()} first for
+#' reproducible results.
 #'
 #' @references
 #' Christensen, K. B., Kreiner, S. & Mesbah, M. (Eds.) (2013).
@@ -627,11 +670,18 @@ fit_statistic_rm <- function(model, criterion, group,
 #' Applications}, \emph{7}(1).
 #' \doi{10.1186/s40488-020-00108-7}
 #'
+#' Robins, J. M., van der Vaart, A. & Ventura, V. (2000). Asymptotic
+#' distribution of P values in composite null models. \emph{Journal of
+#' the American Statistical Association}, \emph{95}(452), 1143--1156.
+#' \doi{10.1080/01621459.2000.10474310}
+#'
 #' @seealso
-#' \code{\link{fit_statistic_pcm}} for a general-purpose posterior predictive
-#' fit statistic with user-supplied criterion functions,
-#' \code{\link{fit_statistic_rm}} for a general-purpose posterior predictive
-#' fit statistic with user-supplied criterion functions,
+#' \code{\link{infit_post}} for posterior predictive p-values and a plot,
+#' \code{\link{item_restscore_statistic}} for the item-restscore
+#' association,
+#' \code{\link{fit_statistic_pcm}} and \code{\link{fit_statistic_rm}} for
+#' general-purpose posterior predictive fit statistics with user-supplied
+#' criterion functions,
 #' \code{\link[brms]{posterior_epred}},
 #' \code{\link[brms]{posterior_predict}}.
 #'
@@ -706,7 +756,8 @@ fit_statistic_rm <- function(model, criterion, group,
 #' @importFrom stats formula setNames
 #' @export
 infit_statistic <- function(model, item_var = item, person_var = id,
-                            ndraws_use = NULL, outfit = FALSE) {
+                            ndraws_use = NULL, outfit = FALSE,
+                            method = c("conditional", "theta")) {
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
@@ -732,6 +783,12 @@ infit_statistic <- function(model, item_var = item, person_var = id,
   if (!person_name %in% names(model$data)) {
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
+  }
+
+  method <- match.arg(method)
+  if (method == "conditional") {
+    return(.infit_conditional(model, resp_var, item_name, person_name,
+                              ndraws_use, outfit))
   }
   
   # --- Determine posterior draw subset ---
@@ -881,20 +938,27 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 }
 
 
-#' Posterior Predictive Item-Restscore Association for Bayesian IRT Models
+#' Item-Restscore Association Conditional on the Total Score
 #'
-#' Computes a Bayesian analogue of the item-restscore association test
-#' (Kreiner, 2011) for Rasch-family models fitted with \pkg{brms}. For
-#' each posterior draw, the Goodman-Kruskal gamma coefficient between
-#' each item's score and the rest-score (total score minus that item)
-#' is computed for both observed and replicated data. Posterior
-#' predictive p-values indicate whether the observed association is
-#' stronger than the model predicts, which signals violations of
-#' local independence or unidimensionality.
+#' Computes the item-restscore association (Kreiner, 2011) for Rasch-family
+#' models fitted with \pkg{brms}, with a posterior predictive check that
+#' conditions on each person's total score. The observed Goodman-Kruskal
+#' gamma between each item and its rest-score (total score minus that item)
+#' is compared with (i) its expected value under the model, conditional on
+#' the total scores, and (ii) the gammas of datasets replicated conditional
+#' on the total scores. Both are computed for each posterior draw of the
+#' item parameters.
 #'
-#' @param model A fitted \code{\link[brms]{brmsfit}} object from an
-#'   ordinal IRT model (e.g., \code{family = acat} for a partial credit
-#'   model) or a dichotomous model (\code{family = bernoulli()}).
+#' Observed gamma above the expected value means the item discriminates
+#' more than the equal discrimination of the Rasch model implies, and
+#' observed gamma below it means the item discriminates less.
+#'
+#' @param model A fitted \code{\link[brms]{brmsfit}} object from a
+#'   Rasch-family model in which the total score is sufficient for the
+#'   person location: \code{family = acat} (partial credit or rating scale
+#'   model) or \code{family = bernoulli()} (dichotomous Rasch model), both
+#'   with the logit link, a person random intercept \code{(1 | id)}, and no
+#'   \code{disc} term. Other models stop with an error.
 #' @param item_var An unquoted variable name identifying the item
 #'   grouping variable in the model data (e.g., \code{item}).
 #' @param person_var An unquoted variable name identifying the person
@@ -903,59 +967,93 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #'   subset of posterior draws of this size is used. If \code{NULL} (the
 #'   default), all draws are used.
 #'
-#' @return A \code{\link[tibble]{tibble}} with the following columns:
+#' @return A list with two elements:
 #' \describe{
-#'   \item{item}{The item identifier.}
-#'   \item{gamma_obs}{Posterior mean of the observed Goodman-Kruskal
-#'     gamma between this item and the rest-score.}
-#'   \item{gamma_rep}{Posterior mean of the replicated gamma.}
-#'   \item{gamma_diff}{Posterior mean of \code{gamma_obs - gamma_rep}.
-#'     Positive values indicate the observed item-restscore association
-#'     is stronger than the model expects.}
-#'   \item{ppp}{Posterior predictive p-value:
-#'     \code{mean(gamma_obs > gamma_rep)} across draws.
-#'     Values close to 1 indicate the item discriminates more than the
-#'     model predicts (too high discrimination). Values close to 0
-#'     indicate the item discriminates less than expected (too low
-#'     discrimination, e.g., noise or miskeyed item).}
-#'   \item{gamma_obs_q025, gamma_obs_q975}{95\% credible interval for
-#'     the observed gamma.}
-#'   \item{gamma_obs_q005, gamma_obs_q995}{99\% credible interval for
-#'     the observed gamma.}
-#'   \item{gamma_diff_q025, gamma_diff_q975}{95\% credible interval for
-#'     the gamma difference.}
-#'   \item{gamma_diff_q005, gamma_diff_q995}{99\% credible interval for
-#'     the gamma difference.}
+#'   \item{result}{A \code{\link[tibble]{tibble}} with one row per item,
+#'     sorted by \code{gamma_diff} in decreasing order, and the columns:
+#'     \describe{
+#'       \item{item}{The item identifier, named after \code{item_var}.}
+#'       \item{gamma_obs}{The observed gamma between the item and the
+#'         rest-score.}
+#'       \item{gamma_exp}{The expected gamma conditional on the total
+#'         scores, as in Kreiner (2011), averaged over posterior draws.}
+#'       \item{gamma_diff}{\code{gamma_obs - gamma_exp}.}
+#'       \item{ppp}{Mid-p posterior predictive p-value, the proportion
+#'         of draws where \code{gamma_obs} exceeds the replicated gamma,
+#'         counting ties as one half. Values near 1 indicate stronger
+#'         association than the model implies, values near 0 weaker.}
+#'       \item{ppp_adj}{Two-sided posterior predictive p-value adjusted
+#'         for the number of items by a single-step max-T procedure. See
+#'         Details.}
+#'       \item{gamma_rep}{Mean of the replicated gamma across draws.}
+#'       \item{gamma_diff_q025, gamma_diff_q975}{95% credible interval
+#'         for \code{gamma_obs} minus the expected gamma. It reflects
+#'         uncertainty in the item parameters only. See Details.}
+#'       \item{gamma_diff_q005, gamma_diff_q995}{99% credible interval
+#'         for the same difference.}
+#'       \item{gamma_rep_q025, gamma_rep_q975}{95% posterior predictive
+#'         interval for the gamma of a replicated dataset.}
+#'       \item{gamma_rep_q005, gamma_rep_q995}{99% posterior predictive
+#'         interval for the same.}
+#'     }
+#'   }
+#'   \item{draws}{A \code{\link[tibble]{tibble}} in long format with one
+#'     row per item and draw, and the columns \code{item} (named after
+#'     \code{item_var}), \code{draw}, \code{gamma_rep} (replicated gamma)
+#'     and \code{gamma_exp} (expected gamma).}
 #' }
 #'
 #' @details
-#' The item-restscore association is a key diagnostic in Rasch
-#' measurement. Under the Rasch model, each item should relate to the
-#' latent trait (and hence the rest-score) only through the modelled
-#' relationship. Goodman-Kruskal's gamma is a rank-based measure of
-#' association for ordinal cross-tabulations that is well-suited for
-#' this purpose (Kreiner, 2011).
-#'
-#' The procedure for each posterior draw \eqn{s} is:
+#' Under a Rasch-family model the total score is sufficient for the
+#' person location. Given the total score, the distribution of a
+#' person's responses depends on the item parameters only. For each
+#' posterior draw \eqn{s} the function:
 #'
 #' \enumerate{
-#'   \item Obtain replicated responses \eqn{Y^{rep(s)}} from
-#'     \code{\link[brms]{posterior_predict}}.
-#'   \item For each item \eqn{i} and each person \eqn{v}, compute the
-#'     rest-score: \eqn{R^{obs}_{vi} = \sum_{j \neq i} X_{vj}} for
-#'     observed data and \eqn{R^{rep(s)}_{vi} = \sum_{j \neq i}
-#'     Y^{rep(s)}_{vj}} for replicated data.
-#'   \item Cross-tabulate item score \eqn{\times} rest-score and compute
-#'     the Goodman-Kruskal gamma for both observed and replicated data.
-#'   \item Compare the two gammas across draws.
+#'   \item Takes the category probabilities from
+#'     \code{\link[brms]{posterior_epred}} and removes the person
+#'     location from them, which leaves item weights that depend on
+#'     that draw's item parameters only.
+#'   \item Computes, with elementary symmetric functions, the
+#'     probability of each item score given each person's total score.
+#'     Summed over persons, these give the expected item \eqn{\times}
+#'     rest-score table and its gamma, \eqn{\gamma^{exp(s)}_i}.
+#'   \item Draws a replicated dataset in which every person keeps their
+#'     observed total score, and computes the replicated gamma
+#'     \eqn{\gamma^{rep(s)}_i}.
 #' }
 #'
-#' Items with \code{ppp} close to 1 have observed item-restscore
-#' association that is consistently stronger than the model predicts.
-#' This typically indicates that the item discriminates more than
-#' assumed under the equal-discrimination Rasch model (i.e., a
-#' violation of the Rasch assumption). Items with \code{ppp} close to
-#' 0 discriminate less than expected.
+#' The observed gamma \eqn{\gamma^{obs}_i} is computed once from the data.
+#' Persons with the minimum or maximum total score carry no information
+#' about fit and their responses are reproduced as observed in every
+#' replicated dataset.
+#'
+#' Because replication conditions on the total scores, the reference
+#' distribution does not depend on the person locations. The data are
+#' still used to estimate the item parameters, but these are few relative
+#' to the number of persons. This removes the main reason why posterior
+#' predictive p-values based on person parameters drawn from the same
+#' data are conservative (Robins et al., 2000).
+#'
+#' The \code{gamma_diff} interval describes how far the observed sample
+#' departs from the model expectation, given the uncertainty in the item
+#' parameters. It contains no sampling variation, so it is not a test, and
+#' it is not a credible interval for misfit in the population. Use
+#' \code{ppp} or \code{ppp_adj} to judge whether a departure is larger
+#' than chance would produce. As with any test, they will flag smaller
+#' departures as the sample size grows.
+#'
+#' \code{ppp_adj} standardises each item's observed gamma by the mean and
+#' standard deviation of its replicated gammas. Its reference is the
+#' largest absolute standardised deviation across items within each
+#' replicated dataset, so it accounts for testing all items at once.
+#'
+#' With missing responses, the total and rest-scores are sums over the
+#' items a person answered, scored from 0. The conditional distribution
+#' is computed for each person's set of answered items.
+#'
+#' Replication uses random numbers, so call \code{set.seed()} first for
+#' reproducible results.
 #'
 #' @references
 #' Kreiner, S. (2011). A note on item-restscore association in Rasch
@@ -970,12 +1068,16 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' brms and Stan. \emph{Journal of Statistical Software}, \emph{100},
 #' 1--54. \doi{10.18637/jss.v100.i05}
 #'
+#' Robins, J. M., van der Vaart, A. & Ventura, V. (2000). Asymptotic
+#' distribution of P values in composite null models. \emph{Journal of
+#' the American Statistical Association}, \emph{95}(452), 1143--1156.
+#' \doi{10.1080/01621459.2000.10474310}
+#'
 #' @seealso
-#' \code{\link{fit_statistic_pcm}} for posterior predictive fit statistics,
-#' \code{\link{fit_statistic_rm}} for posterior predictive fit statistics,
-#' \code{\link{infit_statistic}} for Bayesian infit/outfit,
+#' \code{\link{item_restscore_post}} for a summary table and plot,
+#' \code{\link{infit_statistic}} for posterior predictive infit/outfit,
 #' \code{\link{q3_statistic}} for Bayesian Q3 residual correlations,
-#' \code{\link[brms]{posterior_predict}}.
+#' \code{\link[brms]{posterior_epred}}.
 #'
 #' @examples
 #' \donttest{
@@ -1038,23 +1140,22 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' irs_results$plot
 #' }
 #'
-#' @importFrom brms posterior_predict ndraws
-#' @importFrom dplyr arrange desc filter everything
+#' @importFrom brms posterior_epred ndraws variables as_draws_matrix
 #' @importFrom rlang enquo !! .data as_name
-#' @importFrom tibble as_tibble
-#' @importFrom stats formula quantile
+#' @importFrom tibble as_tibble tibble
+#' @importFrom stats formula quantile runif sd
 #' @export
 item_restscore_statistic <- function(model, item_var = item, person_var = id,
                                      ndraws_use = NULL) {
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
-  
+
   item_quo    <- rlang::enquo(item_var)
   person_quo  <- rlang::enquo(person_var)
   item_name   <- rlang::as_name(item_quo)
   person_name <- rlang::as_name(person_quo)
-  
+
   # --- Extract response variable name ---
   resp_var <- as.character(formula(model)$formula[[2]])
   if (length(resp_var) > 1) {
@@ -1072,147 +1173,71 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
-  
-  # --- Determine posterior draw subset ---
-  draw_ids <- NULL
-  if (!is.null(ndraws_use)) {
-    ndraws_use <- as.integer(ndraws_use)
-    if (ndraws_use < 1) {
-      stop("'ndraws_use' must be a positive integer.", call. = FALSE)
-    }
-    total_draws <- brms::ndraws(model)
-    if (ndraws_use > total_draws) {
-      warning("'ndraws_use' (", ndraws_use, ") exceeds available draws (",
-              total_draws, "). Using all draws.", call. = FALSE)
-      ndraws_use <- total_draws
-    }
-    draw_ids <- sample(seq_len(total_draws), ndraws_use)
-  }
-  
-  # --- Posterior predicted responses ---
-  yrep_mat <- brms::posterior_predict(model, draw_ids = draw_ids)
-  
-  n_draws <- nrow(yrep_mat)
-  n_obs   <- ncol(yrep_mat)
-  obs_response <- model$data[[resp_var]]
-  
+
+  .check_unique_person_item(model$data[[person_name]], model$data[[item_name]],
+                            person_name, item_name, "item_restscore_statistic")
+  .check_sufficient_score_brmsfit(model, person_name,
+                                  "item_restscore_statistic")
+
+  draw_ids <- .select_draw_ids(model, ndraws_use)
+  n_draws <- length(draw_ids)
+
   # --- Map observations to person x item structure ---
-  items   <- model$data[[item_name]]
-  persons <- model$data[[person_name]]
-  unique_items   <- sort(unique(items))
-  unique_persons <- sort(unique(persons))
+  dd <- .cond_prepare_data(model, resp_var, item_name, person_name)
+  unique_items <- dd$unique_items
+  x_obs <- dd$x_obs
   k <- length(unique_items)
-  n_persons <- length(unique_persons)
-  
-  person_idx <- match(persons, unique_persons)
-  item_idx   <- match(items, unique_items)
-  
-  # Pre-compute linear index for vectorized wide-matrix construction
-  lin_idx <- (item_idx - 1L) * n_persons + person_idx
-  
-  # --- Build observed wide matrix (person x item) ONCE ---
-  obs_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
-  obs_wide[lin_idx] <- obs_response
-  obs_total <- rowSums(obs_wide, na.rm = TRUE)
-  
-  # --- Compute observed gamma ONCE (constant across draws) ---
+  r_obs <- rowSums(x_obs, na.rm = TRUE)
+
+  # --- Observed gamma, computed once ---
   gamma_obs <- numeric(k)
   for (i in seq_len(k)) {
-    item_score_obs <- obs_wide[, i]
-    rest_score_obs <- obs_total - item_score_obs
-    valid_obs <- !is.na(item_score_obs)
-    if (sum(valid_obs) > 2L) {
-      gamma_obs[i] <- gk_gamma_vec(item_score_obs[valid_obs],
-                                   rest_score_obs[valid_obs])
+    valid <- !is.na(x_obs[, i])
+    gamma_obs[i] <- if (sum(valid) > 2L) {
+      gk_gamma_vec(x_obs[valid, i], r_obs[valid] - x_obs[valid, i])
     } else {
-      gamma_obs[i] <- NA_real_
+      NA_real_
     }
   }
-  
-  # Broadcast observed gamma to a draws x items matrix (for summary stats)
-  gamma_obs_draws <- matrix(gamma_obs, nrow = n_draws, ncol = k, byrow = TRUE)
-  
-  # --- Compute replicated gamma for each draw ---
-  gamma_rep_draws <- matrix(NA_real_, nrow = n_draws, ncol = k)
-  
-  for (s in seq_len(n_draws)) {
-    # Vectorized wide-matrix construction
-    rep_wide <- matrix(NA_real_, nrow = n_persons, ncol = k)
-    rep_wide[lin_idx] <- yrep_mat[s, ]
-    rep_total <- rowSums(rep_wide, na.rm = TRUE)
-    
-    for (i in seq_len(k)) {
-      item_score_rep <- rep_wide[, i]
-      rest_score_rep <- rep_total - item_score_rep
-      valid_rep <- !is.na(item_score_rep)
-      if (sum(valid_rep) > 2L) {
-        gamma_rep_draws[s, i] <- gk_gamma_vec(item_score_rep[valid_rep],
-                                              rest_score_rep[valid_rep])
-      }
-    }
-  }
-  
+
+  # --- Expected and replicated gamma per draw ---
+  per_draw <- .cond_map_draws(model, draw_ids, dd$n_cat_max,
+                              .cond_restscore_draw,
+                              person_idx = dd$person_idx,
+                              item_idx = dd$item_idx, x_obs = x_obs)
+  gamma_exp_draws <- do.call(rbind, lapply(per_draw, `[[`, "gamma_exp"))
+  gamma_rep_draws <- do.call(rbind, lapply(per_draw, `[[`, "gamma_rep"))
+
   # --- Summarise across draws ---
-  gamma_diff_draws <- gamma_obs_draws - gamma_rep_draws
-  
-  result <- data.frame(
-    item = unique_items,
-    stringsAsFactors = FALSE
-  )
+  diff_draws <- matrix(gamma_obs, nrow = n_draws, ncol = k, byrow = TRUE) -
+    gamma_exp_draws
+  q <- function(m, p) apply(m, 2L, stats::quantile, probs = p, na.rm = TRUE)
+
+  result <- tibble::tibble(item = unique_items)
   names(result)[1] <- item_name
-  
-  result$gamma_obs  <- gamma_obs
-  result$gamma_rep  <- colMeans(gamma_rep_draws, na.rm = TRUE)
-  result$gamma_diff <- colMeans(gamma_diff_draws, na.rm = TRUE)
-  result$ppp        <- colMeans(gamma_obs_draws > gamma_rep_draws,
-                                na.rm = TRUE)
-  
-  # 95% credible intervals
-  result$gamma_obs_q025  <- apply(gamma_obs_draws, 2, stats::quantile,
-                                  probs = 0.025, na.rm = TRUE)
-  result$gamma_obs_q975  <- apply(gamma_obs_draws, 2, stats::quantile,
-                                  probs = 0.975, na.rm = TRUE)
-  result$gamma_diff_q025 <- apply(gamma_diff_draws, 2, stats::quantile,
-                                  probs = 0.025, na.rm = TRUE)
-  result$gamma_diff_q975 <- apply(gamma_diff_draws, 2, stats::quantile,
-                                  probs = 0.975, na.rm = TRUE)
-  
-  # 99% credible intervals
-  result$gamma_obs_q005  <- apply(gamma_obs_draws, 2, stats::quantile,
-                                  probs = 0.005, na.rm = TRUE)
-  result$gamma_obs_q995  <- apply(gamma_obs_draws, 2, stats::quantile,
-                                  probs = 0.995, na.rm = TRUE)
-  result$gamma_diff_q005 <- apply(gamma_diff_draws, 2, stats::quantile,
-                                  probs = 0.005, na.rm = TRUE)
-  result$gamma_diff_q995 <- apply(gamma_diff_draws, 2, stats::quantile,
-                                  probs = 0.995, na.rm = TRUE)
-  
-  result <- tibble::as_tibble(result)
-  result <- dplyr::arrange(result, dplyr::desc(.data$gamma_diff))
-  
-  # --- Assign real item names to matrix columns BEFORE pivoting ---
-  colnames(gamma_rep_draws) <- unique_items
-  colnames(gamma_obs_draws) <- unique_items
-  
-  gamma_rep_draws_df <- gamma_rep_draws |>
-    as.data.frame() |>
-    tidyr::pivot_longer(dplyr::everything(),
-                        names_to = "item", values_to = "gamma_rep")
-  gamma_obs_draws_df <- gamma_obs_draws |>
-    as.data.frame() |>
-    tidyr::pivot_longer(dplyr::everything(),
-                        names_to = "item", values_to = "gamma_obs")
-  
-  gamma_draws_df <- dplyr::bind_cols(
-    gamma_rep_draws_df,
-    gamma = gamma_obs_draws_df$gamma_obs
+  result$gamma_obs       <- gamma_obs
+  result$gamma_exp       <- colMeans(gamma_exp_draws, na.rm = TRUE)
+  result$gamma_diff      <- gamma_obs - result$gamma_exp
+  result$ppp             <- .ppp_mid(gamma_obs, gamma_rep_draws)
+  result$ppp_adj         <- .ppp_maxt(gamma_obs, gamma_rep_draws)
+  result$gamma_rep       <- colMeans(gamma_rep_draws, na.rm = TRUE)
+  result$gamma_diff_q025 <- q(diff_draws, 0.025)
+  result$gamma_diff_q975 <- q(diff_draws, 0.975)
+  result$gamma_diff_q005 <- q(diff_draws, 0.005)
+  result$gamma_diff_q995 <- q(diff_draws, 0.995)
+  result$gamma_rep_q025  <- q(gamma_rep_draws, 0.025)
+  result$gamma_rep_q975  <- q(gamma_rep_draws, 0.975)
+  result$gamma_rep_q005  <- q(gamma_rep_draws, 0.005)
+  result$gamma_rep_q995  <- q(gamma_rep_draws, 0.995)
+  result <- result[order(-result$gamma_diff), ]
+
+  draws_df <- tibble::tibble(
+    item      = rep(unique_items, each = n_draws),
+    draw      = rep(seq_len(n_draws), times = k),
+    gamma_rep = as.vector(gamma_rep_draws),
+    gamma_exp = as.vector(gamma_exp_draws)
   )
-  
-  # Rename the "item" column to match the user's item variable name
-  names(gamma_draws_df)[names(gamma_draws_df) == "item"] <- item_name
-  
-  list(
-    result = result,
-    draws = tibble::as_tibble(gamma_draws_df)
-  )
+  names(draws_df)[1] <- item_name
+
+  list(result = result, draws = draws_df)
 }

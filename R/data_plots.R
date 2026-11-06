@@ -216,7 +216,7 @@ plot_tile <- function(
       limits = c(0, NA)
     ) +
     ggplot2::labs(y = "Items") +
-    ggplot2::theme_minimal() +
+    ggplot2::theme_bw() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(size = 8),
       panel.grid  = ggplot2::element_blank()
@@ -812,14 +812,16 @@ plot_stackedbars <- function(
       direction = -1,
       option    = viridis_option,
       end       = viridis_end,
-      labels    = legend_labels
+      labels    = legend_labels,
+      # Lowest category at the top of the legend, as on the left of the bars
+      guide     = ggplot2::guide_legend(reverse = TRUE)
     ) +
     ggplot2::labs(
       title = title,
       x     = "Number of responses",
       y     = NULL
     ) +
-    ggplot2::theme_minimal() +
+    ggplot2::theme_bw() +
     ggplot2::theme(
       legend.position = "right"
     )

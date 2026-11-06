@@ -20,8 +20,10 @@
 #'   \code{id}.
 #' @param items An optional character vector of item names to plot.
 #'   If \code{NULL} (the default), all items are plotted.
-#' @param n_intervals Integer. The number of class intervals into
-#'   which persons are binned along the sum score. Default is 5.
+#' @param class_intervals Integer >= 2. The number of class intervals
+#'   for \code{method = "quantile"} and \code{method = "width"}.
+#'   Default is 5. Ignored by \code{method = "score"} and
+#'   \code{method = "manual"}.
 #' @param theta_range A numeric vector of length 2 specifying the
 #'   range of theta for the expected curve. Default is
 #'   \code{c(-4, 4)}.
@@ -60,6 +62,20 @@
 #'   Default is 5.
 #' @param palette An optional character vector of colors. If
 #'   \code{NULL}, viridis colors are used.
+#' @param method How persons are grouped along the sum score (see
+#'   \emph{Class intervals} in Details). \code{"quantile"} (the default)
+#'   forms \code{class_intervals} groups of about equal numbers of
+#'   persons. \code{"width"} forms \code{class_intervals} intervals of
+#'   equal width over the observed sum-score range. \code{"score"} makes
+#'   every observed sum score its own group. \code{"manual"} uses the
+#'   groups given by \code{score_breaks}.
+#' @param score_breaks Integer vector for \code{method = "manual"}: the
+#'   sum scores at which a new group starts, in increasing order. Extreme
+#'   scores are left out, so the first group starts at 1 and the last
+#'   ends at the maximum score minus 1. For example,
+#'   \code{score_breaks = c(3, 6)} with a maximum score of 9 gives the
+#'   groups 1-2, 3-5 and 6-8. Default \code{NULL}.
+#' @param n_intervals Deprecated. Use \code{class_intervals}.
 #'
 #' @return A \code{\link[ggplot2]{ggplot}} object.
 #'
@@ -79,13 +95,24 @@
 #' \strong{Class intervals:} Following the approach in
 #' \code{iarm::ICCplot()}, persons are binned into class intervals
 #' by their ordinal \emph{sum score} (the sufficient statistic in
-#' Rasch models), not by their EAP theta estimate. Within each
+#' Rasch models), not by their EAP theta estimate. The grouping rules
+#' are the same as in \code{RMitemICCPlot()} in the \pkg{easyRasch2}
+#' package, except that extreme sum scores are left out here. With
+#' \code{method = "quantile"}, tied sum scores at the quantile
+#' boundaries can give fewer groups than requested. Equal-width and
+#' manual grouping can define groups that no person falls into. If
+#' fewer than two groups can be formed, the quantile and width methods
+#' fall back to one group per sum score. The plot caption states the
+#' grouping that was used. Within each
 #' interval, the mean observed item response is computed and
 #' plotted at the theta value corresponding to the mean sum score
 #' in that interval, obtained by inverting the posterior-mean
 #' expected total score function. Persons with extreme sum scores
 #' (0 and maximum) are excluded from the class intervals, as their
-#' theta positions cannot be estimated.
+#' theta positions cannot be estimated. Sum scores are only comparable
+#' across persons who answered the same items, so, as in \pkg{iarm},
+#' persons with missing responses are left out of the class intervals
+#' and the partial gamma, with a message giving their number.
 #'
 #' \strong{Uncertainty around observed points:} For each class
 #' interval, the standard error of the mean observed response is
@@ -105,7 +132,9 @@
 #' coefficient is displayed in each item panel. This measures the
 #' ordinal association between item response and DIF group,
 #' stratified by total score. Values near 0 indicate no DIF;
-#' values near \eqn{\pm 1} indicate strong DIF. The computation
+#' values near \eqn{\pm 1} indicate strong DIF. Positive values mean
+#' higher item scores, at the same total score, in the group whose
+#' label sorts second (as \code{factor()} orders the levels). The computation
 #' reuses the concordant/discordant pair counting algorithm from
 #' \code{\link{gk_gamma}}.
 #'
@@ -140,8 +169,11 @@
 #' # Basic ICC plot with 5 class intervals
 #' plot_icc(fit_pcm)
 #'
-#' # Select specific items, more intervals
-#' plot_icc(fit_pcm, items = c("I1", "I2"), n_intervals = 5)
+#' # Select specific items, one group per sum score
+#' plot_icc(fit_pcm, items = c("I1", "I2"), method = "score")
+#'
+#' # Groups defined by hand: sum scores 1-3, 4 and 5-7
+#' plot_icc(fit_pcm, method = "manual", score_breaks = c(4, 5))
 #'
 #' # With DIF overlay and partial gamma annotation
 #' 
@@ -153,7 +185,7 @@
 #'   pivot_longer(!c(id,gender), names_to = "item", values_to = "response")
 #'   
 #' plot_icc(fit_pcm, dif_var = gender, dif_data = df_pcm,
-#'          dif_labels = c("Female", "Male"), n_intervals = 5)
+#'          dif_labels = c("Female", "Male"), class_intervals = 5)
 #' }
 #'
 #' @importFrom brms as_draws_df ranef
@@ -167,7 +199,7 @@ plot_icc <- function(
     item_var     = item,
     person_var   = id,
     items        = NULL,
-    n_intervals  = 5,
+    class_intervals = 5,
     theta_range  = c(-4, 4),
     n_points     = 200,
     center       = TRUE,
@@ -181,8 +213,41 @@ plot_icc <- function(
     dif_labels   = NULL,
     dif_stats    = TRUE,
     min_n        = 5,
-    palette      = NULL
+    palette      = NULL,
+    method       = c("quantile", "width", "score", "manual"),
+    score_breaks = NULL,
+    n_intervals  = NULL
 ) {
+  
+  method <- match.arg(method)
+  if (!is.null(n_intervals)) {
+    warning("`n_intervals` is deprecated. Use `class_intervals`.",
+            call. = FALSE)
+    class_intervals <- n_intervals
+  }
+  if (method %in% c("quantile", "width")) {
+    if (!is.numeric(class_intervals) || length(class_intervals) != 1L ||
+        !is.finite(class_intervals) || class_intervals < 2) {
+      stop("`class_intervals` must be a single integer >= 2.", call. = FALSE)
+    }
+    class_intervals <- as.integer(class_intervals)
+  }
+  if (method == "manual") {
+    if (is.null(score_breaks)) {
+      stop("method = 'manual' requires `score_breaks` (the sum scores at ",
+           "which a new group starts, e.g. c(3, 6)).", call. = FALSE)
+    }
+    if (!is.numeric(score_breaks) || anyNA(score_breaks) ||
+        any(score_breaks != round(score_breaks)) ||
+        is.unsorted(score_breaks, strictly = TRUE)) {
+      stop("`score_breaks` must be a strictly increasing vector of ",
+           "integers (each value starts a new sum-score group).",
+           call. = FALSE)
+    }
+  } else if (!is.null(score_breaks)) {
+    stop("`score_breaks` is only used with method = 'manual'.",
+         call. = FALSE)
+  }
   
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required.", call. = FALSE)
@@ -237,6 +302,10 @@ plot_icc <- function(
   is_binary   <- grepl("bernoulli|binomial",
                        family_name, ignore.case = TRUE)
   
+  tau_all <- .item_tau_draws(draws, .item_levels(model, item_name),
+                             item_name, ordinal = is_ordinal)
+  linkinv <- if (is_ordinal) .ordinal_linkinv(model, "plot_icc") else stats::plogis
+
   if (!is_ordinal && !is_binary) {
     stop("Unsupported model family '", family_name,
          "'. Expected acat, cumulative, sratio, cratio, or ",
@@ -250,27 +319,9 @@ plot_icc <- function(
   upper_prob <- 1 - lower_prob
   
   if (center) {
-    if (is_ordinal) {
-      all_thresh_means <- c()
-      for (il in all_unique_items) {
-        tc <- .find_thresh_cols(draws, il)
-        if (length(tc) > 0) {
-          all_thresh_means <- c(
-            all_thresh_means,
-            vapply(tc, function(col) mean(draws[[col]]), numeric(1))
-          )
-        }
-      }
-      shift <- mean(all_thresh_means)
-    } else {
-      item_locs <- vapply(all_unique_items, function(il) {
-        loc_draws <- .get_item_location_draws_all(
-          draws, il, item_name
-        )
-        mean(loc_draws)
-      }, numeric(1))
-      shift <- mean(item_locs)
-    }
+    # Mean of all threshold means (dichotomous: of all item locations)
+    shift <- mean(unlist(lapply(as.character(all_unique_items),
+                                function(il) colMeans(tau_all[[il]]))))
   } else {
     shift <- 0
   }
@@ -278,7 +329,13 @@ plot_icc <- function(
   # ================================================================
   # RESPONSE ADJUSTMENT FOR ORDINAL MODELS
   # ================================================================
-  min_resp <- min(model_data[[resp_var]], na.rm = TRUE)
+  # Score responses from 0. brms ordinal categories start at 1, the base
+  # of the thresholds, whether or not anyone used category 1. An ordered
+  # factor response is kept as a factor in model$data.
+  if (is.factor(model_data[[resp_var]])) {
+    model_data[[resp_var]] <- as.integer(model_data[[resp_var]])
+  }
+  min_resp <- if (is_ordinal) 1 else 0
   
   # ================================================================
   # COMPUTE EXPECTED TOTAL SCORE CURVE E(R|theta) FOR CLASS INTERVALS
@@ -290,27 +347,19 @@ plot_icc <- function(
   
   for (item_label in all_unique_items) {
     if (is_ordinal) {
-      thresh_cols <- .find_thresh_cols(draws, item_label)
-      if (length(thresh_cols) == 0) next
-      tau_mean <- vapply(
-        thresh_cols, function(col) mean(draws[[col]]), numeric(1)
-      )
-      tau_mean <- tau_mean - shift
+      tau_mean <- colMeans(tau_all[[as.character(item_label)]]) - shift
       n_cat <- length(tau_mean) + 1
       cats  <- seq(0, n_cat - 1)
       
       for (t in seq_along(theta_grid_fine)) {
         p_cat <- .compute_cat_probs(
           theta_grid_fine[t], tau_mean,
-          is_acat, is_cumul, is_sratio, is_cratio
+          is_acat, is_cumul, is_sratio, is_cratio, linkinv
         )
         e_total_score[t] <- e_total_score[t] + sum(cats * p_cat)
       }
     } else {
-      loc_mean <- mean(.get_item_location_draws_all(
-        draws, item_label, item_name
-      ))
-      loc_mean <- loc_mean - shift
+      loc_mean <- mean(tau_all[[as.character(item_label)]]) - shift
       e_total_score <- e_total_score +
         stats::plogis(theta_grid_fine - loc_mean)
     }
@@ -326,21 +375,32 @@ plot_icc <- function(
   )
   colnames(sum_scores_df) <- c("person_id", "sum_score")
   
-  if (min_resp > 0) {
-    n_obs_per <- stats::aggregate(
-      stats::as.formula(paste(resp_var, "~", person_name)),
-      data = model_data, FUN = length
-    )
-    colnames(n_obs_per) <- c("person_id", "n_obs")
-    sum_scores_df <- merge(sum_scores_df, n_obs_per, by = "person_id")
-    sum_scores_df$sum_score <- sum_scores_df$sum_score -
-      (min_resp * sum_scores_df$n_obs)
-    sum_scores_df$n_obs <- NULL
+  n_obs_per <- stats::aggregate(
+    stats::as.formula(paste(resp_var, "~", person_name)),
+    data = model_data, FUN = length
+  )
+  colnames(n_obs_per) <- c("person_id", "n_obs")
+  sum_scores_df <- merge(sum_scores_df, n_obs_per, by = "person_id")
+  sum_scores_df$sum_score <- sum_scores_df$sum_score -
+    (min_resp * sum_scores_df$n_obs)
+
+  # Sum scores are only comparable across persons who answered the same
+  # items, and the class intervals place them on theta through the
+  # expected total over all items. As in iarm, only complete responders
+  # are used.
+  n_incomplete <- sum(sum_scores_df$n_obs < length(all_unique_items))
+  if (n_incomplete > 0) {
+    message("plot_icc() uses the ", nrow(sum_scores_df) - n_incomplete,
+            " persons who answered every item. ", n_incomplete,
+            " with missing responses are left out.")
+    sum_scores_df <- sum_scores_df[
+      sum_scores_df$n_obs == length(all_unique_items), ]
   }
+  sum_scores_df$n_obs <- NULL
   
   if (is_ordinal) {
-    n_thresholds <- vapply(all_unique_items, function(il) {
-      length(.find_thresh_cols(draws, il))
+    n_thresholds <- vapply(as.character(all_unique_items), function(il) {
+      ncol(tau_all[[il]])
     }, integer(1))
     max_score <- sum(n_thresholds)
   } else {
@@ -359,22 +419,17 @@ plot_icc <- function(
          "Cannot create class intervals.", call. = FALSE)
   }
   
-  breaks <- stats::quantile(
-    person_ci$sum_score,
-    probs = seq(0, 1, length.out = n_intervals + 1)
-  )
-  breaks <- unique(breaks)
-  n_actual_intervals <- length(breaks) - 1
-  
-  if (n_actual_intervals < 2) {
-    warning("Could not create enough distinct class intervals. ",
-            "Try reducing n_intervals.", call. = FALSE)
+  if (method == "manual" &&
+      (any(score_breaks <= 1) || any(score_breaks >= max_score))) {
+    stop("`score_breaks` must lie between 2 and ", max_score - 1,
+         " (extreme sum scores 0 and ", max_score, " are left out, so ",
+         "the first group starts at 1).", call. = FALSE)
   }
-  
-  person_ci$interval <- cut(
-    person_ci$sum_score, breaks = breaks,
-    include.lowest = TRUE, labels = FALSE
-  )
+  bins <- .icc_class_bins(person_ci$sum_score, method, class_intervals,
+                          score_breaks, max_score)
+  person_ci$interval <- bins$interval
+  interval_caption <- .icc_interval_caption(method, class_intervals,
+                                            score_breaks, bins, min_n)
   
   interval_mean_score <- stats::aggregate(
     sum_score ~ interval, data = person_ci, FUN = mean
@@ -452,9 +507,11 @@ plot_icc <- function(
     wide_responses <- merge(
       wide_responses, dif_person, by = "person_id", all.x = TRUE
     )
+    # Complete responders only, as for the class intervals
     wide_responses <- wide_responses[
       stats::complete.cases(
-        wide_responses[, c(".dif_group", "sum_score")]
+        wide_responses[, c(".dif_group", "sum_score",
+                           as.character(all_unique_items))]
       ),
     ]
     
@@ -465,9 +522,11 @@ plot_icc <- function(
     )
     
     for (item_label in unique_items) {
-      if (!item_label %in% names(wide_responses)) next
+      # Index by name: a numeric label would select a column by position
+      item_col <- as.character(item_label)
+      if (!item_col %in% names(wide_responses)) next
       
-      item_resp  <- wide_responses[[item_label]]
+      item_resp  <- wide_responses[[item_col]]
       dif_group  <- as.numeric(as.factor(wide_responses$.dif_group))
       tot_score  <- wide_responses$sum_score
       
@@ -504,17 +563,8 @@ plot_icc <- function(
   
   for (item_label in unique_items) {
     if (is_ordinal) {
-      thresh_cols <- .find_thresh_cols(draws, item_label)
-      if (length(thresh_cols) == 0) {
-        warning("Could not find threshold parameters for item '",
-                item_label, "'. Skipping.", call. = FALSE)
-        next
-      }
-      
-      thresh_sub <- as.matrix(
-        draws[draw_sample, thresh_cols, drop = FALSE]
-      )
-      thresh_sub <- thresh_sub - shift
+      thresh_sub <- tau_all[[as.character(item_label)]][draw_sample, ,
+                                                        drop = FALSE] - shift
       
       n_thresh <- ncol(thresh_sub)
       n_cat    <- n_thresh + 1
@@ -528,17 +578,15 @@ plot_icc <- function(
         for (s in seq_len(max_draws)) {
           tau_s <- thresh_sub[s, ]
           p_cat <- .compute_cat_probs(
-            theta, tau_s, is_acat, is_cumul, is_sratio, is_cratio
+            theta, tau_s, is_acat, is_cumul, is_sratio, is_cratio, linkinv
           )
           escore_draws[s, t] <- sum(cats * p_cat)
         }
       }
       
     } else {
-      item_loc_draws <- .get_item_location_draws(
-        draws, item_label, item_name, draw_sample
-      )
-      item_loc_draws <- item_loc_draws - shift
+      item_loc_draws <- tau_all[[as.character(item_label)]][draw_sample, 1] -
+        shift
       
       escore_draws <- matrix(NA_real_, nrow = max_draws,
                              ncol = n_points)
@@ -695,9 +743,10 @@ plot_icc <- function(
       ggplot2::geom_line(
         data    = observed_data,
         mapping = ggplot2::aes(
-          x      = .data$theta,
-          y      = .data$response,
-          colour = .data$.dif_group
+          x        = .data$theta,
+          y        = .data$response,
+          colour   = .data$.dif_group,
+          linetype = .data$.dif_group
         ),
         linewidth = 0.5
       ) +
@@ -706,10 +755,12 @@ plot_icc <- function(
         mapping = ggplot2::aes(
           x      = .data$theta,
           y      = .data$response,
-          colour = .data$.dif_group
+          colour = .data$.dif_group,
+          shape  = .data$.dif_group
         ),
         size = point_size
-      )
+      ) +
+      ggplot2::labs(linetype = "", shape = "")
     
     if (!is.null(palette)) {
       p <- p +
@@ -771,13 +822,15 @@ plot_icc <- function(
     ggplot2::scale_y_continuous(limits = c(0, NA)) +
     ggplot2::labs(
       x = expression(theta),
-      y = "Item score"
+      y = "Item score",
+      caption = .erb_caption(interval_caption)
     ) +
     ggplot2::theme_bw() +
     ggplot2::theme(
       legend.position = "bottom",
       strip.text = ggplot2::element_text(face = "bold")
-    )
+    ) +
+    .erb_caption_theme()
   
   p
 }
@@ -787,35 +840,104 @@ plot_icc <- function(
 # INTERNAL HELPERS
 # ══════════════════════════════════════════════════════════════════
 
-# ── Internal: find threshold columns for an item ────────────────
+# ── Internal: class intervals on the sum score ──────────────────
+# score: non-extreme sum scores (1 .. max_score - 1).
+# Returns list(interval = integer group per person, n_groups = number of
+# groups defined, n_used = number with persons, fallback = TRUE when the
+# requested binning could not form two groups).
 #' @keywords internal
-.find_thresh_cols <- function(draws, item_label) {
-  thresh_pattern <- paste0(
-    "^b_Intercept\\[",
-    gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-    ","
-  )
-  thresh_cols <- grep(thresh_pattern, names(draws), value = TRUE)
-  
-  if (length(thresh_cols) == 0) {
-    thresh_cols <- grep("^b_Intercept\\[\\d+\\]$", names(draws),
-                        value = TRUE)
+#' @noRd
+.icc_class_bins <- function(score, method, class_intervals,
+                            score_breaks = NULL, max_score = NULL) {
+  by_score <- function(fallback = FALSE) {
+    u <- sort(unique(score))
+    list(interval = match(score, u), n_groups = length(u),
+         fallback = fallback)
   }
-  
-  if (length(thresh_cols) == 0) return(character(0))
-  
-  thresh_nums <- as.numeric(
-    gsub(".*,(\\d+)\\]$|.*\\[(\\d+)\\]$", "\\1\\2", thresh_cols)
+  out <- switch(
+    method,
+    score = by_score(),
+    manual = {
+      edges <- c(0.5, score_breaks - 0.5, max_score - 0.5)
+      list(interval = cut(score, breaks = edges, labels = FALSE),
+           n_groups = length(edges) - 1L, fallback = FALSE)
+    },
+    width = {
+      edges <- seq(min(score) - 0.5, max(score) + 0.5,
+                   length.out = class_intervals + 1L)
+      if (length(unique(score)) < 2L) {
+        by_score(TRUE)
+      } else {
+        list(interval = cut(score, breaks = edges, include.lowest = TRUE,
+                            labels = FALSE),
+             n_groups = class_intervals, fallback = FALSE)
+      }
+    },
+    quantile = {
+      edges <- unique(stats::quantile(
+        score, probs = seq(0, 1, length.out = class_intervals + 1L)))
+      if (length(edges) < 3L) {
+        by_score(TRUE)
+      } else {
+        list(interval = cut(score, breaks = edges, include.lowest = TRUE,
+                            labels = FALSE),
+             n_groups = length(edges) - 1L, fallback = FALSE)
+      }
+    }
   )
-  thresh_cols[order(thresh_nums)]
+  out$n_used <- length(unique(out$interval))
+  out
 }
 
+# Caption sentence naming the grouping that was used, which is not always
+# the one requested.
+#' @keywords internal
+#' @noRd
+.icc_interval_caption <- function(method, class_intervals, score_breaks,
+                                  bins, min_n) {
+  n <- bins$n_groups
+  body <- if (isTRUE(bins$fallback)) {
+    sprintf(paste0(
+      "Class intervals: %s grouping was requested, but there are too few ",
+      "distinct sum scores to form it, so every observed sum score is its ",
+      "own group (%d groups)."), method, n)
+  } else {
+    switch(
+      method,
+      score = sprintf(
+        "Class intervals: every observed sum score is its own group (%d groups).",
+        n),
+      manual = sprintf(
+        "Class intervals: manual, a new group starting at sum score%s %s (%d groups).",
+        if (length(score_breaks) > 1L) "s" else "",
+        paste(score_breaks, collapse = ", "), n),
+      width = sprintf(
+        "Class intervals: %d equal-width groups over the observed sum-score range.",
+        n),
+      quantile = if (n < class_intervals) {
+        sprintf(paste0(
+          "Class intervals: %d groups of about equal size (%d were ",
+          "requested, fewer were formed because sum scores tie at the ",
+          "quantile boundaries)."), n, class_intervals)
+      } else {
+        sprintf("Class intervals: %d groups of about equal size (quantile).", n)
+      }
+    )
+  }
+  if (bins$n_used < n) {
+    body <- paste0(body, sprintf(" %d of them contain persons.", bins$n_used))
+  }
+  paste0(body, sprintf(
+    " Extreme sum scores are left out, and groups with fewer than %d persons are not shown.",
+    min_n))
+}
 
 # ── Internal: compute category probabilities ────────────────────
 #' @keywords internal
 .compute_cat_probs <- function(theta, tau,
                                is_acat, is_cumul,
-                               is_sratio, is_cratio) {
+                               is_sratio, is_cratio,
+                               linkinv = stats::plogis) {
   n_cat <- length(tau) + 1
   
   if (is_acat) {
@@ -825,7 +947,7 @@ plot_icc <- function(
     probs     <- exp(cum_eta - log_denom)
     
   } else if (is_cumul) {
-    cum_probs <- stats::plogis(tau - theta)
+    cum_probs <- linkinv(tau - theta)
     probs     <- diff(c(0, cum_probs, 1))
     probs     <- pmax(probs, 0)
     probs     <- probs / sum(probs)
@@ -834,7 +956,7 @@ plot_icc <- function(
     probs     <- numeric(n_cat)
     remaining <- 1
     for (cc in seq_along(tau)) {
-      p_stop       <- stats::plogis(tau[cc] - theta)
+      p_stop       <- linkinv(tau[cc] - theta)
       probs[cc]    <- remaining * p_stop
       remaining    <- remaining * (1 - p_stop)
     }
@@ -844,7 +966,7 @@ plot_icc <- function(
     probs     <- numeric(n_cat)
     remaining <- 1
     for (cc in seq_along(tau)) {
-      p_cont       <- stats::plogis(theta - tau[cc])
+      p_cont       <- linkinv(theta - tau[cc])
       probs[cc]    <- remaining * (1 - p_cont)
       remaining    <- remaining * p_cont
     }
@@ -852,80 +974,6 @@ plot_icc <- function(
   }
   
   probs
-}
-
-
-# ── Internal: get dichotomous item location draws (subsampled) ──
-#' @keywords internal
-.get_item_location_draws <- function(draws, item_label, item_name,
-                                     draw_sample) {
-  col_pattern <- paste0("^b_", item_name,
-                        gsub("([.|()\\^{}+$*?])", "\\\\\\1",
-                             item_label), "$")
-  fe_col <- grep(col_pattern, names(draws), value = TRUE)
-  
-  if (length(fe_col) > 0) {
-    return(-as.numeric(draws[[fe_col[1]]][draw_sample]))
-  }
-  
-  intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
-  intercept_draws <- if (length(intercept_col) == 1) {
-    as.numeric(draws[[intercept_col]][draw_sample])
-  } else {
-    rep(0, length(draw_sample))
-  }
-  
-  re_col <- paste0("r_", item_name, "[", item_label, ",Intercept]")
-  if (!re_col %in% names(draws)) {
-    re_col_alt <- grep(
-      paste0("^r_", item_name, "\\[",
-             gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-             ",Intercept\\]$"),
-      names(draws), value = TRUE
-    )
-    if (length(re_col_alt) == 1) re_col <- re_col_alt
-    else stop("Could not find parameters for item '", item_label,
-              "'.", call. = FALSE)
-  }
-  
-  -(intercept_draws + as.numeric(draws[[re_col]][draw_sample]))
-}
-
-
-# ── Internal: get ALL dichotomous item location draws ────────────
-#' @keywords internal
-.get_item_location_draws_all <- function(draws, item_label,
-                                         item_name) {
-  col_pattern <- paste0("^b_", item_name,
-                        gsub("([.|()\\^{}+$*?])", "\\\\\\1",
-                             item_label), "$")
-  fe_col <- grep(col_pattern, names(draws), value = TRUE)
-  
-  if (length(fe_col) > 0) {
-    return(-as.numeric(draws[[fe_col[1]]]))
-  }
-  
-  intercept_col <- grep("^b_Intercept$", names(draws), value = TRUE)
-  intercept_draws <- if (length(intercept_col) == 1) {
-    as.numeric(draws[[intercept_col]])
-  } else {
-    rep(0, nrow(draws))
-  }
-  
-  re_col <- paste0("r_", item_name, "[", item_label, ",Intercept]")
-  if (!re_col %in% names(draws)) {
-    re_col_alt <- grep(
-      paste0("^r_", item_name, "\\[",
-             gsub("([.|()\\^{}+$*?])", "\\\\\\1", item_label),
-             ",Intercept\\]$"),
-      names(draws), value = TRUE
-    )
-    if (length(re_col_alt) == 1) re_col <- re_col_alt
-    else stop("Could not find parameters for item '", item_label,
-              "'.", call. = FALSE)
-  }
-  
-  -(intercept_draws + as.numeric(draws[[re_col]]))
 }
 
 

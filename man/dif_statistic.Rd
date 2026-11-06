@@ -24,7 +24,8 @@ the baseline (no-DIF) model.}
 \item{group_var}{An unquoted variable name identifying the
 grouping variable for DIF testing (e.g., \code{gender}).
 Must be a factor or character variable with exactly 2 levels
-in the current implementation.}
+in the current implementation. The second level (in factor
+level order) is the focal group, the first the reference group.}
 
 \item{item_var}{An unquoted variable name identifying the item
 grouping variable. Default is \code{item}.}
@@ -42,8 +43,8 @@ the original data frame here.}
 
 \item{dif_type}{Character. For polytomous ordinal models only.
 \code{"uniform"} (the default) tests for a uniform location
-shift per item via a \code{group:item} fixed-effect
-interaction. \code{"non-uniform"} fits group-specific
+shift per item via item-specific random slopes of the group
+indicator. \code{"non-uniform"} fits group-specific
 thresholds per item and computes per-threshold DIF effects
 as the difference between groups. Ignored for dichotomous
 models.}
@@ -77,7 +78,12 @@ non-uniform DIF) containing: \code{item}, optionally
 \code{dif_lower}, \code{dif_upper} (credible interval),
 \code{dif_sd} (posterior SD), \code{pd} (probability of
 direction), \code{rope_percentage} (proportion inside ROPE),
-and \code{flag} (classification).}
+and \code{flag} (classification). Positive DIF means the
+item (or threshold) is easier for the focal group than the
+model implies given the impact.}
+\item{impact}{A one-row \code{\link[tibble]{tibble}} with the
+posterior mean, SD and credible interval of the difference in
+latent means, focal minus reference group, in logits.}
 \item{dif_draws}{A matrix of posterior draws for the DIF
 effects (draws × effects), for further analysis.}
 \item{dif_model}{The fitted DIF \code{brmsfit} object (if
@@ -102,40 +108,65 @@ For polytomous models, two types of DIF can be tested:
 \describe{
 \item{Uniform DIF (\code{dif_type = "uniform"}, default)}{
 A single location shift per item across groups, modelled as
-a \code{group:item} fixed-effect interaction. This tests
-whether the average item difficulty differs between groups.}
+an item-specific random slope of the group indicator. This
+tests whether the average item difficulty differs between
+groups.}
 \item{Non-uniform / threshold-level DIF
 (\code{dif_type = "non-uniform"})}{Each item receives
-group-specific thresholds via
-\code{thres(gr = interaction(item, group))}. DIF effects
-are computed as the difference in each threshold between
-groups, revealing whether DIF affects specific response
-categories.}
+group-specific thresholds. DIF effects are the differences in
+each threshold between groups, revealing whether DIF affects
+specific response categories.}
 }
 
-The function constructs a DIF model by adding a group-by-item
-interaction to the baseline model:
+In all cases a difference between the groups' latent means
+(impact) is estimated separately from DIF, and DIF is defined
+relative to the average item. See Details.
+
+The function constructs a DIF model from the baseline model. In the
+formulas below, \code{g} is a 0/1 indicator of the focal group that
+the function adds to the data:
 
 \itemize{
 \item \strong{Dichotomous models}
 (\code{family = bernoulli()}): The baseline
 \code{response ~ 1 + (1 | item) + (1 | id)} becomes
-\code{response ~ 1 + group + (1 + group | item) + (1 | id)},
-where the group slope varying by item captures item-specific
-DIF.
+\code{response ~ 1 + group + (1 + group | item) + (1 | id)}.
+The fixed group effect is the impact and the group slope
+varying by item is the item-specific DIF.
 \item \strong{Polytomous uniform DIF}
 (\code{dif_type = "uniform"}): The baseline
 \code{response | thres(gr = item) ~ 1 + (1 | id)} becomes
-\code{response | thres(gr = item) ~ 1 + group:item + (1 | id)}.
+\code{response | thres(gr = item) ~ 1 + (1 | id) + g +
+    (0 + g | item)}. The fixed effect of \code{g} is the impact and
+the slope varying by item is the DIF.
 \item \strong{Polytomous non-uniform DIF}
 (\code{dif_type = "non-uniform"}): The baseline becomes
-\code{response | thres(gr = item_group) ~ 1 + (1 | id)},
-where \code{item_group = interaction(item, group)}. Each
-item × group combination gets its own thresholds. DIF
-effects are the differences between group-specific
-thresholds for each item, computed draw-by-draw from the
-posterior.
+\code{response | thres(gr = item_group) ~ 1 + (1 | id)}, where
+\code{item_group} identifies each item × group combination,
+which gets its own thresholds. The person distribution has
+mean 0 in both groups, so a difference in latent means moves
+all thresholds of the focal group by the same amount. For each
+posterior draw, the threshold differences between groups are
+centred on their mean across items (each item weighted
+equally). The mean is the impact and the centred differences,
+with sign reversed, are the DIF.
 }
+
+\strong{Identification.} DIF and a difference in latent means
+cannot be told apart without a constraint, since shifting every
+item for one group is the same as shifting that group's persons.
+Here DIF is defined relative to the average item: it is zero on
+average across items, by the random-effect distribution in the
+dichotomous and uniform models and exactly in the non-uniform
+model. One item with large DIF therefore pulls the other items'
+estimates slightly in the opposite direction, by about its DIF
+divided by the number of items. Interpret DIF as relative to the
+rest of the scale, not as absolute.
+
+\strong{Sign.} For every DIF type, positive DIF means the item or
+threshold is easier for the focal group (the second factor level)
+than for the reference group at the same latent level, and
+positive impact means the focal group has the higher latent mean.
 
 DIF effects are summarized using:
 \describe{
@@ -143,8 +174,8 @@ DIF effects are summarized using:
 posterior on the dominant side of zero. Values > 0.975
 indicate strong directional evidence.}
 \item{ROPE}{The Region of Practical Equivalence (Kruschke,
-2018). If > 95\\% of the posterior falls inside the ROPE,
-the DIF effect is practically negligible. If > 95\\% falls
+2018). If > 95\% of the posterior falls inside the ROPE,
+the DIF effect is practically negligible. If > 95\% falls
 outside, the effect is practically significant.}
 \item{Credible Interval}{If the CI excludes zero, there is
 evidence of DIF at the specified credibility level.}
