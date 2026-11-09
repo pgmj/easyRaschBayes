@@ -65,15 +65,15 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
   Person locations are posterior means (EAP), with Warm’s weighted
   likelihood estimates (WLE) as an alternative.
 - **Inference**: posterior predictive checks. For Rasch-family models
-  the total score is sufficient for the person location, and item fit is
-  computed conditional on it: item-restscore associations are compared
-  with their expected values given the total scores (Kreiner, 2011), and
-  infit follows the conditional infit of Christensen et al. (2013).
-  Replicated data are drawn conditional on each person’s total score. In
-  null simulations the restscore posterior predictive p-value was close
-  to uniform, while infit stays conservative, so the two are meant to be
-  used together. Posterior predictive p-values are not measures of the
-  size of misfit.
+  the total score is sufficient for the person location, and item fit
+  and local dependence are computed conditional on it: item-restscore
+  associations are compared with their expected values given the total
+  scores (Kreiner, 2011), and infit follows the conditional infit of
+  Christensen et al. (2013). Replicated data are drawn conditional on
+  each person’s total score. In null simulations the restscore and Q3
+  posterior predictive p-values were close to uniform, while infit stays
+  conservative, so infit and restscore are meant to be used together.
+  Posterior predictive p-values are not measures of the size of misfit.
 - **Output**: tibbles for tables and `ggplot2` figures. Infit,
   item-restscore and Q3 are computed per draw by `*_statistic()`
   functions and summarised and plotted by `*_post()` functions, so the
@@ -107,7 +107,9 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
 
 - [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/q3_statistic.md) +
   [`q3_post()`](https://pgmj.github.io/easyRaschBayes/dev/reference/q3_post.md):
-  Yen’s Q3 residual correlations against replicated data
+  Yen’s Q3 residual correlations given the total scores, against
+  replicated data, with a max-T adjustment for the number of item pairs;
+  `method = "theta"` for residuals given each draw’s person locations
 
 ### Dimensionality
 
@@ -138,7 +140,8 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
 - [`plot_targeting()`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_targeting.md):
   person-item targeting plot with the ranges where each response
   category is the most likely, threshold credible intervals, and the
-  posterior probability of collapsed categories and reversed thresholds
+  posterior probability of collapsed categories and disordered
+  thresholds
 - [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/dev/reference/RMUreliability.md):
   reliability from relative measurement uncertainty (Bignardi et al.,
   2025)
@@ -260,10 +263,10 @@ plot_targeting(fit)
 
 ## Credits
 
-This started as a side project to update the code to assess item fit
-included in Bürkner (2020). With the help of Claude Opus things expanded
-to try to reproduce core Rasch analysis steps. Most of the code in this
-package is produced by the LLM.
+This started as a small side project to update the code to assess item
+fit included in Bürkner (2020). With the help of Claude Opus things
+expanded to try to reproduce core Rasch analysis aspects with Bayesian
+methods. Most of the code in this package is produced by the LLM.
 
 [Magnus Johansson](https://ki.se/en/people/magnus-johansson-3) is a
 licensed psychologist with a PhD in behavior analysis. He works as a

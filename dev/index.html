@@ -5,7 +5,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Bayesian Rasch Analysis Using brms • easyRaschBayes</title>
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="katex-auto.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -88,7 +89,7 @@
 <li>
 <strong>Estimation</strong>: models are fitted with <code>brms</code> and Stan. Item thresholds are read from the posterior draws in the same way by every function, for partial credit models (<code>thres(gr = item)</code>), rating scale models and dichotomous models with fixed or random item effects. Person locations are posterior means (EAP), with Warm’s weighted likelihood estimates (WLE) as an alternative.</li>
 <li>
-<strong>Inference</strong>: posterior predictive checks. For Rasch-family models the total score is sufficient for the person location, and item fit is computed conditional on it: item-restscore associations are compared with their expected values given the total scores (Kreiner, 2011), and infit follows the conditional infit of Christensen et al. (2013). Replicated data are drawn conditional on each person’s total score. In null simulations the restscore posterior predictive p-value was close to uniform, while infit stays conservative, so the two are meant to be used together. Posterior predictive p-values are not measures of the size of misfit.</li>
+<strong>Inference</strong>: posterior predictive checks. For Rasch-family models the total score is sufficient for the person location, and item fit and local dependence are computed conditional on it: item-restscore associations are compared with their expected values given the total scores (Kreiner, 2011), and infit follows the conditional infit of Christensen et al. (2013). Replicated data are drawn conditional on each person’s total score. In null simulations the restscore and Q3 posterior predictive p-values were close to uniform, while infit stays conservative, so infit and restscore are meant to be used together. Posterior predictive p-values are not measures of the size of misfit.</li>
 <li>
 <strong>Output</strong>: tibbles for tables and <code>ggplot2</code> figures. Infit, item-restscore and Q3 are computed per draw by <code>*_statistic()</code> functions and summarised and plotted by <code>*_post()</code> functions, so the draws stay available for further analysis.</li>
 <li>
@@ -117,7 +118,7 @@
 </h3>
 <ul>
 <li>
-<code><a href="reference/q3_statistic.html">q3_statistic()</a></code> + <code><a href="reference/q3_post.html">q3_post()</a></code>: Yen’s Q3 residual correlations against replicated data</li>
+<code><a href="reference/q3_statistic.html">q3_statistic()</a></code> + <code><a href="reference/q3_post.html">q3_post()</a></code>: Yen’s Q3 residual correlations given the total scores, against replicated data, with a max-T adjustment for the number of item pairs; <code>method = "theta"</code> for residuals given each draw’s person locations</li>
 </ul>
 </div>
 <div class="section level3">
@@ -153,7 +154,7 @@
 </h3>
 <ul>
 <li>
-<code><a href="reference/plot_targeting.html">plot_targeting()</a></code>: person-item targeting plot with the ranges where each response category is the most likely, threshold credible intervals, and the posterior probability of collapsed categories and reversed thresholds</li>
+<code><a href="reference/plot_targeting.html">plot_targeting()</a></code>: person-item targeting plot with the ranges where each response category is the most likely, threshold credible intervals, and the posterior probability of collapsed categories and disordered thresholds</li>
 <li>
 <code><a href="reference/RMUreliability.html">RMUreliability()</a></code>: reliability from relative measurement uncertainty (Bignardi et al., 2025)</li>
 </ul>
@@ -270,7 +271,7 @@
 <div class="section level2">
 <h2 id="credits">Credits<a class="anchor" aria-label="anchor" href="#credits"></a>
 </h2>
-<p>This started as a side project to update the code to assess item fit included in Bürkner (2020). With the help of Claude Opus things expanded to try to reproduce core Rasch analysis steps. Most of the code in this package is produced by the LLM.</p>
+<p>This started as a small side project to update the code to assess item fit included in Bürkner (2020). With the help of Claude Opus things expanded to try to reproduce core Rasch analysis aspects with Bayesian methods. Most of the code in this package is produced by the LLM.</p>
 <p><a href="https://ki.se/en/people/magnus-johansson-3" class="external-link">Magnus Johansson</a> is a licensed psychologist with a PhD in behavior analysis. He works as a research specialist at <a href="https://ki.se/en/cns/research/centre-for-psychiatry-research" class="external-link">Karolinska Institutet</a>, Department of Clinical Neuroscience, Center for Psychiatry Research.</p>
 <ul>
 <li>ORCID: <a href="https://orcid.org/0000-0003-1669-592X" class="external-link">0000-0003-1669-592X</a>

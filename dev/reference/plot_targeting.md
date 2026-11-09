@@ -143,7 +143,7 @@ plot_targeting(
 
   Numeric. Vertical spacing between item rows in the `"categories"`
   panel. Default `NULL` uses 1, widened when a category collapses or
-  thresholds are reversed, to make room for their labels.
+  thresholds are disordered, to make room for their labels.
 
 - output:
 
@@ -171,10 +171,10 @@ With `output = "patchwork"`, a `patchwork` object. With
   category starts to be the most likely response, over the draws where
   it is (`NA` for category 0).
 
-- reversals:
+- disordered:
 
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
-  one row per item and adjacent threshold pair: `p_reversed`, the
+  one row per item and adjacent threshold pair: `p_disordered`, the
   posterior probability that the higher threshold lies below the lower
   one.
 
@@ -209,15 +209,16 @@ are ordered these boundaries are the thresholds themselves. When they
 are not, the disordered run is pooled by averaging, and the categories
 it skips over, which are never the most likely response at any location,
 collapse to a red tick labelled with the category number. Red arrows
-below the bar give the size of each threshold reversal in logits. The
-two outer bands fade towards the panel edge, since they are open-ended.
+below the bar mark each pair of disordered thresholds and give the
+distance between them in logits. The two outer bands fade towards the
+panel edge, since they are open-ended.
 
 **Posterior probabilities.** The same category structure is computed for
 every posterior draw. Each red tick is labelled with the posterior
 probability that its category is never the most likely response, and
-each reversal with the posterior probability that the pair is reversed.
-The full tables, including categories and pairs without red marks, are
-returned with `output = "list"`.
+each pair of disordered thresholds with the posterior probability that
+the pair is disordered. The full tables, including categories and pairs
+without red marks, are returned with `output = "list"`.
 
 **Person locations.** `person_estimate = "eap"` uses the posterior means
 of the person random effects, shifted by the same constant as the
@@ -288,7 +289,7 @@ res <- plot_targeting(fit_pcm, output = "list")
 #> Error: object 'fit_pcm' not found
 res$categories
 #> Error: object 'res' not found
-res$reversals
+res$disordered
 #> Error: object 'res' not found
 
 # --- Dichotomous Rasch Model ---

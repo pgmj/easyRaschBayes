@@ -15,7 +15,8 @@ hurdle partial credit model for data with many zero responses (see the
 vignette](https://pgmj.github.io/easyRaschBayes/dev/articles/hpcm-rasch-analysis.md)).
 A code example for the dichotomous model is available
 [here](https://pgmj.github.io/reliability.html#rasch-dichotomous-model),
-and more detail on Rasch models in `brms` is in Bürkner (2021).
+and more detail on Rasch models in `brms` is in Bürkner
+([2021](#ref-burkner_bayesian_2021)).
 
 The frequentist counterpart is
 [`easyRasch2`](https://pgmj.github.io/easyRasch2/), which uses
@@ -31,10 +32,26 @@ example
 (`RMtargeting()`). Each function has documentation and example code, see
 `?function_name`.
 
-The sections follow the four requirements of a Rasch model:
-unidimensionality, local independence, ordered response categories, and
-invariance (no differential item functioning). Targeting, reliability
-and person estimates come after.
+The sections follow the four requirements of a Rasch model ([Christensen
+et al. 2013](#ref-christensen_rasch_2013); [Christensen et al.
+2021](#ref-christensen_psychometric_2021)):
+
+1.  **Unidimensionality** — the items measure a single latent variable.
+2.  **Local independence** — given the latent variable, item responses
+    are independent of each other.
+3.  **Ordered response categories** — moving up the latent variable
+    increases the probability of higher categories.
+4.  **Invariance (no differential item functioning)** — item parameters
+    are the same across relevant groups, here gender.
+
+They are followed by descriptors that are usually reported alongside the
+four requirements:
+
+- Targeting — how well person and item locations overlap on the latent
+  variable.
+- Reliability — how precisely the scale separates respondents.
+- Item and person parameters — item thresholds, person locations, and a
+  table from sum score to person location.
 
 ``` r
 
@@ -48,11 +65,12 @@ library(ggplot2)
 
 ## Data
 
-`phq9` holds 600 respondents to the PHQ-9 in the U.S. National Health
-and Nutrition Examination Survey (NHANES, September 2024 release), with
-complete responses on all nine items. Respondents with a sum score of
-zero were reduced by hand, so symptom levels are much higher than in the
-NHANES population. See
+`phq9` holds 600 respondents to the PHQ-9 ([Kroenke et al.
+2001](#ref-kroenke_phq9_2001)) in the U.S. National Health and Nutrition
+Examination Survey (NHANES, September 2024 release), with complete
+responses on all nine items. Respondents with a sum score of zero were
+reduced by hand, so symptom levels are much higher than in the NHANES
+population. See
 [`?phq9`](https://pgmj.github.io/easyRaschBayes/dev/reference/phq9.md),
 and the `phq9_nhanes` data for a random sample. Each item is scored 0
 (“Not at all”), 1 (“Several days”), 2 (“More than half the days”) and 3
@@ -108,9 +126,10 @@ The plotting functions take wide data, one column per item.
 plot_stackedbars(items)
 ```
 
-![Response distribution per item](figures/pcm-data-viz-1.png)
+![\*\*Figure 1.\*\* \*Response distribution per
+item\*](figures/pcm-data-viz-1.png)
 
-Response distribution per item
+**Figure 1.** *Response distribution per item*
 
 [`plot_tile()`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_tile.md)
 and
@@ -204,8 +223,9 @@ can then be used to compare it with the partial credit model.
 ### Item fit: conditional infit
 
 [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic.md)
-computes infit (and optionally outfit) mean squares for each item,
-conditional on each person’s total score, as in
+computes infit (and optionally outfit, see Müller
+([2020](#ref-muller_item_2020))) mean squares for each item, conditional
+on each person’s total score, as in
 [`iarm::out_infit()`](https://rdrr.io/pkg/iarm/man/out_infit.html). For
 the same item parameters the observed values are the same as iarm’s. The
 function compares them with data replicated from the model, also
@@ -236,9 +256,10 @@ infit_results$summary
 infit_results$plot
 ```
 
-![Observed and replicated infit](figures/pcm-infit-1.png)
+![\*\*Figure 2.\*\* \*Observed and replicated
+infit\*](figures/pcm-infit-1.png)
 
-Observed and replicated infit
+**Figure 2.** *Observed and replicated infit*
 
 `infit_obs` is the observed infit and `infit_rep` the infit of
 replicated data. Values above 1 mean more variation in the responses
@@ -258,22 +279,28 @@ Three items underfit: `q9` (thoughts of self-harm, infit about 1.33),
 `q8` (moving slowly or restless, 1.27) and `q3` (sleep, 1.24), all with
 `infit_ppp` near 1. Two overfit: `q2` (feeling down, 0.78) and `q4`
 (feeling tired, 0.83). Given how conservative the ppp is, values this
-close to 0 or 1 are clear signals.
+close to 0 or 1 are clear signals, but they should not be read item by
+item. Infit is relative to the other items. An item in a strongly
+dependent pair usually overfits, and that makes the remaining items look
+more underfit than they would otherwise. `q2` is part of the strongest
+dependent pair (see local dependence below), so fit should be checked
+again after the dependence is dealt with, for example by removing one
+item of the pair.
 
 ### Item-restscore association
 
 [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md)
 computes Goodman-Kruskal’s gamma between each item and the rest score
 (the total score minus the item), and compares it with the gamma
-expected under the model given the total scores (Kreiner, 2011). The
-expected value differs between items, since it depends on item locations
-and targeting. An observed gamma above the expected value means the item
-discriminates more than the model implies, and below it less. `ppp` is a
-posterior predictive p-value from data replicated conditional on each
-person’s total score. Values near 1 mean a stronger association than
-expected, and near 0 a weaker one. `ppp_adj` is two-sided and adjusted
-for the number of items, so small values flag a departure in either
-direction.
+expected under the model given the total scores ([Kreiner
+2011](#ref-kreiner_note_2011)). The expected value differs between
+items, since it depends on item locations and targeting. An observed
+gamma above the expected value means the item discriminates more than
+the model implies, and below it less. `ppp` is a posterior predictive
+p-value from data replicated conditional on each person’s total score.
+Values near 1 mean a stronger association than expected, and near 0 a
+weaker one. `p_adj` is two-sided and adjusted for the number of items,
+so small values flag a departure in either direction.
 
 ``` r
 
@@ -282,31 +309,31 @@ rest_stats <- item_restscore_statistic(fit_pcm, ndraws_use = 500)
 rest_results <- item_restscore_post(rest_stats)
 rest_results$summary
 #> # A tibble: 9 × 6
-#>   item  gamma_obs gamma_exp gamma_diff   ppp ppp_adj
-#>   <chr>     <dbl>     <dbl>      <dbl> <dbl>   <dbl>
-#> 1 q1        0.658     0.62       0.039 0.938   0.7  
-#> 2 q2        0.725     0.624      0.101 1       0    
-#> 3 q3        0.569     0.629     -0.06  0       0.048
-#> 4 q4        0.712     0.617      0.095 1       0    
-#> 5 q5        0.62      0.623     -0.003 0.392   1    
-#> 6 q6        0.69      0.627      0.063 0.992   0.058
-#> 7 q7        0.642     0.624      0.019 0.774   0.996
-#> 8 q8        0.55      0.635     -0.085 0       0    
-#> 9 q9        0.59      0.638     -0.048 0.02    0.25
+#>   item  gamma_obs gamma_exp gamma_diff   ppp p_adj
+#>   <chr>     <dbl>     <dbl>      <dbl> <dbl> <dbl>
+#> 1 q1        0.658     0.62       0.039 0.938 0.7  
+#> 2 q2        0.725     0.624      0.101 1     0    
+#> 3 q3        0.569     0.629     -0.06  0     0.048
+#> 4 q4        0.712     0.617      0.095 1     0    
+#> 5 q5        0.62      0.623     -0.003 0.392 1    
+#> 6 q6        0.69      0.627      0.063 0.992 0.058
+#> 7 q7        0.642     0.624      0.019 0.774 0.996
+#> 8 q8        0.55      0.635     -0.085 0     0    
+#> 9 q9        0.59      0.638     -0.048 0.02  0.25
 rest_results$plot
 ```
 
-![Observed and expected item-restscore
-gamma](figures/pcm-restscore-1.png)
+![\*\*Figure 3.\*\* \*Observed and expected item-restscore
+gamma\*](figures/pcm-restscore-1.png)
 
-Observed and expected item-restscore gamma
+**Figure 3.** *Observed and expected item-restscore gamma*
 
 Item-restscore agrees with infit for four of the five items. `q2` and
 `q4` have a stronger association with the rest score than expected
-(`ppp_adj` near 0), and `q8` and `q3` a weaker one. `q9` has a weaker
+(`p_adj` near 0), and `q8` and `q3` a weaker one. `q9` has a weaker
 association than expected as well (`ppp` 0.02), but after adjustment for
-the number of items it is not flagged (`ppp_adj` 0.25). `q6` leans
-towards overfit (`ppp` 0.99, `ppp_adj` 0.06).
+the number of items it is not flagged (`p_adj` 0.25). `q6` leans towards
+overfit (`ppp` 0.99, `p_adj` 0.06).
 
 ### Conditional item characteristic curves
 
@@ -326,9 +353,10 @@ was used.
 plot_icc(fit_pcm)
 ```
 
-![Conditional item characteristic curves](figures/pcm-icc-1.png)
+![\*\*Figure 4.\*\* \*Conditional item characteristic
+curves\*](figures/pcm-icc-1.png)
 
-Conditional item characteristic curves
+**Figure 4.** *Conditional item characteristic curves*
 
 The curves show the same items. The observed points of `q8` and `q9` are
 flatter than the model curve, above it in the middle and below it at the
@@ -354,10 +382,11 @@ pca$eigenvalue
 pca$plot
 ```
 
-![Loadings on the first residual contrast and item
-locations](figures/pcm-pca-1.png)
+![\*\*Figure 5.\*\* \*Loadings on the first residual contrast and item
+locations\*](figures/pcm-pca-1.png)
 
-Loadings on the first residual contrast and item locations
+**Figure 5.** *Loadings on the first residual contrast and item
+locations*
 
 `ppp` in `pca$eigenvalue` is the proportion of draws where the observed
 largest eigenvalue exceeds the replicated one. Values near 1 suggest
@@ -375,12 +404,19 @@ the mood items.
 ## 2. Local independence
 
 [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/q3_statistic.md)
-computes Yen’s Q3, the correlation between the residuals of each pair of
-items. Given the latent variable, residuals should be uncorrelated, and
-pairs with higher correlations than the model replicates suggest local
-dependence. The residuals use the person locations in each posterior
-draw, so this ppp is conservative in the same way as theta-based infit.
-`q3_ppp` near 1 flags a pair.
+computes Yen’s Q3 ([Yen 1984](#ref-yen_scaling_1984)), the correlation
+between the residuals of each pair of items. Given the latent variable,
+residuals should be uncorrelated, and pairs with higher correlations
+than the model replicates suggest local dependence ([Levy et al.
+2009](#ref-levy_posterior_2009)). As for infit and item-restscore, the
+residuals are taken from the expected responses given each person’s
+total score. Given the total score, a person’s residuals sum to zero, so
+Q3 centres on about -1/(k-1), here -0.125, rather than on 0
+([Christensen et al. 2017](#ref-christensen2017)). The replicated values
+have the same centre, so `q3_diff` (observed minus replicated) is the
+quantity to read. `q3_ppp` near 1 flags a pair, and `q3_p_adj` adjusts
+for the 36 pairs, with small values flagging a pair. The dashed line in
+the plot is the mean replicated Q3.
 
 ``` r
 
@@ -388,34 +424,45 @@ q3_stats <- q3_statistic(fit_pcm, ndraws_use = 500)
 
 q3_results <- q3_post(q3_stats)
 q3_results$summary
-#> # A tibble: 36 × 7
-#>    item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp
-#>    <chr>     <chr>  <chr>   <dbl>  <dbl>   <dbl>  <dbl>
-#>  1 q1 : q2   q1     q2      0.34  -0.001   0.341  1    
-#>  2 q2 : q6   q2     q6      0.163 -0.002   0.164  1    
-#>  3 q3 : q4   q3     q4      0.162  0.001   0.162  1    
-#>  4 q3 : q5   q3     q5      0.16  -0.001   0.16   1    
-#>  5 q2 : q9   q2     q9      0.152  0.001   0.151  1    
-#>  6 q7 : q8   q7     q8      0.146  0.001   0.145  1    
-#>  7 q4 : q5   q4     q5      0.108 -0.002   0.11   0.988
-#>  8 q1 : q4   q1     q4      0.1    0.001   0.099  0.982
-#>  9 q6 : q9   q6     q9      0.098 -0.001   0.099  0.984
-#> 10 q2 : q4   q2     q4      0.083 -0.002   0.085  0.964
+#> # A tibble: 36 × 8
+#>    item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp q3_p_adj
+#>    <chr>     <chr>  <chr>   <dbl>  <dbl>   <dbl>  <dbl>    <dbl>
+#>  1 q1 : q2   q1     q2      0.239 -0.121   0.361  1        0    
+#>  2 q3 : q5   q3     q5      0.075 -0.139   0.214  1        0    
+#>  3 q3 : q4   q3     q4      0.062 -0.128   0.19   1        0    
+#>  4 q7 : q8   q7     q8      0.066 -0.115   0.181  1        0    
+#>  5 q2 : q9   q2     q9      0.049 -0.123   0.171  1        0    
+#>  6 q2 : q6   q2     q6      0.016 -0.132   0.148  1        0.006
+#>  7 q4 : q5   q4     q5     -0.01  -0.123   0.113  0.996    0.11 
+#>  8 q6 : q9   q6     q9     -0.003 -0.115   0.112  1        0.072
+#>  9 q8 : q9   q8     q9     -0.109 -0.196   0.086  0.958    0.744
+#> 10 q1 : q4   q1     q4     -0.023 -0.105   0.082  0.984    0.568
 #> # ℹ 26 more rows
 q3_results$plot
 ```
 
-![Q3 residual correlations](figures/pcm-q3-1.png)
+![\*\*Figure 6.\*\* \*Q3 residual correlations\*](figures/pcm-q3-1.png)
 
-Q3 residual correlations
+**Figure 6.** *Q3 residual correlations*
 
-The largest residual correlation by far is between `q1` and `q2`, the
-two core symptoms of depression (little interest and feeling down), at
-0.34. The next pairs, at about 0.15, are `q2` with `q6`, `q3` with `q4`
-and with `q5`, `q2` with `q9`, and `q7` with `q8`. These match the two
-groups in the residual PCA. Several pairs have `q3_ppp` close to 1, so
-this ppp is not enough on its own to rank them. The size of `q3_obs`
-above `q3_rep` is a better guide.
+The largest difference by far is for `q1` and `q2`, the two core
+symptoms of depression (little interest and feeling down), with an
+observed Q3 of 0.24 against about -0.12 replicated. Next, with
+differences of about 0.15 to 0.2, are `q3` with `q5` and with `q4`, `q7`
+with `q8`, `q2` with `q9`, and `q2` with `q6`. All six have `q3_p_adj`
+below .05, and they match the two groups in the residual PCA. `q4` with
+`q5` and `q6` with `q9` follow at about 0.11, with `q3_ppp` near 1 but
+`q3_p_adj` above .05.
+
+Pairs with lower residual correlations than replicated are also worth a
+look. When items form two groups, items within a group have residual
+correlations above the replicated ones and items from different groups
+below. Here the lowest pairs, about 0.12 to 0.21 below the replicated
+values, are mostly one somatic and one mood item: `q4` with `q9`, `q2`
+with `q8`, `q2` with `q5`, `q5` with `q9` and `q3` with `q9`. Together
+with the positive pairs and the residual PCA, this points to a somatic
+and a mood dimension rather than to dependence between single pairs of
+items.
 
 ## 3. Ordered response categories
 
@@ -430,9 +477,10 @@ never the highest is never the most likely response at any location.
 plot_ipf(fit_pcm, theta_range = c(-5, 5))
 ```
 
-![Item category probability functions](figures/pcm-ipf-1.png)
+![\*\*Figure 7.\*\* \*Item category probability
+functions\*](figures/pcm-ipf-1.png)
 
-Item category probability functions
+**Figure 7.** *Item category probability functions*
 
 [`item_parameters()`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_parameters.md)
 reports the thresholds, and whether they are in order:
@@ -474,7 +522,7 @@ ipar$threshold_order
 
 The thresholds are in order for all items except `q9`, where the
 posterior probability that they are disordered is 0.88. Thresholds 2 and
-3 of `q9` are reversed, so “More than half the days” is never the most
+3 of `q9` are disordered, so “More than half the days” is never the most
 likely response to that item. Together with `q8`, it is the item fewest
 people endorse at all.
 
@@ -529,9 +577,9 @@ dif$summary
 dif$plot
 ```
 
-![DIF by gender](figures/pcm-dif-1.png)
+![\*\*Figure 8.\*\* \*DIF by gender\*](figures/pcm-dif-1.png)
 
-DIF by gender
+**Figure 8.** *DIF by gender*
 
 `rope = 0` reports the posteriors without a region of practical
 equivalence. Whether a DIF of a given size matters depends on how the
@@ -547,9 +595,10 @@ item response and group within total-score strata:
 plot_icc(fit_pcm, dif_var = gender, dif_data = df_pcm)
 ```
 
-![Conditional ICCs by gender](figures/pcm-dif-icc-1.png)
+![\*\*Figure 9.\*\* \*Conditional ICCs by
+gender\*](figures/pcm-dif-icc-1.png)
 
-Conditional ICCs by gender
+**Figure 9.** *Conditional ICCs by gender*
 
 The difference in latent means between men and women (impact) is small
 and uncertain, about 0.08 logits with an interval from -0.26 to 0.42.
@@ -572,34 +621,36 @@ scale. The top panel is the distribution of person locations (EAP by
 default, `person_estimate = "wle"` for WLE). The bottom panel draws each
 item as a bar split into the ranges where each response category is the
 most likely response, with the threshold credible intervals below. A
-category that is never the most likely response, or thresholds in
-reversed order, are marked in red with the posterior probability of
-that. `panel = "thresholds"` gives a simpler threshold plot.
+category that is never the most likely response, or disordered
+thresholds, are marked in red with the posterior probability of that.
+`panel = "thresholds"` gives a simpler threshold plot.
 
 ``` r
 
 plot_targeting(fit_pcm, category_labels = resp_labels)
 ```
 
-![Person-item targeting](figures/pcm-targeting-1.png)
+![\*\*Figure 10.\*\* \*Person-item
+targeting\*](figures/pcm-targeting-1.png)
 
-Person-item targeting
+**Figure 10.** *Person-item targeting*
 
 The person locations (mean 0.45, SD 1.23) overlap the thresholds well.
 This sample was selected to have few respondents without symptoms, see
 [`?phq9`](https://pgmj.github.io/easyRaschBayes/dev/reference/phq9.md).
 The two hardest items, `q8` and `q9`, are located above most persons. On
-`q9`, category 2 collapses, as found above, and the arrow gives the size
-of the reversal and the probability that the category is never the most
-likely response.
+`q9`, category 2 collapses, as found above, and the arrow gives the
+distance between the disordered thresholds and the probability that the
+category is never the most likely response.
 
 ## Reliability
 
 [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/dev/reference/RMUreliability.md)
 gives a Bayesian reliability estimate based on relative measurement
-uncertainty (RMU, Bignardi et al., 2025). It takes a matrix of person
-location draws, persons by draws, and returns the posterior mean with a
-95% highest density continuous interval.
+uncertainty (RMU, [Bignardi et al. 2025](#ref-bignardi_general_2025)).
+It takes a matrix of person location draws, persons by draws, and
+returns the posterior mean with a 95% highest density continuous
+interval.
 
 ``` r
 
@@ -701,37 +752,54 @@ hist(ppar$person_estimates$eap, col = "lightblue", main = "",
      xlab = "Person location (EAP)")
 ```
 
-![Distribution of person locations (EAP)](figures/pcm-ppar-1.png)
+![\*\*Figure 11.\*\* \*Distribution of person locations
+(EAP)\*](figures/pcm-ppar-1.png)
 
-Distribution of person locations (EAP)
+**Figure 11.** *Distribution of person locations (EAP)*
 
 ## References
 
-- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general method
-  for estimating reliability using Bayesian Measurement Uncertainty.
-  OSF. <https://doi.org/10.31234/osf.io/h54k8_v1>
+Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2025. *A
+General Method for Estimating Reliability Using Bayesian Measurement
+Uncertainty*. OSF. <https://doi.org/10.31234/osf.io/h54k8_v1>.
 
-- Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
-  and Stan. *Journal of Statistical Software*, *100*, 1–54.
-  <https://doi.org/10.18637/jss.v100.i05>
+Bürkner, Paul-Christian. 2021. “Bayesian Item Response Modeling in R
+with Brms and Stan.” *Journal of Statistical Software* 100: 1–54.
+<https://doi.org/10.18637/jss.v100.i05>.
 
-- Christensen, K. B., Kreiner, S., & Mesbah, M. (Eds.) (2013). *Rasch
-  Models in Health*. ISTE and Wiley.
+Christensen, Karl Bang, Jonathan D. Comins, Michael R. Krogsgaard, et
+al. 2021. “Psychometric Validation of PROM Instruments.” *Scandinavian
+Journal of Medicine & Science in Sports* 31 (6): 1225–38.
+<https://doi.org/10.1111/sms.13908>.
 
-- Kreiner, S. (2011). A note on item-restscore association in Rasch
-  models. *Applied Psychological Measurement*, *35*(7), 557–561.
-  <https://doi.org/10.1177/0146621611410227>
+Christensen, Karl Bang, Svend Kreiner, and Mounir Mesbah, eds. 2013.
+*Rasch Models in Health*. Applied Mathematics Series. ISTE ; John Wiley
+& Sons.
 
-- Kroenke, K., Spitzer, R. L., & Williams, J. B. W. (2001). The PHQ-9:
-  Validity of a brief depression severity measure. *Journal of General
-  Internal Medicine*, *16*(9), 606–613.
-  <https://doi.org/10.1046/j.1525-1497.2001.016009606.x>
+Christensen, Karl Bang, Guido Makransky, and Mike Horton. 2017.
+“Critical Values for Yen’s Q3: Identification of Local Dependence in the
+Rasch Model Using Residual Correlations.” *Applied Psychological
+Measurement* 41 (3): 178–94. <https://doi.org/10.1177/0146621616677520>.
 
-- Levy, R., Mislevy, R. J., & Sinharay, S. (2009). Posterior predictive
-  model checking for multidimensionality in item response theory.
-  *Applied Psychological Measurement*, *33*(7), 519–537.
-  <https://doi.org/10.1177/0146621608329504>
+Kreiner, Svend. 2011. “A Note on Item–Restscore Association in Rasch
+Models.” *Applied Psychological Measurement* 35 (7): 557–61.
+<https://doi.org/10.1177/0146621611410227>.
 
-- Müller, M. (2020). Item fit statistics for Rasch analysis: Can we
-  trust them? *Journal of Statistical Distributions and Applications*,
-  *7*(1), 5. <https://doi.org/10.1186/s40488-020-00108-7>
+Kroenke, Kurt, Robert L. Spitzer, and Janet B. W. Williams. 2001. “The
+PHQ-9: Validity of a Brief Depression Severity Measure.” *Journal of
+General Internal Medicine* 16 (9): 606–13.
+<https://doi.org/10.1046/j.1525-1497.2001.016009606.x>.
+
+Levy, Roy, Robert J. Mislevy, and Sandip Sinharay. 2009. “Posterior
+Predictive Model Checking for Multidimensionality in Item Response
+Theory.” *Applied Psychological Measurement* 33 (7): 519–37.
+<https://doi.org/10.1177/0146621608329504>.
+
+Müller, Marianne. 2020. “Item Fit Statistics for Rasch Analysis: Can We
+Trust Them?” *Journal of Statistical Distributions and Applications* 7
+(1): 5. <https://doi.org/10.1186/s40488-020-00108-7>.
+
+Yen, Wendy M. 1984. “Effects of Local Item Dependence on the Fit and
+Equating Performance of the Three-Parameter Logistic Model.” *Applied
+Psychological Measurement* 8 (2): 125–45.
+<https://doi.org/10.1177/014662168400800201>.

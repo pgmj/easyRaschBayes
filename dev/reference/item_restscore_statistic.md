@@ -82,7 +82,7 @@ A list with two elements:
       half. Values near 1 indicate stronger association than the model
       implies, values near 0 weaker.
 
-  ppp_adj
+  p_adj
 
   :   Two-sided posterior predictive p-value adjusted for the number of
       items by a single-step max-T procedure. See Details.
@@ -157,14 +157,14 @@ The `gamma_diff` interval describes how far the observed sample departs
 from the model expectation, given the uncertainty in the item
 parameters. It contains no sampling variation, so it is not a test, and
 it is not a credible interval for misfit in the population. Use `ppp` or
-`ppp_adj` to judge whether a departure is larger than chance would
+`p_adj` to judge whether a departure is larger than chance would
 produce. As with any test, they will flag smaller departures as the
 sample size grows.
 
-`ppp_adj` standardises each item's observed gamma by the mean and
-standard deviation of its replicated gammas. Its reference is the
-largest absolute standardised deviation across items within each
-replicated dataset, so it accounts for testing all items at once.
+`p_adj` standardises each item's observed gamma by the mean and standard
+deviation of its replicated gammas. Its reference is the largest
+absolute standardised deviation across items within each replicated
+dataset, so it accounts for testing all items at once.
 
 With missing responses, the total and rest-scores are sums over the
 items a person answered, scored from 0. The conditional distribution is

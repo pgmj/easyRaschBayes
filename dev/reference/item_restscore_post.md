@@ -29,7 +29,7 @@ A list with two elements:
 
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
   one row per item and the columns item, `gamma_obs`, `gamma_exp`,
-  `gamma_diff`, `ppp` and `ppp_adj`, rounded to 3 decimals and sorted by
+  `gamma_diff`, `ppp` and `p_adj`, rounded to 3 decimals and sorted by
   item.
 
 - plot:

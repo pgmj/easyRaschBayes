@@ -5,7 +5,8 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Hurdle Partial Credit Model with easyRaschBayes • easyRaschBayes</title>
-<script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<!-- katex math --><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" integrity="sha384-nB0miv6/jRmo5UMMR1wu3Gz6NLsoTkbqJghGIsx//Rlm+ZU03BU6SQNC66uf4l5+" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" integrity="sha384-7zkQWkzuo3B5mTepMUcHkMB5jZaolc2xDwL6VFqjFALcbeS9Ggm/Yr2r3Dy4lfFg" crossorigin="anonymous"></script><script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js" integrity="sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script><script src="../katex-auto.js"></script><script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -67,6 +68,20 @@
 
     
     
+<style>
+/* Journal-style figure captions: subtle left rule + muted colour */
+.figure p.caption,
+div.figure > p.caption,
+figure > figcaption {
+  font-size: 0.95em;
+  padding-left: 0.75em;
+  border-left: 3px solid #ccd;
+  color: #555;
+  margin-top: 0.5em;
+  margin-bottom: 1.25em;
+  line-height: 1.4;
+}
+</style>
 <div class="section level2">
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
@@ -87,15 +102,43 @@ and</li>
 the probability of each category 1, 2, 3 given that the response is
 above 0.</li>
 </ul>
-<p>Each submodel has its own person location, and the two are allowed to
-correlate. The correlation shows whether presence and severity are close
-to the same trait or two distinct ones. This follows the zero-inflated
-graded response model of Magnus and Garnier-Villarreal (2022), with
-partial credit in place of graded response.</p>
-<p>The model is fitted with the custom <code>brms</code> family
-<code><a href="../reference/hurdle_acat.html">hurdle_acat()</a></code>, contributed by Kristoffer Magnusson. The
-functions with the suffix <code>_hpcm</code> analyse the fitted
-model.</p>
+<p>For person <span class="math inline">p</span> and item <span class="math inline">i</span> with categories <span class="math inline">0, 1, \dots, m_i</span>, the hurdle submodel is</p>
+<p><span class="math display">
+\operatorname{logit} P(Y_{pi} &gt; 0) = \zeta_p - \delta_i ,
+</span></p>
+<p>where <span class="math inline">\zeta_p</span> is the person’s hurdle
+location and <span class="math inline">\delta_i</span> the item’s hurdle
+location. Given a response above 0, the severity submodel is</p>
+<p><span class="math display">
+P(Y_{pi} = k \mid Y_{pi} &gt; 0) =
+\frac{\exp \sum_{j=2}^{k} (\theta_p - \tau_{ij})}
+     {\sum_{h=1}^{m_i} \exp \sum_{j=2}^{h} (\theta_p - \tau_{ij})},
+\qquad k = 1, \dots, m_i ,
+</span></p>
+<p>where <span class="math inline">\theta_p</span> is the person’s
+severity location, <span class="math inline">\tau_{ij}</span> is the
+threshold between categories <span class="math inline">j - 1</span> and
+<span class="math inline">j</span>, and an empty sum is 0. Item <span class="math inline">i</span> thus has <span class="math inline">m_i -
+1</span> severity thresholds, two for the PHQ-9 items. The person
+locations follow a bivariate normal distribution,</p>
+<p><span class="math display">
+\begin{pmatrix} \zeta_p \\ \theta_p \end{pmatrix} \sim
+\mathcal{N}\left(
+\begin{pmatrix} 0 \\ 0 \end{pmatrix},
+\begin{pmatrix} \sigma_\zeta^2 &amp; \rho \sigma_\zeta \sigma_\theta \\
+\rho \sigma_\zeta \sigma_\theta &amp; \sigma_\theta^2 \end{pmatrix}
+\right).
+</span></p>
+<p>Each submodel thus has its own person location, and the two are
+allowed to correlate. The correlation shows whether presence and
+severity are close to the same trait or two distinct ones. This follows
+the zero-inflated graded response model of <span class="citation">Magnus
+and Garnier-Villarreal (<a href="#ref-magnus_multidimensional_2022">2022</a>)</span>, with partial
+credit in place of graded response.</p>
+<p>The model is fitted with the custom <code>brms</code> <span class="citation">(<a href="#ref-burkner_bayesian_2021">Bürkner
+2021</a>)</span> family <code><a href="../reference/hurdle_acat.html">hurdle_acat()</a></code>, contributed by
+Kristoffer Magnusson. The functions with the suffix <code>_hpcm</code>
+analyse the fitted model.</p>
 <p><strong>brms version.</strong> On CRAN <code>brms</code> (2.23),
 custom ordinal families with grouped thresholds produce invalid Stan
 code. Until a fixed version is on CRAN, install the patched branch to
@@ -116,13 +159,13 @@ the standard Rasch workflow, see the <a href="pcm-rasch-analysis.html">partial c
 <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h2>
 <p><code>phq9_nhanes</code> is a simple random sample of 1000
-respondents to the PHQ-9 in the U.S. National Health and Nutrition
-Examination Survey (NHANES, September 2024 release), drawn from everyone
-who answered all nine items. There was no selection on scores, so the
-share of zero responses is that of a general population sample. See
-<code><a href="../reference/phq9_nhanes.html">?phq9_nhanes</a></code>. Each item is scored 0 (“Not at all”), 1
-(“Several days”), 2 (“More than half the days”) and 3 (“Nearly every
-day”).</p>
+respondents to the PHQ-9 <span class="citation">(<a href="#ref-kroenke_phq9_2001">Kroenke et al. 2001</a>)</span> in the
+U.S. National Health and Nutrition Examination Survey (NHANES, September
+2024 release), drawn from everyone who answered all nine items. There
+was no selection on scores, so the share of zero responses is that of a
+general population sample. See <code><a href="../reference/phq9_nhanes.html">?phq9_nhanes</a></code>. Each item is
+scored 0 (“Not at all”), 1 (“Several days”), 2 (“More than half the
+days”) and 3 (“Nearly every day”).</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">phq9_nhanes</span><span class="op">)</span></span>
 <span><span class="va">items</span> <span class="op">&lt;-</span> <span class="va">phq9_nhanes</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">9</span><span class="op">]</span></span>
@@ -139,8 +182,8 @@ day”).</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_stackedbars.html">plot_stackedbars</a></span><span class="op">(</span><span class="va">items</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-data-viz-1.png" alt="Response distribution per item" width="100%"><p class="caption">
-Response distribution per item
+<img src="figures/hpcm-data-viz-1.png" alt="**Figure 1.** *Response distribution per item*" width="100%"><p class="caption">
+<strong>Figure 1.</strong> <em>Response distribution per item</em>
 </p>
 </div>
 <p>The highest categories are rare for several items. On <code>q9</code>
@@ -188,15 +231,15 @@ ordinary PCM.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_targeting.html">plot_targeting</a></span><span class="op">(</span><span class="va">fit_pcm</span>, height_ratios <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1.5</span>, <span class="fl">7</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-targeting-pcm-1.png" alt="Targeting, partial credit model" width="100%"><p class="caption">
-Targeting, partial credit model
+<img src="figures/hpcm-targeting-pcm-1.png" alt="**Figure 2.** *Targeting, partial credit model*" width="100%"><p class="caption">
+<strong>Figure 2.</strong> <em>Targeting, partial credit model</em>
 </p>
 </div>
 <p>The 216 persons with a sum score of zero all get the same, lowest,
 location and form the spike at the left of the person histogram. The PCM
 cannot tell them apart. The item panel shows a second problem: for eight
 of the nine items, category 2 (“More than half the days”) is never the
-most likely response, because its thresholds are reversed. The PCM
+most likely response, because its thresholds are disordered. The PCM
 places the step from 0 to 1 and the steps between the higher categories
 on one scale, and in these data they do not line up.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
@@ -218,25 +261,28 @@ on one scale, and in these data they do not line up.</p>
 <code class="sourceCode R"><span><span class="va">rest_pcm</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_restscore_post.html">item_restscore_post</a></span><span class="op">(</span><span class="fu"><a href="../reference/item_restscore_statistic.html">item_restscore_statistic</a></span><span class="op">(</span><span class="va">fit_pcm</span>, ndraws_use <span class="op">=</span> <span class="fl">500</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">rest_pcm</span><span class="op">$</span><span class="va">summary</span></span>
 <span><span class="co">#&gt; # A tibble: 9 × 6</span></span>
-<span><span class="co">#&gt;   item  gamma_obs gamma_exp gamma_diff   ppp ppp_adj</span></span>
-<span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt; 1 q1        0.698     0.665      0.033 0.934   0.772</span></span>
-<span><span class="co">#&gt; 2 q2        0.757     0.659      0.098 1       0    </span></span>
-<span><span class="co">#&gt; 3 q3        0.561     0.678     -0.117 0       0    </span></span>
-<span><span class="co">#&gt; 4 q4        0.689     0.682      0.007 0.634   1    </span></span>
-<span><span class="co">#&gt; 5 q5        0.612     0.674     -0.063 0       0.008</span></span>
-<span><span class="co">#&gt; 6 q6        0.74      0.667      0.073 0.998   0.006</span></span>
-<span><span class="co">#&gt; 7 q7        0.683     0.665      0.018 0.77    0.99 </span></span>
-<span><span class="co">#&gt; 8 q8        0.689     0.674      0.016 0.7     1    </span></span>
-<span><span class="co">#&gt; 9 q9        0.843     0.677      0.166 1       0.008</span></span></code></pre></div>
+<span><span class="co">#&gt;   item  gamma_obs gamma_exp gamma_diff   ppp p_adj</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 q1        0.698     0.665      0.033 0.934 0.772</span></span>
+<span><span class="co">#&gt; 2 q2        0.757     0.659      0.098 1     0    </span></span>
+<span><span class="co">#&gt; 3 q3        0.561     0.678     -0.117 0     0    </span></span>
+<span><span class="co">#&gt; 4 q4        0.689     0.682      0.007 0.634 1    </span></span>
+<span><span class="co">#&gt; 5 q5        0.612     0.674     -0.063 0     0.008</span></span>
+<span><span class="co">#&gt; 6 q6        0.74      0.667      0.073 0.998 0.006</span></span>
+<span><span class="co">#&gt; 7 q7        0.683     0.665      0.018 0.77  0.99 </span></span>
+<span><span class="co">#&gt; 8 q8        0.689     0.674      0.016 0.7   1    </span></span>
+<span><span class="co">#&gt; 9 q9        0.843     0.677      0.166 1     0.008</span></span></code></pre></div>
 <p>Infit and item-restscore agree on the items that fit worst.
 <code>q3</code> (sleep) underfits, with infit around 1.27 and an
 item-restscore gamma below its expected value. <code>q5</code>
 (appetite) shows the same pattern, less strongly. <code>q2</code>
 (feeling down) and <code>q6</code> (feeling bad about yourself) overfit,
-and so does <code>q9</code> by item-restscore. Part of this may come
-from forcing presence and severity onto one scale, which the hurdle
-model relaxes.</p>
+and so does <code>q9</code> by item-restscore. Overfit and underfit are
+related here: items in a strongly dependent pair usually overfit, which
+makes the other items look more underfit, and <code>q2</code> and
+<code>q6</code> form such a pair (see local dependence below). Part of
+the misfit may also come from forcing presence and severity onto one
+scale, which the hurdle model relaxes.</p>
 </div>
 <div class="section level2">
 <h2 id="fitting-the-hurdle-pcm">Fitting the hurdle PCM<a class="anchor" aria-label="anchor" href="#fitting-the-hurdle-pcm"></a>
@@ -275,7 +321,7 @@ effect in the <code>hu</code> formula is on the logit of P(response =
 flip the sign of the person locations and the correlation, so that a
 higher hurdle location means a symptom is more likely to be present.
 Item hurdle locations keep the <code>brms</code> direction: a higher
-value means more zeros, a harder hurdle to cross.</p>
+value means more zeros, a harder hurdle to cross. These are <span class="math inline">\zeta_p</span> and <span class="math inline">\delta_i</span> in the model above.</p>
 </div>
 <div class="section level2">
 <h2 id="presence-and-severity-one-trait-or-two">Presence and severity: one trait or two?<a class="anchor" aria-label="anchor" href="#presence-and-severity-one-trait-or-two"></a>
@@ -486,7 +532,7 @@ between 2 and 3, for those who endorsed the item.</p>
 <p>Among those who report a symptom, the two severity thresholds are
 close together, and for <code>q1</code>, <code>q7</code>,
 <code>q9</code>, <code>q2</code> and <code>q8</code> the posterior
-probability that they are reversed is above 0.7. Separating out the
+probability that they are disordered is above 0.7. Separating out the
 zeros does not remove the weak middle category. It suggests that “More
 than half the days” is hard to tell apart from its neighbours.</p>
 </div>
@@ -497,15 +543,15 @@ than half the days” is hard to tell apart from its neighbours.</p>
 <code class="sourceCode R"><span><span class="va">targ</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_targeting_hpcm.html">plot_targeting_hpcm</a></span><span class="op">(</span><span class="va">fit_hpcm</span><span class="op">)</span></span>
 <span><span class="va">targ</span><span class="op">$</span><span class="va">hurdle</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-targeting-hpcm-1.png" alt="Targeting, hurdle submodel" width="100%"><p class="caption">
-Targeting, hurdle submodel
+<img src="figures/hpcm-targeting-hpcm-1.png" alt="**Figure 3.** *Targeting, hurdle submodel*" width="100%"><p class="caption">
+<strong>Figure 3.</strong> <em>Targeting, hurdle submodel</em>
 </p>
 </div>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">targ</span><span class="op">$</span><span class="va">pcm</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-targeting-hpcm-pcm-1.png" alt="Targeting, severity submodel" width="100%"><p class="caption">
-Targeting, severity submodel
+<img src="figures/hpcm-targeting-hpcm-pcm-1.png" alt="**Figure 4.** *Targeting, severity submodel*" width="100%"><p class="caption">
+<strong>Figure 4.</strong> <em>Targeting, severity submodel</em>
 </p>
 </div>
 <p>In the hurdle plot, the item difficulties spread from about -2 to 3
@@ -515,7 +561,11 @@ spread out, unlike in the PCM. The severity plot shows only the 784
 persons with at least one response above 0. Their mean severity is about
 2 logits below the mean threshold: most of those who report symptoms
 report them as occurring on “Several days”, so the severity thresholds
-are targeted above most of the sample.</p>
+are targeted above most of the sample. The category bands show the
+disordered severity thresholds from above: for <code>q1</code>,
+<code>q2</code>, <code>q7</code>, <code>q8</code> and <code>q9</code>,
+category 2 is marked in red, with posterior probabilities from 0.71 to
+0.91 that it is never the most likely response.</p>
 </div>
 <div class="section level2">
 <h2 id="item-fit">Item fit<a class="anchor" aria-label="anchor" href="#item-fit"></a>
@@ -544,8 +594,8 @@ responses above 0. Each part is summarised with
 <span><span class="co">#&gt; 9 q9        0.914     0.997     0.256</span></span>
 <span><span class="va">infit_hu</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-infit-hpcm-1.png" alt="Infit, hurdle submodel" width="100%"><p class="caption">
-Infit, hurdle submodel
+<img src="figures/hpcm-infit-hpcm-1.png" alt="**Figure 5.** *Infit, hurdle submodel*" width="100%"><p class="caption">
+<strong>Figure 5.</strong> <em>Infit, hurdle submodel</em>
 </p>
 </div>
 <div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
@@ -565,8 +615,8 @@ Infit, hurdle submodel
 <span><span class="co">#&gt; 9 q9        1.16      1.01      0.68</span></span>
 <span><span class="va">infit_sev</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-infit-hpcm-pcm-1.png" alt="Infit, severity submodel" width="100%"><p class="caption">
-Infit, severity submodel
+<img src="figures/hpcm-infit-hpcm-pcm-1.png" alt="**Figure 6.** *Infit, severity submodel*" width="100%"><p class="caption">
+<strong>Figure 6.</strong> <em>Infit, severity submodel</em>
 </p>
 </div>
 <p>Unlike <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> for Rasch models, these
@@ -581,33 +631,35 @@ model.</p>
 <p>The conditional item characteristic curves show where along each
 latent variable the observed responses depart from the model.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">icc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm</a></span><span class="op">(</span><span class="va">fit_hpcm</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">icc</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm</a></span><span class="op">(</span><span class="va">fit_hpcm</span>, class_intervals <span class="op">=</span> <span class="fl">3</span><span class="op">)</span></span>
 <span><span class="va">icc</span><span class="op">$</span><span class="va">hurdle</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-icc-hpcm-1.png" alt="Conditional ICC, hurdle submodel" width="100%"><p class="caption">
-Conditional ICC, hurdle submodel
+<img src="figures/hpcm-icc-hpcm-1.png" alt="**Figure 7.** *Conditional ICC, hurdle submodel*" width="100%"><p class="caption">
+<strong>Figure 7.</strong> <em>Conditional ICC, hurdle submodel</em>
 </p>
 </div>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">icc</span><span class="op">$</span><span class="va">pcm</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-icc-hpcm-pcm-1.png" alt="Conditional ICC, severity submodel" width="100%"><p class="caption">
-Conditional ICC, severity submodel
+<img src="figures/hpcm-icc-hpcm-pcm-1.png" alt="**Figure 8.** *Conditional ICC, severity submodel*" width="100%"><p class="caption">
+<strong>Figure 8.</strong> <em>Conditional ICC, severity submodel</em>
 </p>
 </div>
-<p>In the hurdle panel, <code>q3</code> and <code>q4</code> are flatter
-than the model curve: people low on the presence trait report sleep
-problems and tiredness more often than expected. This matches the infit
-of <code>q3</code> above 1. <code>q1</code> and <code>q2</code> are
-steeper than the curve, matching their infit below 1.</p>
+<p>Three class intervals are used here, since with more intervals
+several severity points fall at the floor and overlap. In the hurdle
+panel, <code>q3</code> is flatter than the model curve: people low on
+the presence trait report sleep problems more often than expected, which
+matches its infit above 1. <code>q2</code> is steeper than the curve,
+matching its infit below 1.</p>
 <p>In the severity panel, persons are grouped by their severity EAP,
 since the hurdle model has no sufficient sum score. EAPs are shrunk
-toward the mean, so the observed points (blue) can sit off the curve
-even when the model fits. Compare them with the orange diamonds instead,
-the model’s expected mean for the same responses. For several items the
-observed means fall below the diamonds in the lowest interval and above
-them in the highest, so severity separates persons a little more than
-the model expects.</p>
+toward the mean, so each interval is placed where the curve equals the
+model’s expected mean for the same responses, and the observed points
+can be compared with the curve as in the other ICC plots. For several
+items, most clearly <code>q3</code>, <code>q4</code> and
+<code>q5</code>, the observed mean is below the curve in the lowest
+interval and above it in the highest, so severity separates persons a
+little more than the model expects.</p>
 </div>
 <div class="section level2">
 <h2 id="local-dependence">Local dependence<a class="anchor" aria-label="anchor" href="#local-dependence"></a>
@@ -621,47 +673,47 @@ draw.</p>
 <span></span>
 <span><span class="va">q3_hu</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/q3_post.html">q3_post</a></span><span class="op">(</span><span class="va">q3_hpcm</span><span class="op">$</span><span class="va">hurdle</span><span class="op">)</span></span>
 <span><span class="va">q3_hu</span><span class="op">$</span><span class="va">summary</span></span>
-<span><span class="co">#&gt; # A tibble: 36 × 7</span></span>
-<span><span class="co">#&gt;    item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;  1 q2 : q6   q2     q6      0.303 -0.002   0.305  1    </span></span>
-<span><span class="co">#&gt;  2 q1 : q2   q1     q2      0.193  0       0.193  1    </span></span>
-<span><span class="co">#&gt;  3 q1 : q6   q1     q6      0.088 -0.001   0.089  0.98 </span></span>
-<span><span class="co">#&gt;  4 q2 : q9   q2     q9      0.089  0       0.089  0.996</span></span>
-<span><span class="co">#&gt;  5 q6 : q9   q6     q9      0.073 -0.001   0.075  0.98 </span></span>
-<span><span class="co">#&gt;  6 q7 : q8   q7     q8      0.073 -0.001   0.075  0.964</span></span>
-<span><span class="co">#&gt;  7 q3 : q4   q3     q4      0.071 -0.001   0.072  0.962</span></span>
-<span><span class="co">#&gt;  8 q5 : q7   q5     q7      0.057  0.001   0.056  0.916</span></span>
-<span><span class="co">#&gt;  9 q4 : q6   q4     q6      0.031 -0.001   0.032  0.832</span></span>
-<span><span class="co">#&gt; 10 q1 : q9   q1     q9      0.031  0.002   0.029  0.81 </span></span>
+<span><span class="co">#&gt; # A tibble: 36 × 8</span></span>
+<span><span class="co">#&gt;    item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp q3_p_adj</span></span>
+<span><span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;  1 q2 : q6   q2     q6      0.303 -0.002   0.305  1        0    </span></span>
+<span><span class="co">#&gt;  2 q1 : q2   q1     q2      0.193  0       0.193  1        0    </span></span>
+<span><span class="co">#&gt;  3 q1 : q6   q1     q6      0.088 -0.001   0.089  0.98     0.25 </span></span>
+<span><span class="co">#&gt;  4 q2 : q9   q2     q9      0.089  0       0.089  0.996    0.056</span></span>
+<span><span class="co">#&gt;  5 q6 : q9   q6     q9      0.073 -0.001   0.075  0.98     0.412</span></span>
+<span><span class="co">#&gt;  6 q7 : q8   q7     q8      0.073 -0.001   0.075  0.964    0.468</span></span>
+<span><span class="co">#&gt;  7 q3 : q4   q3     q4      0.071 -0.001   0.072  0.962    0.578</span></span>
+<span><span class="co">#&gt;  8 q5 : q7   q5     q7      0.057  0.001   0.056  0.916    0.868</span></span>
+<span><span class="co">#&gt;  9 q4 : q6   q4     q6      0.031 -0.001   0.032  0.832    0.996</span></span>
+<span><span class="co">#&gt; 10 q1 : q9   q1     q9      0.031  0.002   0.029  0.81     1    </span></span>
 <span><span class="co">#&gt; # ℹ 26 more rows</span></span>
 <span><span class="va">q3_hu</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-q3-hpcm-1.png" alt="Q3, hurdle submodel" width="100%"><p class="caption">
-Q3, hurdle submodel
+<img src="figures/hpcm-q3-hpcm-1.png" alt="**Figure 9.** *Q3, hurdle submodel*" width="100%"><p class="caption">
+<strong>Figure 9.</strong> <em>Q3, hurdle submodel</em>
 </p>
 </div>
 <div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">q3_sev</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/q3_post.html">q3_post</a></span><span class="op">(</span><span class="va">q3_hpcm</span><span class="op">$</span><span class="va">pcm</span><span class="op">)</span></span>
 <span><span class="va">q3_sev</span><span class="op">$</span><span class="va">summary</span></span>
-<span><span class="co">#&gt; # A tibble: 36 × 7</span></span>
-<span><span class="co">#&gt;    item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp</span></span>
-<span><span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span><span class="co">#&gt;  1 q1 : q2   q1     q2      0.279  0.001   0.278  1    </span></span>
-<span><span class="co">#&gt;  2 q2 : q6   q2     q6      0.195  0.002   0.193  0.994</span></span>
-<span><span class="co">#&gt;  3 q8 : q9   q8     q9      0.182  0.002   0.181  0.818</span></span>
-<span><span class="co">#&gt;  4 q5 : q6   q5     q6      0.162  0.004   0.158  0.964</span></span>
-<span><span class="co">#&gt;  5 q3 : q4   q3     q4      0.133  0       0.133  0.98 </span></span>
-<span><span class="co">#&gt;  6 q7 : q9   q7     q9      0.115 -0.003   0.118  0.788</span></span>
-<span><span class="co">#&gt;  7 q6 : q7   q6     q7      0.1   -0.004   0.104  0.84 </span></span>
-<span><span class="co">#&gt;  8 q3 : q8   q3     q8      0.056  0.001   0.055  0.684</span></span>
-<span><span class="co">#&gt;  9 q1 : q7   q1     q7      0.032 -0.005   0.037  0.658</span></span>
-<span><span class="co">#&gt; 10 q4 : q5   q4     q5      0.033 -0.001   0.034  0.658</span></span>
+<span><span class="co">#&gt; # A tibble: 36 × 8</span></span>
+<span><span class="co">#&gt;    item_pair item_1 item_2 q3_obs q3_rep q3_diff q3_ppp q3_p_adj</span></span>
+<span><span class="co">#&gt;    &lt;chr&gt;     &lt;chr&gt;  &lt;chr&gt;   &lt;dbl&gt;  &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;    &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt;  1 q1 : q2   q1     q2      0.279  0.001   0.278  1        0.004</span></span>
+<span><span class="co">#&gt;  2 q2 : q6   q2     q6      0.195  0.002   0.193  0.994    0.148</span></span>
+<span><span class="co">#&gt;  3 q8 : q9   q8     q9      0.182  0.002   0.181  0.818    0.998</span></span>
+<span><span class="co">#&gt;  4 q5 : q6   q5     q6      0.162  0.004   0.158  0.964    0.614</span></span>
+<span><span class="co">#&gt;  5 q3 : q4   q3     q4      0.133  0       0.133  0.98     0.352</span></span>
+<span><span class="co">#&gt;  6 q7 : q9   q7     q9      0.115 -0.003   0.118  0.788    1    </span></span>
+<span><span class="co">#&gt;  7 q6 : q7   q6     q7      0.1   -0.004   0.104  0.84     0.996</span></span>
+<span><span class="co">#&gt;  8 q3 : q8   q3     q8      0.056  0.001   0.055  0.684    1    </span></span>
+<span><span class="co">#&gt;  9 q1 : q7   q1     q7      0.032 -0.005   0.037  0.658    1    </span></span>
+<span><span class="co">#&gt; 10 q4 : q5   q4     q5      0.033 -0.001   0.034  0.658    1    </span></span>
 <span><span class="co">#&gt; # ℹ 26 more rows</span></span>
 <span><span class="va">q3_sev</span><span class="op">$</span><span class="va">plot</span></span></code></pre></div>
 <div class="figure">
-<img src="figures/hpcm-q3-hpcm-pcm-1.png" alt="Q3, severity submodel" width="100%"><p class="caption">
-Q3, severity submodel
+<img src="figures/hpcm-q3-hpcm-pcm-1.png" alt="**Figure 10.** *Q3, severity submodel*" width="100%"><p class="caption">
+<strong>Figure 10.</strong> <em>Q3, severity submodel</em>
 </p>
 </div>
 <p>The largest residual correlations involve <code>q1</code> (little
@@ -671,6 +723,46 @@ bad about yourself), in both submodels. Q3 is about 0.30 for
 0.28 for <code>q1</code> and <code>q2</code> in the severity submodel.
 These three items share more than the model allows, in whether they are
 reported and in how often.</p>
+</div>
+<div class="section level2">
+<h2 id="presence-and-severity-compared">Presence and severity compared<a class="anchor" aria-label="anchor" href="#presence-and-severity-compared"></a>
+</h2>
+<p>Splitting the model in two shows where the misfit of the PCM comes
+from.</p>
+<ul>
+<li>
+<strong>Item fit.</strong> The flagged misfit is in the hurdle part:
+<code>q3</code> (sleep) and <code>q5</code> (appetite) underfit, and
+<code>q2</code> and <code>q1</code> overfit. The overfitting items are
+the ones in the strongest dependent pairs below, and that dependence
+also makes the other items look more underfit, so the pattern says more
+about the mood items than about sleep or appetite as such. In the
+severity part, the ppp ranges from 0.21 to 0.83, with the highest infit
+for <code>q8</code> and <code>q9</code> (about 1.15), and nothing is
+flagged.</li>
+<li>
+<strong>Local dependence.</strong> The core mood items depend on
+each other in both parts. In the hurdle part, one pair stands out
+(<code>q2</code> and <code>q6</code>, 0.30), followed by <code>q1</code>
+and <code>q2</code> (0.19), and the rest are below 0.1. In the severity
+part, more pairs have residual correlations above 0.1, including
+<code>q8</code> with <code>q9</code>, <code>q5</code> with
+<code>q6</code> and <code>q3</code> with <code>q4</code>, so which
+symptoms occur together frequently is less well described by one
+severity trait than which symptoms occur at all.</li>
+</ul>
+<p>Both comparisons need care. The severity part uses only the responses
+above 0, about a third of all responses here, and 37% of those with any
+such response have only one or two. Its statistics are much less
+certain, and with this sample it has little power to flag misfit or
+dependence. A severity part without flagged items is therefore weak
+evidence that it fits. The posterior predictive p-values in both parts
+are also conservative.</p>
+<!-- Draft note: a brief discussion of why susceptibility and severity can
+differ in local dependence and fit. The user recalls a paper reporting
+that mental disorders are strongly correlated at low symptom levels and
+less correlated at higher levels. Add the reference once found, and
+phrase the link to this example as a possibility, not a finding. -->
 </div>
 <div class="section level2">
 <h2 id="person-locations-and-reliability">Person locations and reliability<a class="anchor" aria-label="anchor" href="#person-locations-and-reliability"></a>
@@ -710,8 +802,8 @@ location only, since that person gave no severity responses.</p>
 <span><span class="co">#&gt;   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval</span></span>
 <span><span class="co">#&gt; 1    0.5777624       0.5348526        0.625631   0.95   mean      hdci</span></span></code></pre></div>
 <p>Reliability is computed per submodel with relative measurement
-uncertainty (Bignardi et al., 2025). For comparison, the RMU reliability
-of the PCM:</p>
+uncertainty <span class="citation">(<a href="#ref-bignardi_general_2025">Bignardi et al. 2025</a>)</span>. For
+comparison, the RMU reliability of the PCM:</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">person_draws_pcm</span> <span class="op">&lt;-</span> <span class="va">fit_pcm</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://mc-stan.org/posterior/reference/draws_df.html" class="external-link">as_draws_df</a></span><span class="op">(</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -767,23 +859,33 @@ gain holds for every item, and is largest for <code>q1</code> and
 smallest for <code>q9</code>, the item most people do not report at
 all.</p>
 </div>
-<div class="section level2">
-<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+<div class="section level2 unnumbered">
+<h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
-<ul>
-<li><p>Bignardi, G., Kievit, R., &amp; Bürkner, P.-C. (2025). A general
-method for estimating reliability using Bayesian Measurement
-Uncertainty. OSF. <a href="https://doi.org/10.31234/osf.io/h54k8_v1" class="external-link uri">https://doi.org/10.31234/osf.io/h54k8_v1</a></p></li>
-<li><p>Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with
-brms and Stan. <em>Journal of Statistical Software</em>, <em>100</em>,
-1–54. <a href="https://doi.org/10.18637/jss.v100.i05" class="external-link uri">https://doi.org/10.18637/jss.v100.i05</a></p></li>
-<li><p>Kroenke, K., Spitzer, R. L., &amp; Williams, J. B. W. (2001). The
-PHQ-9: Validity of a brief depression severity measure. <em>Journal of
-General Internal Medicine</em>, <em>16</em>(9), 606–613. <a href="https://doi.org/10.1046/j.1525-1497.2001.016009606.x" class="external-link uri">https://doi.org/10.1046/j.1525-1497.2001.016009606.x</a></p></li>
-<li><p>Magnus, B. E., &amp; Garnier-Villarreal, M. (2022). A
-multidimensional zero-inflated graded response model for ordinal symptom
-data. <em>Psychological Methods</em>, <em>27</em>(2), 261–279. <a href="https://doi.org/10.1037/met0000395" class="external-link uri">https://doi.org/10.1037/met0000395</a></p></li>
-</ul>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-bignardi_general_2025" class="csl-entry">
+Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2025.
+<em>A General Method for Estimating Reliability Using
+<span>Bayesian</span> <span>Measurement</span>
+<span>Uncertainty</span></em>. OSF. <a href="https://doi.org/10.31234/osf.io/h54k8_v1" class="external-link">https://doi.org/10.31234/osf.io/h54k8_v1</a>.
+</div>
+<div id="ref-burkner_bayesian_2021" class="csl-entry">
+Bürkner, Paul-Christian. 2021. <span>“Bayesian Item Response Modeling in
+<span>R</span> with Brms and <span>Stan</span>.”</span> <em>Journal of
+Statistical Software</em> 100: 1–54. <a href="https://doi.org/10.18637/jss.v100.i05" class="external-link">https://doi.org/10.18637/jss.v100.i05</a>.
+</div>
+<div id="ref-kroenke_phq9_2001" class="csl-entry">
+Kroenke, Kurt, Robert L. Spitzer, and Janet B. W. Williams. 2001.
+<span>“The <span>PHQ-9</span>: <span>Validity</span> of a Brief
+Depression Severity Measure.”</span> <em>Journal of General Internal
+Medicine</em> 16 (9): 606–13. <a href="https://doi.org/10.1046/j.1525-1497.2001.016009606.x" class="external-link">https://doi.org/10.1046/j.1525-1497.2001.016009606.x</a>.
+</div>
+<div id="ref-magnus_multidimensional_2022" class="csl-entry">
+Magnus, Brooke E., and Mauricio Garnier-Villarreal. 2022. <span>“A
+Multidimensional Zero-Inflated Graded Response Model for Ordinal Symptom
+Data.”</span> <em>Psychological Methods</em> 27 (2): 261–79. <a href="https://doi.org/10.1037/met0000395" class="external-link">https://doi.org/10.1037/met0000395</a>.
+</div>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

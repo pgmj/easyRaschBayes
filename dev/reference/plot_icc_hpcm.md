@@ -165,13 +165,18 @@ observed mean response for an item is computed *only* over persons with
 \\Y \> 0\\ on that item, the cells the PCM submodel applies to.
 
 EAPs are shrunk toward the mean and are estimated from the same
-responses that are plotted, so the observed points can sit off the curve
-under good fit. The PCM panel therefore also shows, for each interval,
-the model-expected mean severity for the same responses (orange
-diamonds), computed from
-[`posterior_epred()`](https://mc-stan.org/rstantools/reference/posterior_epred.html)
-and averaged over each person's posterior (up to 200 draws). Compare the
-observed points with the diamonds rather than with the curve.
+responses that are plotted, so a class interval placed at its mean EAP
+would put the observed points off the curve under good fit. Instead, for
+each item and interval the model-expected mean severity for the same
+responses is computed from
+[`posterior_epred()`](https://mc-stan.org/rstantools/reference/posterior_epred.html),
+averaged over each person's posterior (up to 200 draws), and the point
+is placed at the \\\theta\_{pcm}\\ where the item's expected curve
+equals that mean. This is the analogue of placing intervals by inverting
+the expected total score in
+[`plot_icc`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_icc.md).
+The same interval can therefore sit at slightly different
+\\\theta\_{pcm}\\ values for different items.
 
 **Uncertainty.** Each expected curve carries a credible interval ribbon
 at width `prob`. Observed points have \\\pm 1.96\\SE\\ error bars where
