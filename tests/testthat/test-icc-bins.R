@@ -42,3 +42,13 @@ test_that("empty groups and fall back are reported", {
   expect_match(.icc_interval_caption("quantile", 4L, NULL, f, 5),
                "too few distinct sum scores")
 })
+
+test_that(".hpcm_invert_curve finds theta where the curve equals the target", {
+  theta <- seq(-4, 4, length.out = 401)
+  e <- 1 + 2 * stats::plogis(theta)
+  target <- 1 + 2 * stats::plogis(c(-1.5, 0, 0.7))
+  expect_equal(.hpcm_invert_curve(target, theta, e), c(-1.5, 0, 0.7),
+               tolerance = 1e-3)
+  # outside the curve's range: nearest end; NA stays NA
+  expect_equal(.hpcm_invert_curve(c(0.5, 3.5, NA), theta, e), c(-4, 4, NA))
+})

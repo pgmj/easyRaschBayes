@@ -4,12 +4,23 @@
 \alias{q3_statistic}
 \title{Posterior Predictive Q3 Residual Correlations for Bayesian IRT Models}
 \usage{
-q3_statistic(model, item_var = item, person_var = id, ndraws_use = NULL)
+q3_statistic(
+  model,
+  item_var = item,
+  person_var = id,
+  ndraws_use = NULL,
+  method = c("conditional", "theta")
+)
 }
 \arguments{
-\item{model}{A fitted \code{\link[brms]{brmsfit}} object from an
-ordinal IRT model (e.g., \code{family = acat} for a partial credit
-model) or a dichotomous model (\code{family = bernoulli()}).}
+\item{model}{A fitted \code{\link[brms]{brmsfit}} object. For
+\code{method = "conditional"} it must be a Rasch-family model in which
+the total score is sufficient for the person location:
+\code{family = acat} (partial credit or rating scale model) or
+\code{family = bernoulli()} (dichotomous Rasch model), both with the
+logit link, a person random intercept \code{(1 | id)}, and no
+\code{disc} term. \code{method = "theta"} accepts any ordinal or
+Bernoulli model.}
 
 \item{item_var}{An unquoted variable name identifying the item grouping
 variable in the model data. Default is \code{item}.}
@@ -20,6 +31,11 @@ grouping variable in the model data. Default is \code{id}.}
 \item{ndraws_use}{Optional positive integer. If specified, a random
 subset of posterior draws of this size is used. If \code{NULL} (the
 default), all draws are used.}
+
+\item{method}{Either \code{"conditional"} (the default), with expected
+responses conditional on the total score, or \code{"theta"}, with
+expected responses given each draw's person locations, as in
+easyRaschBayes 0.3.0.}
 }
 \value{
 A \code{\link[tibble]{tibble}} in long format with one row
@@ -44,26 +60,58 @@ detecting local dependence between item pairs in Rasch-family models
 fitted with \pkg{brms}. For each posterior draw, residual correlations
 are computed for both observed and replicated data, yielding draw-level
 Q3 values that can be summarized and visualized via
-\code{\link{q3_post}}.
+\code{\link{q3_post}}. By default (\code{method = "conditional"}) the
+residuals are taken from the expected responses given each person's
+total score, and the replicated data keep each person's observed total
+score. With \code{method = "theta"} they are computed given each draw's
+person locations instead.
 }
 \details{
-The procedure works as follows for each posterior draw \eqn{s}:
+\strong{Conditional method.} Under a Rasch-family model the total score
+is sufficient for the person location, so the distribution of a
+person's responses given the total does not depend on the location. For
+each posterior draw \eqn{s}, the expected response
+\eqn{E^{(s)}(X_{vi} \mid R_v)} given the total score \eqn{R_v} is
+computed from the item parameters of that draw with elementary
+symmetric functions. The observed residuals are
+\eqn{X_{vi} - E^{(s)}(X_{vi} \mid R_v)}. Replicated responses are
+drawn given each person's total score, and their residuals use the same
+expected values. Persons with the minimum or maximum total score have
+no residual variation and do not contribute.
 
-\enumerate{
-\item Compute expected values \eqn{E^{(s)}_{vi}} from the category
-probabilities returned by \code{\link[brms]{posterior_epred}}.
-For ordinal models: \eqn{E^{(s)}_{vi} = \sum_c c \cdot
-    P^{(s)}(X_{vi} = c)}. For binary models: \eqn{E^{(s)}_{vi} =
-    P^{(s)}(X_{vi} = 1)}.
-\item Compute observed residuals: \eqn{d^{(s)}_{vi} = X_{vi} -
-    E^{(s)}_{vi}}.
-\item Compute replicated residuals: \eqn{d^{rep(s)}_{vi} =
-    Y^{rep(s)}_{vi} - E^{(s)}_{vi}}, where \eqn{Y^{rep}} is drawn
-via \code{\link[brms]{posterior_predict}}.
-\item For each item pair \eqn{(i, j)}, compute Q3 as the Pearson
-correlation of residuals across all persons who responded to
-both items.
-}
+Given the total score, a person's residuals sum to 0, so the observed
+Q3 values centre on about \eqn{-1/(k-1)} with \eqn{k} items, not on 0
+(Christensen et al., 2017). The replicated Q3 values have the same
+centre, so the comparison of observed and replicated Q3 is not affected,
+and \code{q3_diff} in \code{\link{q3_post}} centres on 0.
+
+\strong{Theta method.} For each draw, the expected responses
+\eqn{E^{(s)}_{vi}} are computed from the category probabilities of
+\code{\link[brms]{posterior_epred}}, given the draw's person locations.
+The observed residuals are \eqn{X_{vi} - E^{(s)}_{vi}}, and the
+replicated residuals use responses from
+\code{\link[brms]{posterior_predict}} for the same draw. Because the
+person locations are posterior draws rather than point estimates, the
+observed Q3 values centre on 0 under the model, as the replicated values
+do.
+
+With both methods, Q3 for an item pair is the Pearson correlation of
+the residuals across all persons who responded to both items.
+
+\strong{Calibration.} In simulations under a fitting Rasch model
+(dichotomous and partial credit models, 300 and 1000 persons, 8 or 10
+items), the conditional ppp from \code{\link{q3_post}} was close to
+uniform: 4.2\\% to 4.9\\% of item pairs had \code{q3_ppp} above .95. The
+theta method was conservative, with 1.9\\% to 3.1\\%, because the person
+locations are drawn given the observed responses. With many item pairs,
+some pair will usually exceed .95 by chance. The adjusted
+\code{q3_p_adj} in \code{\link{q3_post}} accounts for this. Under the
+conditional method, the proportion of simulated datasets with any pair
+flagged by it at .05 was 3.5\\% to 5.3\\% (two runs of 200 datasets per
+condition, pooled).
+
+Replication uses random numbers, so call \code{set.seed()} first for
+reproducible results.
 }
 \examples{
 \donttest{

@@ -16,3 +16,9 @@ vignettes/fits/
 dev/results/null_restscore/
 dev/*.log
 Rplots.pdf
+dev/results/null_q3/
+dev/results/null_q3_smoke/
+dev/results/null_q3_global/
+dev/results/null_q3_global_smoke/
+dev/results/null_infit_adj/
+dev/results/null_infit_adj_smoke/

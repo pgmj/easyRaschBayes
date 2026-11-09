@@ -2278,12 +2278,16 @@ RMUreliability_hpcm <- function(x,
 #' that item, the cells the PCM submodel applies to.
 #'
 #' EAPs are shrunk toward the mean and are estimated from the same
-#' responses that are plotted, so the observed points can sit off the
-#' curve under good fit. The PCM panel therefore also shows, for each
-#' interval, the model-expected mean severity for the same responses
-#' (orange diamonds), computed from \code{posterior_epred()} and
-#' averaged over each person's posterior (up to 200 draws). Compare the
-#' observed points with the diamonds rather than with the curve.
+#' responses that are plotted, so a class interval placed at its mean
+#' EAP would put the observed points off the curve under good fit.
+#' Instead, for each item and interval the model-expected mean severity
+#' for the same responses is computed from \code{posterior_epred()},
+#' averaged over each person's posterior (up to 200 draws), and the
+#' point is placed at the \eqn{\theta_{pcm}} where the item's expected
+#' curve equals that mean. This is the analogue of placing intervals by
+#' inverting the expected total score in \code{\link{plot_icc}}. The
+#' same interval can therefore sit at slightly different
+#' \eqn{\theta_{pcm}} values for different items.
 #'
 #' \strong{Uncertainty.} Each expected curve carries a credible
 #' interval ribbon at width \code{prob}. Observed points have
@@ -2613,6 +2617,22 @@ plot_icc_hpcm <- function(model,
     expected_obs   = pcm_expected_obs
   )
 
+  # Place each severity point where the item's expected curve equals the
+  # model-expected mean for the same responses, as plot_icc() places
+  # class intervals by inverting the expected total score. The expected
+  # mean then lies on the curve, and the observed mean is compared with
+  # the curve. Bins on shrunk EAPs would otherwise sit at the wrong x.
+  if (!is.null(pcm_observed_data) && nrow(pcm_observed_data) > 0) {
+    for (item_label in unique(pcm_observed_data$item)) {
+      rows  <- which(pcm_observed_data$item == item_label)
+      curve <- pcm_expected_data[pcm_expected_data$item == item_label, ,
+                                 drop = FALSE]
+      pcm_observed_data$theta[rows] <- .hpcm_invert_curve(
+        pcm_observed_data$expected[rows], curve$theta, curve$e_score
+      )
+    }
+  }
+
   # ---------------------------------------------------------------
   # Build ggplot objects
   # ---------------------------------------------------------------
@@ -2690,15 +2710,6 @@ plot_icc_hpcm <- function(model,
           mapping = ggplot2::aes(x = .data$theta, y = .data$response),
           colour = "#1F78B4", size = point_size
         )
-      if (any(is.finite(observed_data$expected))) {
-        p <- p + ggplot2::geom_point(
-          data = observed_data[is.finite(observed_data$expected), ,
-                               drop = FALSE],
-          mapping = ggplot2::aes(x = .data$theta, y = .data$expected),
-          shape = 23, fill = "white", colour = "#D55E00",
-          size = point_size, stroke = 0.9
-        )
-      }
     }
 
     p +
@@ -2741,16 +2752,29 @@ plot_icc_hpcm <- function(model,
     error_ceil    = pcm_max_cat
   ) +
     ggplot2::labs(caption = .erb_caption(paste(
-      "Blue circles: observed mean severity in each class interval of",
-      "the severity EAP, among responses above 0, with 95% intervals.",
-      "Orange diamonds: the model-expected mean for the same responses,",
-      "averaged over each person's posterior. Compare the circles with",
-      "the diamonds. The curve is evaluated at the mean EAP of each",
-      "interval, and EAPs are shrunk toward the mean, so the circles can",
-      "sit off the curve when the model fits."))) +
+      "Points: observed mean severity in each class interval of the",
+      "severity EAP, among responses above 0, with 95% intervals. Each",
+      "point is placed where the curve equals the model-expected mean",
+      "for the same responses."))) +
     .erb_caption_theme()
 
   list(hurdle = hurdle_plot, pcm = pcm_plot)
+}
+
+
+# Invert a monotone expected-score curve: the theta at which the curve
+# equals each value in `target`. Values outside the curve's range are
+# placed at the nearest end of the theta grid.
+#' @keywords internal
+.hpcm_invert_curve <- function(target, theta, e_score) {
+  ord <- order(theta)
+  theta <- theta[ord]
+  e_score <- cummax(e_score[ord])  # guard against numerical wiggles
+  out <- rep(NA_real_, length(target))
+  ok <- is.finite(target)
+  out[ok] <- stats::approx(e_score, theta, xout = target[ok],
+                           rule = 2, ties = mean)$y
+  out
 }
 
 
@@ -2881,16 +2905,14 @@ plot_icc_hpcm <- function(model,
 
 #' Person-Item Targeting Plot for the Hurdle Partial Credit Model
 #'
-#' Builds two person-item targeting plots — one for each submodel of a
-#' hurdle partial credit model fitted with the \code{\link{hurdle_acat}}
-#' custom family. Each plot is a three-panel \pkg{patchwork} stack with
-#' the same anatomy as \code{\link{plot_targeting}}: a person histogram,
-#' an inverted item-location histogram, and a dot-and-whisker by item.
-#' Returning two plots — one for the presence trait
-#' \eqn{(\theta_{hurdle}, \delta_{hurdle})} and one for the severity
-#' trait \eqn{(\theta_{pcm}, \tau_{ik})} — reflects the fact that the
-#' two submodels live on distinct latent scales and should be inspected
-#' on their own axes.
+#' Builds two person-item targeting plots, one for each part of a hurdle
+#' partial credit model fitted with the \code{\link{hurdle_acat}} custom
+#' family, with the same design as \code{\link{plot_targeting}}: a person
+#' histogram, an inverted histogram of the item locations, and a bottom
+#' panel with response-category bands or a dot-and-whisker plot of the
+#' thresholds. The presence part \eqn{(\theta_{hurdle}, \delta_{hurdle})}
+#' and the severity part \eqn{(\theta_{pcm}, \tau_{ik})} are different
+#' latent variables, so each gets its own plot and axis.
 #'
 #' @param model A fitted \code{\link[brms]{brmsfit}} object using the
 #'   \code{\link{hurdle_acat}} custom family.
@@ -2898,82 +2920,79 @@ plot_icc_hpcm <- function(model,
 #'   grouping variable in the model data. Default is \code{item}.
 #' @param person_var An unquoted variable name identifying the person
 #'   grouping variable in the model data. Default is \code{id}.
-#' @param robust Logical. If \code{TRUE}, the central tendency / spread
-#'   markers in the histogram panels use median \eqn{\pm} MAD instead
-#'   of mean \eqn{\pm} SD. Default is \code{FALSE}.
-#' @param center Logical. If \code{TRUE} (the default), each submodel
-#'   is recentered so the mean item parameter is zero, with the
-#'   corresponding person trait shifted by the same constant —
-#'   matching \code{\link{item_parameters_hpcm}} and
+#' @param robust Logical. If \code{TRUE}, the histogram panels mark the
+#'   median and MAD instead of the mean and SD. Default is \code{FALSE}.
+#' @param center Logical. If \code{TRUE} (the default), each part is
+#'   shifted so that its mean item location is zero, with the person
+#'   locations shifted by the same constant, as in
+#'   \code{\link{item_parameters_hpcm}} and
 #'   \code{\link{person_parameters_hpcm}}.
-#' @param sort_items One of \code{"data"} (default) or \code{"location"},
-#'   controlling the ordering of items in the dot-and-whisker panel.
-#' @param bins Integer. Number of histogram bins. Default is 30.
-#' @param prob Numeric in \eqn{(0, 1)}. Width of the credible interval
-#'   shown as horizontal whiskers in the dot-and-whisker panel.
-#'   Default is 0.95.
-#' @param palette An optional character vector of colours for the
-#'   threshold-category dot-and-whisker scale. If \code{NULL}, viridis
-#'   is used. Applied to both submodels.
-#' @param person_fill Fill colour for the person histograms. Default
-#'   \code{"#0072B2"}.
-#' @param threshold_fill Fill colour for the threshold histograms.
-#'   Default \code{"#D55E00"}.
-#' @param height_ratios A numeric vector of length 3 giving the
-#'   relative heights of the (person, threshold, dot-and-whisker)
-#'   panels. Default \code{c(3, 2, 5)}.
+#' @param sort_items Character. \code{"data"} (the default) keeps the
+#'   data order, first item at the top. \code{"location"} sorts by mean
+#'   item location, easiest item at the top.
+#' @param bins Integer. Number of histogram bins. Default as in
+#'   \code{\link{plot_targeting}}.
+#' @param prob Numeric in \eqn{(0, 1)}. Width of the credible intervals of
+#'   the item locations and of the intervals in the returned tables.
+#'   Default is 0.95. \code{NULL} hides the intervals in the plots.
+#' @param palette An optional character vector of colours, one per
+#'   response category. Overrides the viridis colours.
+#' @param person_fill,threshold_fill Fill colours for the person and item
+#'   location histograms.
+#' @param height_ratios Numeric vector of length 3 giving the relative
+#'   heights of the three panels. Default is \code{c(3, 2, 5)}.
+#' @param panel Character. \code{"categories"} (the default) draws each
+#'   item as a bar partitioned into response-category bands.
+#'   \code{"thresholds"} draws a dot-and-whisker plot.
+#' @param xlim Numeric vector of length 2. Initial limits of the x-axis,
+#'   widened to whole numbers if needed. Default is \code{c(-4, 4)}.
+#' @param category_labels Optional list with elements \code{hurdle} (two
+#'   labels) and/or \code{pcm} (one label per severity category, starting
+#'   at category 1). Defaults are \code{c("0", "1+")} for the hurdle part
+#'   and the category scores for the severity part.
+#' @param viridis_option,viridis_begin,viridis_end Viridis palette for the
+#'   category colours, as in \code{\link{plot_targeting}}.
+#' @param row_gap Numeric. Vertical spacing between item rows in the
+#'   \code{"categories"} panel. Default \code{NULL} chooses it from the
+#'   number of collapsed categories and disordered thresholds.
+#' @param output Character. \code{"patchwork"} (the default) returns the
+#'   two combined plots. \code{"list"} returns, for each part, the three
+#'   panels and the posterior summaries of the category structure.
 #'
-#' @return A list with two elements:
-#' \describe{
-#'   \item{\code{hurdle}}{A \pkg{patchwork} object stacking the
-#'     \eqn{\theta_{hurdle}} histogram, the \eqn{\delta_{hurdle}}
-#'     histogram (inverted), and the per-item hurdle difficulty
-#'     dot-and-whisker with the credible interval given by
-#'     \code{prob}.}
-#'   \item{\code{pcm}}{A \pkg{patchwork} object with the same anatomy
-#'     for the partial credit submodel: \eqn{\theta_{pcm}} histogram,
-#'     PCM threshold histogram (inverted), and a per-item
-#'     dot-and-whisker with one row per item and one coloured marker
-#'     per threshold within item. Persons who answered 0 on every item
-#'     gave no severity responses and are left out of the
-#'     \eqn{\theta_{pcm}} histogram, with a caption giving their
-#'     number.}
-#' }
+#' @return With \code{output = "patchwork"}, a list with elements
+#'   \code{hurdle} and \code{pcm}, each a \pkg{patchwork} object. With
+#'   \code{output = "list"}, the same two elements, each a list with
+#'   \code{p1}, \code{p2}, \code{p3}, \code{categories} and
+#'   \code{disordered} as described in \code{\link{plot_targeting}}. In the
+#'   severity part, categories are numbered from 1.
 #'
 #' @details
-#' \strong{Hurdle scale.} The presence person trait is taken as
-#' \eqn{\theta_{hurdle, v} = -r_{id}(v, \texttt{hu\_Intercept})}
-#' (the brms random effect on \code{hu} with its sign flipped, so
-#' higher values mean greater presence). Hurdle item difficulties are
-#' \eqn{\delta_{hurdle, i} = b_{hu\_factoritem, i}} directly (higher
-#' values = more zeros = harder hurdle to cross). Under this
-#' convention, \eqn{P(Y_{vi} > 0) =
-#' \mathrm{plogis}(\theta_{hurdle, v} - \delta_{hurdle, i})}, and the
-#' histograms are directly comparable on a single x-axis.
+#' \strong{Hurdle part.} The person location is the posterior mean of the
+#' brms random effect on \code{hu} with its sign flipped, so that higher
+#' values mean a symptom is more likely to be present. The item location
+#' is the hurdle item effect, where higher values mean more zeros. Then
+#' \eqn{P(Y_{vi} > 0) = \mathrm{plogis}(\theta_{hurdle, v} -
+#' \delta_{hurdle, i})}, a dichotomous Rasch model, and each item has two
+#' bands: 0 and any response above 0.
 #'
-#' \strong{Partial credit scale.} The severity person trait is
-#' \eqn{\theta_{pcm, v} = r_{id}(v, \texttt{Intercept})}, and per-item
-#' thresholds are \eqn{\tau_{ik} = b_{\texttt{Intercept}[i, k]}}. The
-#' middle histogram aggregates thresholds across items and threshold
-#' indices, exactly as in \code{\link{plot_targeting}}.
+#' \strong{Severity part.} The person location is the posterior mean of
+#' the random intercept, and the thresholds are those of the partial
+#' credit model for the responses above 0. The bands show the severity
+#' categories 1 and up. Persons who answered 0 on every item gave no
+#' severity responses, so their severity location comes from the prior
+#' and the correlation with the hurdle location only. They are left out
+#' of the severity person histogram, and the caption gives their number.
 #'
-#' \strong{Independent centering per submodel.} When \code{center =
-#' TRUE}, the hurdle is shifted by \eqn{\overline{\delta_{hurdle}}}
-#' and the PCM by \eqn{\overline{\tau}} (a different constant per
-#' submodel). The two resulting x-axes therefore have a shared origin
-#' interpretation (mean item parameter = 0) but cannot be combined on
-#' a single axis — these are different latent traits.
+#' Category bands, red marks for categories that are never the most
+#' likely response and for disordered thresholds, and their posterior
+#' probabilities are computed as in \code{\link{plot_targeting}}.
 #'
-#' \strong{Combining the two plots.} Each list element is a valid
-#' \pkg{patchwork} object, so they can be combined with the usual
-#' operators:
+#' \strong{Combining the two plots.} Each element is a \pkg{patchwork}
+#' object:
 #' \preformatted{
 #' plots <- plot_targeting_hpcm(fit)
 #' patchwork::wrap_plots(plots$hurdle, plots$pcm, ncol = 2)
 #' }
-#' For a tall, single-column layout, prefer
-#' \code{wrap_plots(..., ncol = 1)} so each submodel keeps its own
-#' three-panel column.
 #'
 #' @references
 #' Wright, B. D. & Stone, M. H. (1979). \emph{Best Test Design}.
@@ -2985,26 +3004,34 @@ plot_icc_hpcm <- function(model,
 #' \doi{10.1037/met0000395}
 #'
 #' @seealso
-#' \code{\link{plot_targeting}} for the single-submodel version,
+#' \code{\link{plot_targeting}} for the standard Rasch models,
 #' \code{\link{item_parameters_hpcm}},
 #' \code{\link{person_parameters_hpcm}}.
 #'
 #' @importFrom brms as_draws_df ranef
 #' @importFrom rlang enquo as_name .data
-#' @importFrom stats family quantile sd mad median aggregate
+#' @importFrom stats family
 #' @export
 plot_targeting_hpcm <- function(model,
-                                item_var       = item,
-                                person_var     = id,
-                                robust         = FALSE,
-                                center         = TRUE,
-                                sort_items     = c("data", "location"),
-                                bins           = 30,
-                                prob           = 0.95,
-                                palette        = NULL,
-                                person_fill    = "#0072B2",
-                                threshold_fill = "#D55E00",
-                                height_ratios  = c(3, 2, 5)) {
+                                item_var        = item,
+                                person_var      = id,
+                                robust          = FALSE,
+                                center          = TRUE,
+                                sort_items      = c("data", "location"),
+                                bins,
+                                prob            = 0.95,
+                                palette         = NULL,
+                                person_fill     = "#0072B2",
+                                threshold_fill  = "#D55E00",
+                                height_ratios   = c(3, 2, 5),
+                                panel           = c("categories", "thresholds"),
+                                xlim            = c(-4, 4),
+                                category_labels = NULL,
+                                viridis_option  = "G",
+                                viridis_begin   = 0.9,
+                                viridis_end     = 0.2,
+                                row_gap         = NULL,
+                                output          = c("patchwork", "list")) {
 
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("Package 'ggplot2' is required.", call. = FALSE)
@@ -3026,6 +3053,8 @@ plot_targeting_hpcm <- function(model,
   }
 
   sort_items  <- match.arg(sort_items)
+  panel       <- match.arg(panel)
+  output      <- match.arg(output)
   item_name   <- rlang::as_name(rlang::enquo(item_var))
   person_name <- rlang::as_name(rlang::enquo(person_var))
 
@@ -3037,18 +3066,33 @@ plot_targeting_hpcm <- function(model,
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
   }
-
-  lower_prob <- (1 - prob) / 2
-  upper_prob <- 1 - lower_prob
+  if (!is.null(category_labels) &&
+      (!is.list(category_labels) ||
+       !all(names(category_labels) %in% c("hurdle", "pcm")))) {
+    stop("`category_labels` must be a list with elements `hurdle` and/or ",
+         "`pcm`.", call. = FALSE)
+  }
+  show_ci <- !is.null(prob)
+  ci_prob <- if (show_ci) prob else 0.95
+  if (missing(bins)) bins <- NULL
+  data_order <- as.character(unique(model$data[[item_name]]))
 
   # ---------------------------------------------------------------
-  # Item-order in data order (for sort_items = "data")
+  # Item parameter draws per part, centred
   # ---------------------------------------------------------------
-  unique_items_data_order <- unique(model$data[[item_name]])
-  unique_items            <- sort(unique(model$data[[item_name]]))
+  draws <- brms::as_draws_df(model)
+  item_levels <- .item_levels(model, item_name)
+  tau_pcm <- .item_tau_draws(draws, item_levels, item_name, TRUE)
+  hu_draws <- .extract_hurdle_item_draws(draws, item_levels, item_name)
+  tau_hu <- lapply(hu_draws, function(v) matrix(v, ncol = 1L))
+
+  pcm_shift <- if (center) mean(unlist(lapply(tau_pcm, colMeans))) else 0
+  hu_shift  <- if (center) mean(vapply(hu_draws, mean, numeric(1))) else 0
+  tau_pcm <- lapply(tau_pcm, function(m) m - pcm_shift)
+  tau_hu  <- lapply(tau_hu,  function(m) m - hu_shift)
 
   # ---------------------------------------------------------------
-  # Person random effects -> theta_hurdle (sign-flipped) and theta_pcm
+  # Person locations (EAP)
   # ---------------------------------------------------------------
   person_re <- brms::ranef(model)[[person_name]]
   if (is.null(person_re)) {
@@ -3056,62 +3100,18 @@ plot_targeting_hpcm <- function(model,
          call. = FALSE)
   }
   re_params <- dimnames(person_re)[[3]]
-  pcm_param <- "Intercept"
-  hu_param  <- grep("hu_?[Ii]ntercept|hu_Intercept",
-                    re_params, value = TRUE)
-  if (!(pcm_param %in% re_params) || length(hu_param) == 0L) {
+  hu_param  <- grep("hu_?[Ii]ntercept", re_params, value = TRUE)
+  if (!("Intercept" %in% re_params) || length(hu_param) == 0L) {
     stop("Could not locate both PCM and hurdle random effects in ",
          "ranef(model). Found: ",
          paste(re_params, collapse = ", "), call. = FALSE)
   }
-  pcm_theta_raw <- as.numeric(person_re[, "Estimate", pcm_param])
-  hu_theta_raw  <- -as.numeric(person_re[, "Estimate", hu_param[1]])
+  pcm_theta <- as.numeric(person_re[, "Estimate", "Intercept"]) - pcm_shift
+  hu_theta  <- -as.numeric(person_re[, "Estimate", hu_param[1]]) - hu_shift
 
-  # ---------------------------------------------------------------
-  # Threshold data per submodel (item, category, estimate, lower, upper)
-  # ---------------------------------------------------------------
-  draws <- brms::as_draws_df(model)
-
-  # PCM thresholds: reuse existing helper from plot_targeting
-  pcm_threshold_data <- .extract_threshold_data(
-    draws, model, unique_items, item_name, person_name,
-    is_ordinal = TRUE,
-    lower_prob = lower_prob, upper_prob = upper_prob
-  )
-
-  # Hurdle "thresholds": one per item (Bernoulli has a single transition)
-  hu_draws_per_item <- .extract_hurdle_item_draws(
-    draws, unique_items, item_name
-  )
-  hu_threshold_data <- do.call(rbind, lapply(
-    names(hu_draws_per_item),
-    function(item_label) {
-      vals <- hu_draws_per_item[[item_label]]
-      data.frame(
-        item     = item_label,
-        category = "1",
-        estimate = mean(vals),
-        lower    = stats::quantile(vals, probs = lower_prob),
-        upper    = stats::quantile(vals, probs = upper_prob),
-        stringsAsFactors = FALSE
-      )
-    }
-  ))
-  rownames(hu_threshold_data) <- NULL
-
-  # ---------------------------------------------------------------
-  # Centering shifts (independent per submodel)
-  # ---------------------------------------------------------------
-  pcm_shift <- if (center) mean(pcm_threshold_data$estimate) else 0
-  hu_shift  <- if (center) mean(hu_threshold_data$estimate)  else 0
-
-  pcm_threshold_data$estimate <- pcm_threshold_data$estimate - pcm_shift
-  pcm_threshold_data$lower    <- pcm_threshold_data$lower    - pcm_shift
-  pcm_threshold_data$upper    <- pcm_threshold_data$upper    - pcm_shift
-  pcm_theta <- pcm_theta_raw - pcm_shift
   # Persons who answered 0 on every item gave no severity responses, so
   # their severity EAP comes from the prior and the correlation with the
-  # hurdle trait only. Leave them out of the severity histogram.
+  # hurdle location only. Leave them out of the severity histogram.
   resp_var <- as.character(stats::formula(model)$formula[[2]])
   if (length(resp_var) > 1) resp_var <- resp_var[2]
   y_scores <- .hpcm_response_scores(model$data[[resp_var]])
@@ -3121,228 +3121,54 @@ plot_targeting_hpcm <- function(model,
   n_inactive <- sum(!active)
   pcm_theta <- pcm_theta[active]
 
-  hu_threshold_data$estimate <- hu_threshold_data$estimate - hu_shift
-  hu_threshold_data$lower    <- hu_threshold_data$lower    - hu_shift
-  hu_threshold_data$upper    <- hu_threshold_data$upper    - hu_shift
-  hu_theta <- hu_theta_raw - hu_shift
-
-  x_label <- if (center) {
-    expression("Centered latent variable" ~ (theta))
+  # ---------------------------------------------------------------
+  # Panels
+  # ---------------------------------------------------------------
+  common <- list(
+    person_label = "EAP", data_order = data_order, center = center,
+    robust = robust, sort_items = sort_items, bins = bins,
+    show_ci = show_ci, ci_prob = ci_prob, palette = palette,
+    person_fill = person_fill, threshold_fill = threshold_fill,
+    panel = panel, xlim = xlim, viridis_option = viridis_option,
+    viridis_begin = viridis_begin, viridis_end = viridis_end,
+    row_gap = row_gap
+  )
+  hu_labels <- if (!is.null(category_labels$hurdle)) {
+    category_labels$hurdle
   } else {
-    expression("Latent variable" ~ (theta))
+    c("0", "1+")
   }
-
-  # ---------------------------------------------------------------
-  # Assemble the two 3-panel patchworks
-  # ---------------------------------------------------------------
-  hurdle_plot <- .assemble_targeting_plot(
-    person_theta    = hu_theta,
-    threshold_data  = hu_threshold_data,
-    robust          = robust,
-    bins            = bins,
-    x_label         = x_label,
-    person_fill     = person_fill,
-    threshold_fill  = threshold_fill,
-    height_ratios   = height_ratios,
-    sort_items      = sort_items,
-    item_order_data = unique_items_data_order,
-    palette         = palette,
-    subtitle        = "Hurdle"
-  )
-
-  pcm_plot <- .assemble_targeting_plot(
-    person_theta    = pcm_theta,
-    threshold_data  = pcm_threshold_data,
-    robust          = robust,
-    bins            = bins,
-    x_label         = x_label,
-    person_fill     = person_fill,
-    threshold_fill  = threshold_fill,
-    height_ratios   = height_ratios,
-    sort_items      = sort_items,
-    item_order_data = unique_items_data_order,
-    palette         = palette,
-    subtitle        = "PCM"
-  )
+  hurdle <- do.call(.targeting_build, c(common, list(
+    tau = tau_hu, person_theta = hu_theta[is.finite(hu_theta)],
+    n_persons = length(hu_theta), category_labels = hu_labels,
+    cat_offset = 0L,
+    extra_caption = paste(
+      "Hurdle part: the bands show a response of 0 and any response",
+      "above 0 (1+).")
+  )))
+  pcm_extra <- "Severity part: categories above 0."
   if (n_inactive > 0) {
-    pcm_plot <- pcm_plot + patchwork::plot_annotation(
-      caption = .erb_caption(paste0(
-        "The person histogram shows the ", sum(active), " persons with at ",
-        "least one response above 0. ", n_inactive, " persons who answered ",
-        "0 on every item are left out, since they gave no severity ",
-        "responses.")),
-      theme = .erb_caption_theme()
-    )
+    pcm_extra <- paste0(
+      pcm_extra, " The person histogram leaves out ", n_inactive,
+      " persons who answered 0 on every item, since they gave no severity ",
+      "responses.")
   }
+  pcm <- do.call(.targeting_build, c(common, list(
+    tau = tau_pcm, person_theta = pcm_theta[is.finite(pcm_theta)],
+    n_persons = sum(active), category_labels = category_labels$pcm,
+    cat_offset = 1L, extra_caption = pcm_extra
+  )))
 
-  list(hurdle = hurdle_plot, pcm = pcm_plot)
+  if (output == "list") {
+    return(list(hurdle = hurdle, pcm = pcm))
+  }
+  stack <- function(b) {
+    b$p1 / b$p2 / b$p3 + patchwork::plot_layout(heights = height_ratios)
+  }
+  list(hurdle = stack(hurdle), pcm = stack(pcm))
 }
 
 
-# ── Internal: assemble a single 3-panel targeting patchwork ──────
-#
-# All inputs assumed already centered. Mirrors the panel anatomy of
-# plot_targeting(): person histogram on top, inverted threshold
-# histogram in the middle, dot-and-whisker by item on the bottom.
-#' @keywords internal
-.assemble_targeting_plot <- function(person_theta,
-                                     threshold_data,
-                                     robust,
-                                     bins,
-                                     x_label,
-                                     person_fill,
-                                     threshold_fill,
-                                     height_ratios,
-                                     sort_items,
-                                     item_order_data,
-                                     palette,
-                                     subtitle = NULL) {
-
-  # ---- summary stats ----
-  if (robust) {
-    p_center <- stats::median(person_theta)
-    p_spread <- stats::mad(person_theta)
-    t_center <- stats::median(threshold_data$estimate)
-    t_spread <- stats::mad(threshold_data$estimate)
-    center_label <- "Median"
-    spread_label <- "MAD"
-  } else {
-    p_center <- mean(person_theta)
-    p_spread <- stats::sd(person_theta)
-    t_center <- mean(threshold_data$estimate)
-    t_spread <- stats::sd(threshold_data$estimate)
-    center_label <- "Mean"
-    spread_label <- "SD"
-  }
-
-  # ---- shared x-axis limits ----
-  all_values <- c(person_theta,
-                  threshold_data$estimate,
-                  threshold_data$lower,
-                  threshold_data$upper)
-  x_range <- range(all_values, na.rm = TRUE)
-  x_pad   <- diff(x_range) * 0.05
-  x_lim   <- c(x_range[1] - x_pad, x_range[2] + x_pad)
-
-  # ---- top panel: person histogram ----
-  person_df <- data.frame(theta = person_theta)
-  p_top <- ggplot2::ggplot(person_df,
-                           ggplot2::aes(x = .data$theta)) +
-    ggplot2::geom_histogram(bins = bins, fill = person_fill,
-                            colour = "white", alpha = 0.85) +
-    ggplot2::annotate(
-      "rect",
-      xmin = p_center - p_spread, xmax = p_center + p_spread,
-      ymin = -Inf, ymax = Inf,
-      fill = person_fill, alpha = 0.12
-    ) +
-    ggplot2::geom_vline(xintercept = p_center, linewidth = 0.8,
-                        linetype = "dashed", colour = "grey20") +
-    ggplot2::annotate(
-      "text", x = p_center, y = Inf, vjust = -0.5,
-      label = paste0(center_label, " = ", round(p_center, 2),
-                     ", ", spread_label, " = ", round(p_spread, 2)),
-      size = 3.2, colour = "grey20"
-    ) +
-    ggplot2::scale_y_continuous(
-      breaks = function(lim) {
-        seq(0, floor(lim[2]), by = max(1, round(lim[2] / 6)))
-      }
-    ) +
-    ggplot2::coord_cartesian(xlim = x_lim, clip = "off") +
-    ggplot2::labs(x = NULL, y = "Persons") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      axis.text.x  = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
-      plot.margin  = ggplot2::margin(5, 5, 0, 5)
-    )
-
-  # ---- middle panel: inverted threshold histogram ----
-  thresh_hist_df <- data.frame(location = threshold_data$estimate)
-  p_mid <- ggplot2::ggplot(thresh_hist_df,
-                           ggplot2::aes(x = .data$location)) +
-    ggplot2::geom_histogram(bins = bins, fill = threshold_fill,
-                            colour = "white", alpha = 0.85) +
-    ggplot2::annotate(
-      "rect",
-      xmin = t_center - t_spread, xmax = t_center + t_spread,
-      ymin = -Inf, ymax = Inf,
-      fill = threshold_fill, alpha = 0.12
-    ) +
-    ggplot2::geom_vline(xintercept = t_center, linewidth = 0.8,
-                        linetype = "dashed", colour = "grey20") +
-    ggplot2::annotate(
-      "text", x = t_center, y = -Inf, vjust = 1.5,
-      label = paste0(center_label, " = ", round(t_center, 2),
-                     ", ", spread_label, " = ", round(t_spread, 2)),
-      size = 3.2, colour = "grey20"
-    ) +
-    ggplot2::scale_y_reverse(
-      breaks = function(lim) {
-        max_val <- abs(floor(lim[1]))
-        seq(0, max_val, by = max(1, round(max_val / 4)))
-      }
-    ) +
-    ggplot2::coord_cartesian(xlim = x_lim, clip = "off") +
-    ggplot2::labs(x = NULL, y = "Thresholds") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      axis.text.x  = ggplot2::element_blank(),
-      axis.ticks.x = ggplot2::element_blank(),
-      plot.margin  = ggplot2::margin(0, 5, 0, 5)
-    )
-
-  # ---- bottom panel: dot-and-whisker by item ----
-  if (sort_items == "location") {
-    item_means <- stats::aggregate(
-      estimate ~ item, data = threshold_data, FUN = mean
-    )
-    item_order <- item_means$item[order(item_means$estimate)]
-  } else {
-    item_order <- rev(item_order_data)
-  }
-  threshold_data$item <- factor(threshold_data$item, levels = item_order)
-
-  p_bot <- ggplot2::ggplot(
-    threshold_data,
-    ggplot2::aes(
-      x      = .data$estimate, y      = .data$item,
-      colour = .data$category, xmin   = .data$lower,
-      xmax   = .data$upper
-    )
-  ) +
-    ggplot2::geom_errorbarh(
-      width = 0.25, linewidth = 0.5,
-      position = ggplot2::position_dodge(width = 0.4)
-    ) +
-    ggplot2::geom_point(
-      size = 2.5, position = ggplot2::position_dodge(width = 0.4)
-    ) +
-    ggplot2::coord_cartesian(xlim = x_lim) +
-    ggplot2::labs(x = x_label, y = NULL, colour = "Threshold") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      legend.position = "bottom",
-      plot.margin     = ggplot2::margin(0, 5, 5, 5)
-    )
-
-  if (!is.null(palette)) {
-    p_bot <- p_bot + ggplot2::scale_colour_manual(values = palette)
-  } else {
-    p_bot <- p_bot + ggplot2::scale_colour_viridis_d(end = 0.9)
-  }
-
-  # ---- combine ----
-  combined <- p_top / p_mid / p_bot +
-    patchwork::plot_layout(heights = height_ratios)
-
-  if (!is.null(subtitle)) {
-    combined <- combined +
-      patchwork::plot_annotation(subtitle = subtitle)
-  }
-  combined
-}
 
 
 

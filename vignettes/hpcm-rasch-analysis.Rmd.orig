@@ -1,6 +1,8 @@
 ---
 title: "Hurdle Partial Credit Model with easyRaschBayes"
 output: rmarkdown::html_vignette
+bibliography: references.bib
+link-citations: yes
 vignette: >
   %\VignetteIndexEntry{Hurdle Partial Credit Model with easyRaschBayes}
   %\VignetteEngine{knitr::rmarkdown}
@@ -12,14 +14,47 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "figures/hpcm-",
-  fig.width = 7,
-  fig.height = 6,
-  out.width = "100%"
+  fig.width = 8,
+  fig.height = 5.5,
+  dpi = 144,
+  out.width = "100%",
+  dev = "ragg_png"
 )
 # Only evaluate model-dependent chunks if the pre-fitted models exist
 EVAL <- file.exists("fits/fit_hpcm.rds") && file.exists("fits/fit_pcm_nhanes.rds")
 # The fit statistics use random subsets of draws and replicated data
 set.seed(2024)
+# Auto-numbered, journal-style figure captions, as in the easyRasch2
+# vignette: every chunk with fig.cap = "..." gets the caption
+# **Figure N.** *caption text* at knit time.
+local({
+  fig_n <- 0L
+  knitr::opts_hooks$set(fig.cap = function(options) {
+    cap <- options$fig.cap
+    if (!is.null(cap) && nzchar(cap) && !grepl("^\\*\\*Figure ", cap)) {
+      fig_n <<- fig_n + 1L
+      options$fig.cap <- sprintf("**Figure %d.** *%s*", fig_n, cap)
+    }
+    options
+  })
+})
+```
+
+```{=html}
+<style>
+/* Journal-style figure captions: subtle left rule + muted colour */
+.figure p.caption,
+div.figure > p.caption,
+figure > figcaption {
+  font-size: 0.95em;
+  padding-left: 0.75em;
+  border-left: 3px solid #ccd;
+  color: #555;
+  margin-top: 0.5em;
+  margin-bottom: 1.25em;
+  line-height: 1.4;
+}
+</style>
 ```
 
 ## Overview
@@ -40,13 +75,44 @@ and item:
 - a **severity** submodel, a partial credit model, gives the probability of
   each category 1, 2, 3 given that the response is above 0.
 
-Each submodel has its own person location, and the two are allowed to
+For person $p$ and item $i$ with categories $0, 1, \dots, m_i$, the
+hurdle submodel is
+
+$$
+\operatorname{logit} P(Y_{pi} > 0) = \zeta_p - \delta_i ,
+$$
+
+where $\zeta_p$ is the person's hurdle location and $\delta_i$ the item's
+hurdle location. Given a response above 0, the severity submodel is
+
+$$
+P(Y_{pi} = k \mid Y_{pi} > 0) =
+\frac{\exp \sum_{j=2}^{k} (\theta_p - \tau_{ij})}
+     {\sum_{h=1}^{m_i} \exp \sum_{j=2}^{h} (\theta_p - \tau_{ij})},
+\qquad k = 1, \dots, m_i ,
+$$
+
+where $\theta_p$ is the person's severity location, $\tau_{ij}$ is the
+threshold between categories $j - 1$ and $j$, and an empty sum is 0. Item
+$i$ thus has $m_i - 1$ severity thresholds, two for the PHQ-9 items. The
+person locations follow a bivariate normal distribution,
+
+$$
+\begin{pmatrix} \zeta_p \\ \theta_p \end{pmatrix} \sim
+\mathcal{N}\left(
+\begin{pmatrix} 0 \\ 0 \end{pmatrix},
+\begin{pmatrix} \sigma_\zeta^2 & \rho \sigma_\zeta \sigma_\theta \\
+\rho \sigma_\zeta \sigma_\theta & \sigma_\theta^2 \end{pmatrix}
+\right).
+$$
+
+Each submodel thus has its own person location, and the two are allowed to
 correlate. The correlation shows whether presence and severity are close to
 the same trait or two distinct ones. This follows the zero-inflated graded
-response model of Magnus and Garnier-Villarreal (2022), with partial credit
+response model of @magnus_multidimensional_2022, with partial credit
 in place of graded response.
 
-The model is fitted with the custom `brms` family `hurdle_acat()`,
+The model is fitted with the custom `brms` [@burkner_bayesian_2021] family `hurdle_acat()`,
 contributed by Kristoffer Magnusson. The functions with the suffix `_hpcm`
 analyse the fitted model.
 
@@ -73,7 +139,7 @@ library(ggplot2)
 
 ## Data
 
-`phq9_nhanes` is a simple random sample of 1000 respondents to the PHQ-9 in
+`phq9_nhanes` is a simple random sample of 1000 respondents to the PHQ-9 [@kroenke_phq9_2001] in
 the U.S. National Health and Nutrition Examination Survey (NHANES,
 September 2024 release), drawn from everyone who answered all nine items. There was no
 selection on scores, so the share of zero responses is that of a general
@@ -135,7 +201,7 @@ saveRDS(fit_pcm, "fits/fit_pcm_nhanes.rds")
 fit_pcm <- readRDS("fits/fit_pcm_nhanes.rds")
 ```
 
-```{r targeting-pcm, eval = EVAL, fig.height = 9, fig.cap = "Targeting, partial credit model"}
+```{r targeting-pcm, eval = EVAL, fig.height = 10, fig.cap = "Targeting, partial credit model"}
 plot_targeting(fit_pcm, height_ratios = c(2, 1.5, 7))
 ```
 
@@ -143,16 +209,16 @@ The 216 persons with a sum score of zero all get the same, lowest,
 location and form the spike at the left of the person histogram. The PCM
 cannot tell them apart. The item panel shows a second problem: for eight
 of the nine items, category 2 ("More than half the days") is never the
-most likely response, because its thresholds are reversed. The PCM places
+most likely response, because its thresholds are disordered. The PCM places
 the step from 0 to 1 and the steps between the higher categories on one
 scale, and in these data they do not line up.
 
-```{r infit-pcm, eval = EVAL, fig.cap = "Infit, partial credit model"}
+```{r infit-pcm, eval = EVAL}
 infit_pcm <- infit_post(infit_statistic(fit_pcm, ndraws_use = 500))
 infit_pcm$summary
 ```
 
-```{r restscore-pcm, eval = EVAL, fig.cap = "Item-restscore, partial credit model"}
+```{r restscore-pcm, eval = EVAL}
 rest_pcm <- item_restscore_post(item_restscore_statistic(fit_pcm, ndraws_use = 500))
 rest_pcm$summary
 ```
@@ -161,7 +227,10 @@ Infit and item-restscore agree on the items that fit worst. `q3` (sleep)
 underfits, with infit around 1.27 and an item-restscore gamma below its
 expected value. `q5` (appetite) shows the same pattern, less strongly.
 `q2` (feeling down) and `q6` (feeling bad about yourself) overfit, and so
-does `q9` by item-restscore. Part of this may come from forcing presence
+does `q9` by item-restscore. Overfit and underfit are related here: items
+in a strongly dependent pair usually overfit, which makes the other items
+look more underfit, and `q2` and `q6` form such a pair (see local
+dependence below). Part of the misfit may also come from forcing presence
 and severity onto one scale, which the hurdle model relaxes.
 
 ## Fitting the hurdle PCM
@@ -204,7 +273,8 @@ the logit of P(response = 0), so a higher value means more zeros. The
 `_hpcm` functions flip the sign of the person locations and the
 correlation, so that a higher hurdle location means a symptom is more
 likely to be present. Item hurdle locations keep the `brms` direction: a
-higher value means more zeros, a harder hurdle to cross.
+higher value means more zeros, a harder hurdle to cross. These are
+$\zeta_p$ and $\delta_i$ in the model above.
 
 ## Presence and severity: one trait or two?
 
@@ -243,18 +313,18 @@ ipar$pcm$threshold_order
 
 Among those who report a symptom, the two severity thresholds are close
 together, and for `q1`, `q7`, `q9`, `q2` and `q8` the posterior probability
-that they are reversed is above 0.7. Separating out the zeros does not
+that they are disordered is above 0.7. Separating out the zeros does not
 remove the weak middle category. It suggests that "More than half the
 days" is hard to tell apart from its neighbours.
 
 ## Targeting
 
-```{r targeting-hpcm, eval = EVAL, fig.height = 7, fig.cap = "Targeting, hurdle submodel"}
+```{r targeting-hpcm, eval = EVAL, fig.height = 8, fig.cap = "Targeting, hurdle submodel"}
 targ <- plot_targeting_hpcm(fit_hpcm)
 targ$hurdle
 ```
 
-```{r targeting-hpcm-pcm, eval = EVAL, fig.height = 7, fig.cap = "Targeting, severity submodel"}
+```{r targeting-hpcm-pcm, eval = EVAL, fig.height = 8, fig.cap = "Targeting, severity submodel"}
 targ$pcm
 ```
 
@@ -265,7 +335,10 @@ out, unlike in the PCM. The severity plot shows only the 784 persons with
 at least one response above 0. Their mean severity is about 2 logits below
 the mean threshold: most of those who report symptoms report them as
 occurring on "Several days", so the severity thresholds are targeted
-above most of the sample.
+above most of the sample. The category bands show the disordered
+severity thresholds from above: for `q1`, `q2`, `q7`, `q8` and `q9`, category 2 is
+marked in red, with posterior probabilities from 0.71 to 0.91 that it is
+never the most likely response.
 
 ## Item fit
 
@@ -300,28 +373,29 @@ available for the hurdle model.
 The conditional item characteristic curves show where along each latent
 variable the observed responses depart from the model.
 
-```{r icc-hpcm, eval = EVAL, fig.cap = "Conditional ICC, hurdle submodel"}
-icc <- plot_icc_hpcm(fit_hpcm)
+```{r icc-hpcm, eval = EVAL, fig.height = 8, fig.cap = "Conditional ICC, hurdle submodel"}
+icc <- plot_icc_hpcm(fit_hpcm, class_intervals = 3)
 icc$hurdle
 ```
 
-```{r icc-hpcm-pcm, eval = EVAL, fig.cap = "Conditional ICC, severity submodel"}
+```{r icc-hpcm-pcm, eval = EVAL, fig.height = 8.5, fig.cap = "Conditional ICC, severity submodel"}
 icc$pcm
 ```
 
-In the hurdle panel, `q3` and `q4` are flatter than the model curve:
-people low on the presence trait report sleep problems and tiredness more
-often than expected. This matches the infit of `q3` above 1. `q1` and
-`q2` are steeper than the curve, matching their infit below 1.
+Three class intervals are used here, since with more intervals several
+severity points fall at the floor and overlap. In the hurdle panel, `q3`
+is flatter than the model curve: people low on the presence trait report
+sleep problems more often than expected, which matches its infit above 1.
+`q2` is steeper than the curve, matching its infit below 1.
 
 In the severity panel, persons are grouped by their severity EAP, since
 the hurdle model has no sufficient sum score. EAPs are shrunk toward the
-mean, so the observed points (blue) can sit off the curve even when the
-model fits. Compare them with the orange diamonds instead, the model's
-expected mean for the same responses. For several items the observed
-means fall below the diamonds in the lowest interval and above them in
-the highest, so severity separates persons a little more than the model
-expects.
+mean, so each interval is placed where the curve equals the model's
+expected mean for the same responses, and the observed points can be
+compared with the curve as in the other ICC plots. For several items,
+most clearly `q3`, `q4` and `q5`, the observed mean is below the curve in
+the lowest interval and above it in the highest, so severity separates persons a little more than the
+model expects.
 
 ## Local dependence
 
@@ -329,7 +403,7 @@ expects.
 submodel, and `q3_post()` summarises them. As for infit, the residuals use
 the person locations in each draw.
 
-```{r q3-hpcm, eval = EVAL, fig.cap = "Q3, hurdle submodel"}
+```{r q3-hpcm, eval = EVAL, fig.height = 7, fig.cap = "Q3, hurdle submodel"}
 q3_hpcm <- q3_statistic_hpcm(fit_hpcm, ndraws_use = 500)
 
 q3_hu <- q3_post(q3_hpcm$hurdle)
@@ -337,7 +411,7 @@ q3_hu$summary
 q3_hu$plot
 ```
 
-```{r q3-hpcm-pcm, eval = EVAL, fig.cap = "Q3, severity submodel"}
+```{r q3-hpcm-pcm, eval = EVAL, fig.height = 7, fig.cap = "Q3, severity submodel"}
 q3_sev <- q3_post(q3_hpcm$pcm)
 q3_sev$summary
 q3_sev$plot
@@ -348,6 +422,39 @@ The largest residual correlations involve `q1` (little interest), `q2`
 Q3 is about 0.30 for `q2` and `q6` in the hurdle submodel and about 0.28 for
 `q1` and `q2` in the severity submodel. These three items share more than
 the model allows, in whether they are reported and in how often.
+
+## Presence and severity compared
+
+Splitting the model in two shows where the misfit of the PCM comes from.
+
+- **Item fit.** The flagged misfit is in the hurdle part: `q3` (sleep) and
+  `q5` (appetite) underfit, and `q2` and `q1` overfit. The overfitting
+  items are the ones in the strongest dependent pairs below, and that
+  dependence also makes the other items look more underfit, so the
+  pattern says more about the mood items than about sleep or appetite as
+  such. In the severity part, the ppp ranges from 0.21 to 0.83, with the
+  highest infit for `q8` and `q9` (about 1.15), and nothing is flagged.
+- **Local dependence.** The core mood items depend on each other in both
+  parts. In the hurdle part, one pair stands out (`q2` and `q6`, 0.30),
+  followed by `q1` and `q2` (0.19), and the rest are below 0.1. In the
+  severity part, more pairs have residual correlations above 0.1,
+  including `q8` with `q9`, `q5` with `q6` and `q3` with `q4`, so which
+  symptoms occur together frequently is less well described by one
+  severity trait than which symptoms occur at all.
+
+Both comparisons need care. The severity part uses only the responses
+above 0, about a third of all responses here, and 37% of those with any
+such response have only one or two. Its statistics are much less certain,
+and with this sample it has little power to flag misfit or dependence. A
+severity part without flagged items is therefore weak evidence that it
+fits. The posterior predictive p-values in both parts are also
+conservative.
+
+<!-- Draft note: a brief discussion of why susceptibility and severity can
+differ in local dependence and fit. The user recalls a paper reporting
+that mental disorders are strongly correlated at low symptom levels and
+less correlated at higher levels. Add the reference once found, and
+phrase the link to this example as a possibility, not a finding. -->
 
 ## Person locations and reliability
 
@@ -369,7 +476,7 @@ rel$pcm
 ```
 
 Reliability is computed per submodel with relative measurement uncertainty
-(Bignardi et al., 2025). For comparison, the RMU reliability of the PCM:
+[@bignardi_general_2025]. For comparison, the RMU reliability of the PCM:
 
 ```{r rmu-pcm, eval = EVAL}
 person_draws_pcm <- fit_pcm %>%
@@ -419,21 +526,3 @@ holds for every item, and is largest for `q1` and smallest for `q9`, the
 item most people do not report at all.
 
 ## References
-
-- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general method for
-  estimating reliability using Bayesian Measurement Uncertainty. OSF.
-  <https://doi.org/10.31234/osf.io/h54k8_v1>
-
-- Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms and
-  Stan. *Journal of Statistical Software*, *100*, 1–54.
-  <https://doi.org/10.18637/jss.v100.i05>
-
-- Kroenke, K., Spitzer, R. L., & Williams, J. B. W. (2001). The PHQ-9:
-  Validity of a brief depression severity measure. *Journal of General
-  Internal Medicine*, *16*(9), 606–613.
-  <https://doi.org/10.1046/j.1525-1497.2001.016009606.x>
-
-- Magnus, B. E., & Garnier-Villarreal, M. (2022). A multidimensional
-  zero-inflated graded response model for ordinal symptom data.
-  *Psychological Methods*, *27*(2), 261–279.
-  <https://doi.org/10.1037/met0000395>

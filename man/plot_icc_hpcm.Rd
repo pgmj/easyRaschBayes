@@ -129,12 +129,16 @@ an item is computed \emph{only} over persons with \eqn{Y > 0} on
 that item, the cells the PCM submodel applies to.
 
 EAPs are shrunk toward the mean and are estimated from the same
-responses that are plotted, so the observed points can sit off the
-curve under good fit. The PCM panel therefore also shows, for each
-interval, the model-expected mean severity for the same responses
-(orange diamonds), computed from \code{posterior_epred()} and
-averaged over each person's posterior (up to 200 draws). Compare the
-observed points with the diamonds rather than with the curve.
+responses that are plotted, so a class interval placed at its mean
+EAP would put the observed points off the curve under good fit.
+Instead, for each item and interval the model-expected mean severity
+for the same responses is computed from \code{posterior_epred()},
+averaged over each person's posterior (up to 200 draws), and the
+point is placed at the \eqn{\theta_{pcm}} where the item's expected
+curve equals that mean. This is the analogue of placing intervals by
+inverting the expected total score in \code{\link{plot_icc}}. The
+same interval can therefore sit at slightly different
+\eqn{\theta_{pcm}} values for different items.
 
 \strong{Uncertainty.} Each expected curve carries a credible
 interval ribbon at width \code{prob}. Observed points have

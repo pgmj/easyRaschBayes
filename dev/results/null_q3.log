@@ -1,0 +1,12 @@
+Compiling Stan program...
+Start sampling
+the number of chains is less than 1; sampling not done
+Compiling Stan program...
+Start sampling
+the number of chains is less than 1; sampling not done
+Compiling Stan program...
+Start sampling
+the number of chains is less than 1; sampling not done
+2026-11-08 11:25:54 starting 1200 fits on 10 workers
+2026-11-08 13:39:05 finished. 1200 ok, 0 errors
+saved 47200 rows

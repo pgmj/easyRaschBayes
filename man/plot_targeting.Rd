@@ -106,7 +106,7 @@ light to dark, so higher categories are darker.}
 
 \item{row_gap}{Numeric. Vertical spacing between item rows in the
 \code{"categories"} panel. Default \code{NULL} uses 1, widened when
-a category collapses or thresholds are reversed, to make room for
+a category collapses or thresholds are disordered, to make room for
 their labels.}
 
 \item{output}{Character. \code{"patchwork"} (the default) returns the
@@ -127,8 +127,8 @@ at any location, and \code{lower_bound}, \code{lower_bound_lo},
 interval of the location where the category starts to be the most
 likely response, over the draws where it is (\code{NA} for
 category 0).}
-\item{reversals}{A \code{\link[tibble]{tibble}} with one row per
-item and adjacent threshold pair: \code{p_reversed}, the
+\item{disordered}{A \code{\link[tibble]{tibble}} with one row per
+item and adjacent threshold pair: \code{p_disordered}, the
 posterior probability that the higher threshold lies below the
 lower one.}
 }
@@ -166,15 +166,16 @@ item's thresholds are ordered these boundaries are the thresholds
 themselves. When they are not, the disordered run is pooled by
 averaging, and the categories it skips over, which are never the
 most likely response at any location, collapse to a red tick
-labelled with the category number. Red arrows below the bar give the
-size of each threshold reversal in logits. The two outer bands fade
+labelled with the category number. Red arrows below the bar mark each
+pair of disordered thresholds and give the distance between them in
+logits. The two outer bands fade
 towards the panel edge, since they are open-ended.
 
 \strong{Posterior probabilities.} The same category structure is
 computed for every posterior draw. Each red tick is labelled with the
 posterior probability that its category is never the most likely
-response, and each reversal with the posterior probability that the
-pair is reversed. The full tables, including categories and pairs
+response, and each pair of disordered thresholds with the posterior
+probability that the pair is disordered. The full tables, including categories and pairs
 without red marks, are returned with \code{output = "list"}.
 
 \strong{Person locations.} \code{person_estimate = "eap"} uses the
@@ -221,7 +222,7 @@ plot_targeting(fit_pcm, panel = "thresholds")
 # Panels and posterior summaries of the category structure
 res <- plot_targeting(fit_pcm, output = "list")
 res$categories
-res$reversals
+res$disordered
 
 # --- Dichotomous Rasch Model ---
 

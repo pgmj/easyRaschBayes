@@ -3,7 +3,7 @@
 # The category-band geometry is ported from easyRasch2::RMtargeting()
 # (R/targeting_plot.R, easyRasch2 1.4.0.9000) so the two packages draw the
 # same figure. Additions here: posterior probabilities for collapsed
-# categories and reversed thresholds, computed draw by draw, and plain-text
+# categories and disordered thresholds, computed draw by draw, and plain-text
 # captions (no ggtext dependency).
 
 # ── Category geometry ───────────────────────────────────────────
@@ -78,7 +78,7 @@
   )
 }
 
-# Reversed adjacent threshold pairs (point estimates).
+# Disordered adjacent threshold pairs (point estimates).
 #' @keywords internal
 #' @noRd
 .threshold_reversals <- function(thr, item_levels) {
@@ -100,11 +100,11 @@
 
 # Per-draw category structure for every item.
 # tau: named list of draws x thresholds matrices (already centred).
-# Returns list(categories, reversals):
+# Returns list(categories, disordered):
 #   categories: item, category, p_never_modal, and the lower boundary of the
 #     category's modal region (median and interval over the draws where the
 #     category is modal; NA for category 0, which has no lower boundary).
-#   reversals: item, thresholds ("k-(k+1)"), p_reversed.
+#   disordered: item, thresholds ("k-(k+1)"), p_disordered.
 #' @keywords internal
 #' @noRd
 .category_posterior <- function(tau, prob) {
@@ -138,15 +138,15 @@
       revs_out[[it]] <- tibble::tibble(
         item       = it,
         thresholds = paste0(seq_len(ncol(m) - 1L), "-", seq_len(ncol(m) - 1L) + 1L),
-        p_reversed = colMeans(rev_draws)
+        p_disordered = colMeans(rev_draws)
       )
     }
   }
   list(
     categories = dplyr::bind_rows(cats_out),
-    reversals  = if (length(revs_out)) dplyr::bind_rows(revs_out) else
+    disordered = if (length(revs_out)) dplyr::bind_rows(revs_out) else
       tibble::tibble(item = character(), thresholds = character(),
-                     p_reversed = numeric())
+                     p_disordered = numeric())
   )
 }
 
@@ -203,13 +203,15 @@
 
 # thr: Item, k, Location and, with show_ci, CI_low, CI_high.
 # drop_prob: data.frame item, category, p_never_modal (or NULL).
-# rev_prob: data.frame item, thresholds, p_reversed (or NULL).
+# rev_prob: data.frame item, thresholds, p_disordered (or NULL).
+# cat_offset: added to category numbers in labels (1 when the lowest
+#   category shown is 1, as in the severity part of the hurdle PCM).
 #' @keywords internal
 #' @noRd
 .targeting_category_panel <- function(thr, item_order, xlim, category_labels,
                                       fills, show_ci, row_gap, caption_text,
                                       x_label, drop_prob = NULL,
-                                      rev_prob = NULL) {
+                                      rev_prob = NULL, cat_offset = 0L) {
   rev_col <- "#B2182B"
   bar_h <- 0.52
   hh <- bar_h / 2
@@ -279,7 +281,8 @@
     p <- p +
       ggplot2::geom_text(
         data = lab,
-        ggplot2::aes(x = .data$xc, y = .data$y, label = .data$cat),
+        ggplot2::aes(x = .data$xc, y = .data$y,
+                     label = .data$cat + cat_offset),
         colour = .band_label_colour(lab$fill),
         size = 3.1, show.legend = FALSE
       )
@@ -301,9 +304,10 @@
       pm <- match(paste(drops$Item, drops$cat),
                   paste(drop_prob$item, drop_prob$category))
       drops$p_never <- drop_prob$p_never_modal[pm]
-      drops$tag <- paste0(drops$cat, " (P = ", .fmt_prob(drops$p_never), ")")
+      drops$tag <- paste0(drops$cat + cat_offset, " (P = ",
+                          .fmt_prob(drops$p_never), ")")
     } else {
-      drops$tag <- as.character(drops$cat)
+      drops$tag <- as.character(drops$cat + cat_offset)
     }
     drops$on_arrow <- if (is.null(revs)) {
       rep(FALSE, nrow(drops))
@@ -381,7 +385,7 @@
       pm <- match(paste(revs$Item, paste0(revs$k, "-", revs$k + 1L)),
                   paste(rev_prob$item, rev_prob$thresholds))
       revs$label <- paste0(revs$label, " (P = ",
-                           .fmt_prob(rev_prob$p_reversed[pm]), ")")
+                           .fmt_prob(rev_prob$p_disordered[pm]), ")")
     }
     # A reversal that makes category k collapse: name the category and
     # give the probability that it is never the most likely response
@@ -390,7 +394,7 @@
                   paste(drops$Item, drops$cat))
       hit <- !is.na(dm)
       revs$label[hit] <- paste0(
-        drops$cat[dm[hit]], ": ", sprintf("%.2f", revs$gap[hit]),
+        drops$cat[dm[hit]] + cat_offset, ": ", sprintf("%.2f", revs$gap[hit]),
         ifelse(is.na(drops$p_never[dm[hit]]), "",
                paste0(" (P = ", .fmt_prob(drops$p_never[dm[hit]]), ")"))
       )

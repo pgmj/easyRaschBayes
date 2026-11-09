@@ -474,3 +474,78 @@
   result <- dplyr::group_by(result, .data[[item_name]])
   dplyr::arrange(result, .data[[item_name]], .data$draw)
 }
+
+# Conditional Q3 for one draw, observed and replicated.
+#
+# Residuals are X - E(X | total score), with E from the item parameters of
+# the draw. Replicated data keep each person's total score. Persons with the
+# minimum or maximum total have zero conditional variance and drop out, as
+# in conditional infit. Returns list(obs, rep): Q3 for each item pair, upper
+# triangle in row-major order (1:2, 1:3, ..., 2:3, ...).
+.cond_q3_draw <- function(prob, person_idx, item_idx, x_obs) {
+  k <- ncol(x_obs)
+  st <- .cond_draw_setup(prob, person_idx, item_idx, x_obs)
+  mo <- .cond_moments(st, k)
+  x_rep <- .cond_sample(st$W, st$suffix, st$key, st$r)
+  x_rep[is.na(x_obs)] <- NA
+  use <- !is.na(mo$V) & mo$V > 1e-12
+  r_obs <- ifelse(use, x_obs - mo$E, NA_real_)
+  r_rep <- ifelse(use, x_rep - mo$E, NA_real_)
+  c_obs <- suppressWarnings(stats::cor(r_obs, use = "pairwise.complete.obs"))
+  c_rep <- suppressWarnings(stats::cor(r_rep, use = "pairwise.complete.obs"))
+  lower <- lower.tri(diag(k))
+  list(obs = t(c_obs)[lower], rep = t(c_rep)[lower])
+}
+
+# Conditional branch of q3_statistic(). Returns the same long format as the
+# theta branch.
+.q3_conditional <- function(model, resp_var, item_name, person_name,
+                            ndraws_use) {
+  .check_sufficient_score_brmsfit(model, person_name, "q3_statistic")
+
+  draw_ids <- .select_draw_ids(model, ndraws_use)
+  n_draws <- length(draw_ids)
+  dd <- .cond_prepare_data(model, resp_var, item_name, person_name)
+  k <- length(dd$unique_items)
+
+  per_draw <- .cond_map_draws(model, draw_ids, dd$n_cat_max,
+                              .cond_q3_draw,
+                              person_idx = dd$person_idx,
+                              item_idx = dd$item_idx, x_obs = dd$x_obs)
+  obs <- do.call(rbind, lapply(per_draw, `[[`, "obs"))
+  rep <- do.call(rbind, lapply(per_draw, `[[`, "rep"))
+
+  pg <- which(upper.tri(diag(k)), arr.ind = TRUE)
+  pg <- pg[order(pg[, "row"], pg[, "col"]), , drop = FALSE]
+  n_pairs <- nrow(pg)
+  item_1 <- dd$unique_items[pg[, "row"]]
+  item_2 <- dd$unique_items[pg[, "col"]]
+
+  tibble::tibble(
+    draw      = rep(seq_len(n_draws), times = n_pairs),
+    item_pair = rep(paste0(item_1, " : ", item_2), each = n_draws),
+    item_1    = rep(item_1, each = n_draws),
+    item_2    = rep(item_2, each = n_draws),
+    q3        = as.vector(obs),
+    q3_rep    = as.vector(rep)
+  )
+}
+
+# One-sided single-step max-T p-values across item pairs, for local
+# dependence (observed Q3 above the replicated). Each pair's observed mean
+# is standardised by the mean and SD of its replicated distribution. The
+# reference is the maximum standardised replicated value over pairs in each
+# draw. Small values flag dependence.
+.ppp_maxt_upper <- function(obs, rep_draws) {
+  m <- colMeans(rep_draws, na.rm = TRUE)
+  s <- apply(rep_draws, 2L, stats::sd, na.rm = TRUE)
+  usable <- !is.na(obs) & is.finite(s) & s > 0
+  out <- rep(NA_real_, length(obs))
+  if (!any(usable)) return(out)
+  z_rep <- sweep(sweep(rep_draws[, usable, drop = FALSE], 2L, m[usable]),
+                 2L, s[usable], "/")
+  t_max <- apply(z_rep, 1L, max, na.rm = TRUE)
+  z_obs <- (obs[usable] - m[usable]) / s[usable]
+  out[usable] <- vapply(z_obs, function(z) mean(t_max >= z), numeric(1))
+  out
+}

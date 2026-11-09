@@ -158,7 +158,7 @@ run_one <- function(cond_row, rep) {
     cond = cond_row$cond, model_type = cond_row$model_type, n = cond_row$n,
     rep = rep, item = as.character(new$item),
     gamma_obs = new$gamma_obs, gamma_exp = new$gamma_exp,
-    ppp = new$ppp, ppp_adj = new$ppp_adj,
+    ppp = new$ppp, ppp_adj = new$p_adj,
     ppp_old = ppp_old[match(as.character(new$item), levels(dat$item))],
     infit_ppp_cond = ppp_inf_c[as.character(new$item)],
     infit_ppp_theta = ppp_inf_t[as.character(new$item)],

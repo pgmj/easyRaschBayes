@@ -7,8 +7,8 @@
   Results for data with one response per person and item are unchanged.
 - Breaking - `plot_targeting()` follows `easyRasch2::RMtargeting()`. The
   bottom panel now shows response-category bands (`panel = "categories"`),
-  with red marks for categories that are never most likely and for reversed
-  thresholds, labelled with their posterior probabilities. New arguments
+  with red marks for categories that are never most likely and for
+  disordered thresholds, labelled with their posterior probabilities. New arguments
   `panel`, `person_estimate` (EAP default, or WLE), `xlim`,
   `category_labels`, `viridis_*`, `row_gap` and `output = "list"`, which
   also returns the posterior category tables. Defaults for `bins` and the
@@ -18,7 +18,7 @@
 - Breaking - `item_restscore_statistic()` now conditions on the total
   score. It adds Kreiner's expected gamma (`gamma_exp`), replicates data
   given each person's total score, uses a mid-p `ppp` and adds a max-T
-  `ppp_adj`. `gamma_diff` is now observed minus expected. The zero-width
+  `p_adj`. `gamma_diff` is now observed minus expected. The zero-width
   `gamma_obs_q*` columns are replaced by `gamma_rep_q*`. Only Rasch-family
   models (`bernoulli`, `acat`, logit, no `disc`) are accepted. Results
   change. `item_restscore_post()` follows the new output and accepts any
@@ -28,6 +28,13 @@
   score, matching `iarm::out_infit()` for the same item parameters, and
   replicates data given each person's total score. Only Rasch-family
   models are accepted. `method = "theta"` gives the 0.3.0 results.
+- Breaking - `q3_statistic()` gains `method = c("conditional", "theta")`.
+  The default now takes residuals from the expected responses given each
+  person's total score and replicates data given the total score, so
+  observed and replicated Q3 centre on about -1/(k-1). Only Rasch-family
+  models are accepted. `method = "theta"` gives the 0.3.0 results.
+  `q3_post()` adds `q3_p_adj`, a one-sided max-T adjustment over item
+  pairs, and its reference line is the mean replicated Q3. Results change.
 - Breaking - `infit_post()` `infit_ppp` is now P(observed > replicated)
   with mid-p ties, so values near 1 indicate underfit, as in `q3_post()`.
   `infit_post()` accepts any item column name.
@@ -41,16 +48,22 @@
   `plot_icc_hpcm()` (the old name still works, with a deprecation
   warning). A caption states the grouping used, also when tied sum scores
   give fewer quantile groups than requested.
-- `plot_icc_hpcm()` severity panel adds the model-expected mean for the
-  same responses in each class interval (orange diamonds). Binning on
-  shrunk EAPs had made the observed points look misfitting.
+- `plot_icc_hpcm()` severity panel places each class interval where the
+  item curve equals the model-expected mean for the same responses, as
+  `plot_icc()` does with the total score. Placing intervals at their mean
+  EAP had made the observed points look misfitting. Plots change.
 - `plot_icc()` with `dif_var` distinguishes groups by shape and line type
   as well as colour.
-- `plot_targeting_hpcm()` leaves persons who answered 0 on every item out of
-  the severity histogram, with a caption.
-- `plot_targeting()` labels a category collapse caused by a threshold
-  reversal once, on the reversal arrow, and spaces rows more widely, so
-  labels no longer overlap when many items have reversed thresholds.
+- Breaking - `plot_targeting_hpcm()` uses the same design as
+  `plot_targeting()`: response-category bands with red marks and posterior
+  probabilities for collapsed categories and disordered thresholds, or
+  `panel = "thresholds"`. New arguments `panel`, `xlim`,
+  `category_labels`, `viridis_*`, `row_gap` and `output = "list"`; the
+  default `bins` follows `plot_targeting()`. Persons who answered 0 on
+  every item are left out of the severity histogram, with a caption.
+- `plot_targeting()` labels a category collapse caused by disordered
+  thresholds once, on the arrow, and spaces rows more widely, so labels no
+  longer overlap when many items have disordered thresholds.
 - Docs - `infit_statistic()` and `infit_post()` state that the infit ppp is
   conservative, also with the conditional method, and suggest also using
   `item_restscore_statistic()`.

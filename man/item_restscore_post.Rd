@@ -17,7 +17,7 @@ A list with two elements:
 \describe{
 \item{summary}{A \code{\link[tibble]{tibble}} with one row per
 item and the columns item, \code{gamma_obs}, \code{gamma_exp},
-\code{gamma_diff}, \code{ppp} and \code{ppp_adj}, rounded to 3
+\code{gamma_diff}, \code{ppp} and \code{p_adj}, rounded to 3
 decimals and sorted by item.}
 \item{plot}{A \code{\link[ggplot2]{ggplot}} object showing the
 distribution of replicated gamma (grey slab) with the observed

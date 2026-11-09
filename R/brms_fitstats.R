@@ -646,7 +646,9 @@ fit_statistic_rm <- function(model, criterion, group,
 #' estimated from the same data. In simulations under a fitting Rasch
 #' model, two-sided p-values below .05 occurred for 0.5% to 2% of items,
 #' with the lowest rates for polytomous items. Misfit can therefore go
-#' undetected. It is suggested to also evaluate item fit with
+#' undetected. The shortfall is largest for the easiest and hardest
+#' dichotomous items, so misfit in an item far from the persons' locations
+#' is the most likely to be missed. It is suggested to also evaluate item fit with
 #' \code{\link{item_restscore_statistic}}, whose p-values were close to
 #' uniform in the same simulations.
 #'
@@ -982,7 +984,7 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #'         of draws where \code{gamma_obs} exceeds the replicated gamma,
 #'         counting ties as one half. Values near 1 indicate stronger
 #'         association than the model implies, values near 0 weaker.}
-#'       \item{ppp_adj}{Two-sided posterior predictive p-value adjusted
+#'       \item{p_adj}{Two-sided posterior predictive p-value adjusted
 #'         for the number of items by a single-step max-T procedure. See
 #'         Details.}
 #'       \item{gamma_rep}{Mean of the replicated gamma across draws.}
@@ -1039,11 +1041,11 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' departs from the model expectation, given the uncertainty in the item
 #' parameters. It contains no sampling variation, so it is not a test, and
 #' it is not a credible interval for misfit in the population. Use
-#' \code{ppp} or \code{ppp_adj} to judge whether a departure is larger
+#' \code{ppp} or \code{p_adj} to judge whether a departure is larger
 #' than chance would produce. As with any test, they will flag smaller
 #' departures as the sample size grows.
 #'
-#' \code{ppp_adj} standardises each item's observed gamma by the mean and
+#' \code{p_adj} standardises each item's observed gamma by the mean and
 #' standard deviation of its replicated gammas. Its reference is the
 #' largest absolute standardised deviation across items within each
 #' replicated dataset, so it accounts for testing all items at once.
@@ -1219,7 +1221,7 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
   result$gamma_exp       <- colMeans(gamma_exp_draws, na.rm = TRUE)
   result$gamma_diff      <- gamma_obs - result$gamma_exp
   result$ppp             <- .ppp_mid(gamma_obs, gamma_rep_draws)
-  result$ppp_adj         <- .ppp_maxt(gamma_obs, gamma_rep_draws)
+  result$p_adj         <- .ppp_maxt(gamma_obs, gamma_rep_draws)
   result$gamma_rep       <- colMeans(gamma_rep_draws, na.rm = TRUE)
   result$gamma_diff_q025 <- q(diff_draws, 0.025)
   result$gamma_diff_q975 <- q(diff_draws, 0.975)

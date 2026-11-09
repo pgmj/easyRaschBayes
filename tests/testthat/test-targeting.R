@@ -9,14 +9,14 @@ test_that("modal boundaries reduce to the thresholds when they are ordered", {
   expect_length(mb$dropped, 0L)
 })
 
-test_that("a reversed threshold pair drops the category between them", {
+test_that("a disordered threshold pair drops the category between them", {
   mb <- .modal_boundaries(c(-1.2, -1.6, 0.4))
   expect_equal(mb$dropped, 1L)
   expect_equal(mb$cats, c(0L, 2L, 3L))
   expect_equal(mb$bounds[1], mean(c(-1.2, -1.6)))
 })
 
-test_that("a run of reversed thresholds drops two categories", {
+test_that("a run of disordered thresholds drops two categories", {
   mb <- .modal_boundaries(c(-2.2, 0.6, 0.0, -0.6, 1.2, 2.2))
   expect_equal(mb$dropped, c(2L, 3L))
 })
@@ -62,8 +62,8 @@ test_that("posterior category structure counts draws", {
   expect_true(is.na(cx$lower_bound[1]))
   # Category 1 is modal only in draw 4, starting at -1
   expect_equal(cx$lower_bound[2], -1)
-  expect_equal(cp$reversals$p_reversed, c(0.75, 0))
-  expect_equal(cp$reversals$thresholds, c("1-2", "1-2"))
+  expect_equal(cp$disordered$p_disordered, c(0.75, 0))
+  expect_equal(cp$disordered$thresholds, c("1-2", "1-2"))
 })
 
 test_that("probabilities are formatted without a leading zero", {
@@ -76,7 +76,7 @@ test_that("the category panel builds with red marks and probability labels", {
                     CI_low = c(-1.3, 0.7, 0.1, -0.7),
                     CI_high = c(-0.7, 1.3, 0.7, -0.1))
   drop_prob <- data.frame(item = "b", category = 1L, p_never_modal = 0.9)
-  rev_prob <- data.frame(item = "b", thresholds = "1-2", p_reversed = 0.9)
+  rev_prob <- data.frame(item = "b", thresholds = "1-2", p_disordered = 0.9)
   p <- .targeting_category_panel(
     thr, c("b", "a"), c(-4, 4), c("0", "1", "2"),
     c("#DEF5E5", "#3497A9", "#382A54"), TRUE, 1.44, "Note. x", "Location",

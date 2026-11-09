@@ -453,7 +453,7 @@ plot_ipf <- function(
 #'   light to dark, so higher categories are darker.
 #' @param row_gap Numeric. Vertical spacing between item rows in the
 #'   \code{"categories"} panel. Default \code{NULL} uses 1, widened when
-#'   a category collapses or thresholds are reversed, to make room for
+#'   a category collapses or thresholds are disordered, to make room for
 #'   their labels.
 #' @param output Character. \code{"patchwork"} (the default) returns the
 #'   combined plot. \code{"list"} returns the three panels and the
@@ -472,8 +472,8 @@ plot_ipf <- function(
 #'     interval of the location where the category starts to be the most
 #'     likely response, over the draws where it is (\code{NA} for
 #'     category 0).}
-#'   \item{reversals}{A \code{\link[tibble]{tibble}} with one row per
-#'     item and adjacent threshold pair: \code{p_reversed}, the
+#'   \item{disordered}{A \code{\link[tibble]{tibble}} with one row per
+#'     item and adjacent threshold pair: \code{p_disordered}, the
 #'     posterior probability that the higher threshold lies below the
 #'     lower one.}
 #' }
@@ -490,15 +490,16 @@ plot_ipf <- function(
 #' themselves. When they are not, the disordered run is pooled by
 #' averaging, and the categories it skips over, which are never the
 #' most likely response at any location, collapse to a red tick
-#' labelled with the category number. Red arrows below the bar give the
-#' size of each threshold reversal in logits. The two outer bands fade
+#' labelled with the category number. Red arrows below the bar mark each
+#' pair of disordered thresholds and give the distance between them in
+#' logits. The two outer bands fade
 #' towards the panel edge, since they are open-ended.
 #'
 #' \strong{Posterior probabilities.} The same category structure is
 #' computed for every posterior draw. Each red tick is labelled with the
 #' posterior probability that its category is never the most likely
-#' response, and each reversal with the posterior probability that the
-#' pair is reversed. The full tables, including categories and pairs
+#' response, and each pair of disordered thresholds with the posterior
+#' probability that the pair is disordered. The full tables, including categories and pairs
 #' without red marks, are returned with \code{output = "list"}.
 #'
 #' \strong{Person locations.} \code{person_estimate = "eap"} uses the
@@ -557,7 +558,7 @@ plot_ipf <- function(
 #' # Panels and posterior summaries of the category structure
 #' res <- plot_targeting(fit_pcm, output = "list")
 #' res$categories
-#' res$reversals
+#' res$disordered
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
@@ -633,7 +634,6 @@ plot_targeting <- function(
   }
   show_ci <- !is.null(prob)
   ci_prob <- if (show_ci) prob else 0.95
-  lower_prob <- (1 - ci_prob) / 2
 
   # ================================================================
   # ITEM THRESHOLDS
@@ -642,23 +642,6 @@ plot_targeting <- function(
   thr_means <- lapply(tau, colMeans)
   shift <- if (center) mean(unlist(thr_means)) else 0
   tau <- lapply(tau, function(m) m - shift)
-
-  item_levels <- names(tau)
-  thr <- do.call(rbind, lapply(item_levels, function(it) {
-    m <- tau[[it]]
-    data.frame(
-      Item      = it,
-      k         = seq_len(ncol(m)),
-      Threshold = paste0("T", seq_len(ncol(m))),
-      Location  = colMeans(m),
-      CI_low    = apply(m, 2, stats::quantile, probs = lower_prob),
-      CI_high   = apply(m, 2, stats::quantile, probs = 1 - lower_prob),
-      stringsAsFactors = FALSE
-    )
-  }))
-  rownames(thr) <- NULL
-  n_cat <- max(thr$k) + 1L
-  max_score <- nrow(thr)
 
   # ================================================================
   # PERSON LOCATIONS
@@ -682,9 +665,68 @@ plot_targeting <- function(
   n_persons <- length(unique(model$data[[person_name]]))
 
   # ================================================================
+  # PANELS
+  # ================================================================
+  built <- .targeting_build(
+    tau = tau, person_theta = person_theta, person_label = person_label,
+    n_persons = n_persons,
+    data_order = as.character(unique(model$data[[item_name]])),
+    center = center, robust = robust, sort_items = sort_items,
+    bins = if (missing(bins)) NULL else bins,
+    show_ci = show_ci, ci_prob = ci_prob, palette = palette,
+    person_fill = person_fill, threshold_fill = threshold_fill,
+    panel = panel, xlim = xlim, category_labels = category_labels,
+    viridis_option = viridis_option, viridis_begin = viridis_begin,
+    viridis_end = viridis_end, row_gap = row_gap
+  )
+
+  if (output == "list") return(built[c("p1", "p2", "p3", "categories",
+                                       "disordered")])
+  built$p1 / built$p2 / built$p3 +
+    patchwork::plot_layout(heights = height_ratios)
+}
+
+
+
+# ── Internal: build the three targeting panels ───────────────────
+#
+# Shared by plot_targeting() and plot_targeting_hpcm(). tau is a named list
+# of draws x thresholds matrices, already centred. person_theta is on the
+# same scale. data_order gives the items in data order. cat_offset is the
+# score of the lowest category (0, or 1 for the severity part of the hurdle
+# PCM). extra_caption is appended to the caption. Returns list(p1, p2, p3,
+# categories, disordered).
+#' @keywords internal
+#' @noRd
+.targeting_build <- function(tau, person_theta, person_label, n_persons,
+                             data_order, center, robust, sort_items, bins,
+                             show_ci, ci_prob, palette, person_fill,
+                             threshold_fill, panel, xlim, category_labels,
+                             viridis_option, viridis_begin, viridis_end,
+                             row_gap, cat_offset = 0L,
+                             extra_caption = NULL) {
+  lower_prob <- (1 - ci_prob) / 2
+  item_levels <- names(tau)
+  thr <- do.call(rbind, lapply(item_levels, function(it) {
+    m <- tau[[it]]
+    data.frame(
+      Item      = it,
+      k         = seq_len(ncol(m)),
+      Threshold = paste0("T", seq_len(ncol(m))),
+      Location  = colMeans(m),
+      CI_low    = apply(m, 2, stats::quantile, probs = lower_prob),
+      CI_high   = apply(m, 2, stats::quantile, probs = 1 - lower_prob),
+      stringsAsFactors = FALSE
+    )
+  }))
+  rownames(thr) <- NULL
+  n_cat <- max(thr$k) + 1L
+  max_score <- nrow(thr)
+
+  # ================================================================
   # AXIS, BINS AND SUMMARIES
   # ================================================================
-  if (missing(bins)) bins <- max(11L, ceiling(max_score / 2))
+  if (is.null(bins)) bins <- max(11L, ceiling(max_score / 2))
 
   all_values <- c(person_theta, thr$Location)
   if (show_ci) all_values <- c(all_values, thr$CI_low, thr$CI_high)
@@ -783,12 +825,11 @@ plot_targeting <- function(
     item_means <- tapply(thr$Location, thr$Item, mean)
     item_order <- rev(names(item_means)[order(item_means)])
   } else {
-    data_order <- as.character(unique(model$data[[item_name]]))
     item_order <- rev(data_order)
   }
 
   if (is.null(category_labels)) {
-    category_labels <- as.character(seq_len(n_cat) - 1L)
+    category_labels <- as.character(seq_len(n_cat) - 1L + cat_offset)
   } else if (length(category_labels) != n_cat) {
     stop("`category_labels` must have one label per response category. ",
          "The model has ", n_cat, " categories and ",
@@ -813,6 +854,9 @@ plot_targeting <- function(
     round(t_center, 2), " (", spread_label, " ", round(t_spread, 2),
     "). n = ", n_persons, " persons."
   )
+  if (!is.null(extra_caption)) {
+    caption_body <- paste(caption_body, extra_caption)
+  }
 
   if (panel == "categories") {
     bands_preview <- .category_bands(thr, item_order, xlim)
@@ -850,11 +894,11 @@ plot_targeting <- function(
     if (!is.null(revs_preview)) {
       band_caption <- paste(
         band_caption,
-        "Red arrows give the size in logits of each threshold reversal and",
-        "the posterior probability that the pair is reversed. When a",
-        "reversal makes a category collapse, the arrow is labelled",
-        "'category: size (P)' instead, with the probability that the",
-        "category is never the most likely response."
+        "Red arrows mark disordered thresholds, with the distance between",
+        "them in logits and the posterior probability that the pair is",
+        "disordered. When disordered thresholds make a category collapse,",
+        "the arrow is labelled 'category: distance (P)' instead, with the",
+        "probability that the category is never the most likely response."
       )
     }
     p3 <- .targeting_category_panel(
@@ -863,7 +907,8 @@ plot_targeting <- function(
       row_gap = row_gap,
       caption_text = .erb_caption(paste(caption_body, band_caption)),
       x_label = x_label,
-      drop_prob = cat_post$categories, rev_prob = cat_post$reversals
+      drop_prob = cat_post$categories, rev_prob = cat_post$disordered,
+      cat_offset = cat_offset
     )
   } else {
     thr$Item <- factor(thr$Item, levels = item_order)
@@ -917,14 +962,11 @@ plot_targeting <- function(
       .erb_caption_theme()
   }
 
-  if (output == "list") {
-    return(list(p1 = p1, p2 = p2, p3 = p3,
-                categories = cat_post$categories,
-                reversals = cat_post$reversals))
-  }
-  p1 / p2 / p3 + patchwork::plot_layout(heights = height_ratios)
+  cat_post$categories$category <- cat_post$categories$category + cat_offset
+  list(p1 = p1, p2 = p2, p3 = p3,
+       categories = cat_post$categories,
+       disordered = cat_post$disordered)
 }
-
 
 # ── Internal helper: extract threshold data ──────────────────────
 #' @keywords internal

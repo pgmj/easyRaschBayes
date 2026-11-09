@@ -228,7 +228,7 @@ infit_post <- function(infit_draws, ci = 0.84) {
 #' \describe{
 #'   \item{summary}{A \code{\link[tibble]{tibble}} with one row per
 #'     item and the columns item, \code{gamma_obs}, \code{gamma_exp},
-#'     \code{gamma_diff}, \code{ppp} and \code{ppp_adj}, rounded to 3
+#'     \code{gamma_diff}, \code{ppp} and \code{p_adj}, rounded to 3
 #'     decimals and sorted by item.}
 #'   \item{plot}{A \code{\link[ggplot2]{ggplot}} object showing the
 #'     distribution of replicated gamma (grey slab) with the observed
@@ -288,7 +288,7 @@ item_restscore_post <- function(item_restscore) {
     stop("'item_restscore' must be a list with elements 'result' ",
          "and 'draws'.", call. = FALSE)
   }
-  summary_cols <- c("gamma_obs", "gamma_exp", "gamma_diff", "ppp", "ppp_adj")
+  summary_cols <- c("gamma_obs", "gamma_exp", "gamma_diff", "ppp", "p_adj")
   if (!all(summary_cols %in% names(item_restscore$result)) ||
       !"gamma_rep" %in% names(item_restscore$draws)) {
     stop("'item_restscore' must be the output of ",
@@ -375,9 +375,11 @@ item_restscore_post <- function(item_restscore) {
 #'     item pair containing: \code{item_pair}, \code{item_1},
 #'     \code{item_2}, \code{q3_obs} (posterior mean observed Q3),
 #'     \code{q3_rep} (posterior mean replicated Q3),
-#'     \code{q3_diff} (posterior mean difference), and \code{q3_ppp}
+#'     \code{q3_diff} (posterior mean difference), \code{q3_ppp}
 #'     (posterior predictive p-value: proportion of draws where the
-#'     observed Q3 exceeds the replicated Q3).}
+#'     observed Q3 exceeds the replicated Q3), and \code{q3_p_adj}
+#'     (one-sided p-value for local dependence, adjusted for the number
+#'     of item pairs; small values flag dependence).}
 #'   \item{hdi}{A \code{\link[tibble]{tibble}} with one row per
 #'     item pair containing: \code{item_pair}, \code{item_1},
 #'     \code{item_2}, \code{ld} (proportion of draws where observed
@@ -389,7 +391,9 @@ item_restscore_post <- function(item_restscore) {
 #'     the posterior predictive distribution of replicated Q3
 #'     (grey filled slab) overlaid with the observed Q3
 #'     distribution (coloured slab + interval), with a dashed
-#'     reference line at 0.}
+#'     reference line at the mean replicated Q3 over all pairs (about
+#'     \eqn{-1/(k-1)} for the conditional method, 0 for the theta
+#'     method).}
 #' }
 #'
 #' @details
@@ -404,7 +408,13 @@ item_restscore_post <- function(item_restscore) {
 #'     close to 1 indicates the observed correlation is
 #'     systematically higher than expected (local dependence);
 #'     a ppp close to 0 indicates it is systematically lower
-#'     (local repulsion, e.g., speed-accuracy tradeoffs).}
+#'     (local repulsion, e.g., speed-accuracy tradeoffs).
+#'     \code{q3_p_adj} is a single-step max-T adjustment over item
+#'     pairs, as \code{p_adj} in \code{\link{item_restscore_statistic}},
+#'     but one-sided: each pair's mean observed Q3 is standardised by the
+#'     mean and SD of its replicated Q3, and compared with the largest
+#'     standardised replicated value over all pairs in each draw. Unlike
+#'     \code{q3_ppp}, small values flag local dependence.}
 #'   \item{\code{hdi}}{Reports the proportion of draws where the
 #'     observed Q3 falls above (local dependence) or below (local
 #'     repulsion) the HDI of the replicated distribution. The HDI is
@@ -418,6 +428,44 @@ item_restscore_post <- function(item_restscore) {
 #'     exceedance proportions, not posterior probabilities of local
 #'     dependence.}
 #' }
+#'
+#' With \code{q3_statistic(method = "conditional")}, the default,
+#' \code{q3_ppp} was close to uniform in simulations under a fitting Rasch
+#' model, and \code{q3_p_adj} kept the proportion of datasets with any
+#' pair flagged at .05 near or below .05. With \code{method = "theta"},
+#' \code{q3_ppp} is conservative, and so is \code{q3_p_adj} (2\% to 3\% of
+#' datasets with any pair flagged at .05). See \code{\link{q3_statistic}}.
+#'
+#' \strong{Reading \code{q3_p_adj}.} For the pair with the smallest value,
+#' \code{q3_p_adj} is a test of local independence over all pairs, and it
+#' keeps the familywise error rate at .05 when no pair is dependent. The
+#' values for the other pairs do not have this guarantee when some pair is
+#' dependent, since all pairs are computed from the same residuals
+#' (Ferreira, 2024, Example 2). The suggested use is to act on the most
+#' deviant pair, for example by removing an item, combining the two items
+#' into a superitem or modelling the dependence, then refit the model and
+#' recompute Q3 (Christensen et al., 2017). The adjustment covers the Q3
+#' pairs of one call, not other fit statistics computed on the same data.
+#'
+#' Each pair is compared with its own mean replicated Q3 rather than with
+#' the mean over all pairs. Given the total score, expected Q3 differs
+#' between pairs, and is highest for pairs of the easiest and hardest
+#' items. In simulations, a reference at the mean over all pairs made such
+#' a pair the most deviant one in 11\% to 13\% of datasets without local
+#' dependence, against about 2\% if every pair were equally likely.
+#'
+#' @references
+#' Christensen, K. B., Makransky, G. & Horton, M. (2017). Critical
+#' values for Yen's Q3: Identification of local dependence in the
+#' Rasch model using residual correlations.
+#' \emph{Applied Psychological Measurement}, \emph{41}(3), 178--194.
+#' \doi{10.1177/0146621616677520}
+#'
+#' Ferreira, J. A. (2024). Methods of testing a 'small' or 'moderate'
+#' number of hypotheses simultaneously: An account focusing on the
+#' control of the probability of at least one incorrect rejection and of
+#' the false discovery rate. \emph{Journal of Statistical Theory and
+#' Practice}, \emph{19}, 6. \doi{10.1007/s42519-024-00412-4}
 #'
 #' The plot uses two layers from the \pkg{ggdist} package:
 #' \describe{
@@ -472,9 +520,14 @@ q3_post <- function(q3_draws,
   if (!requireNamespace("ggdist", quietly = TRUE)) {
     stop("Package 'ggdist' is required.", call. = FALSE)
   }
-  if (!all(c("item_pair", "q3", "q3_rep") %in% names(q3_draws))) {
-    stop("'q3_draws' must contain columns 'item_pair', 'q3', ",
+  if (!all(c("draw", "item_pair", "q3", "q3_rep") %in% names(q3_draws))) {
+    stop("'q3_draws' must contain columns 'draw', 'item_pair', 'q3', ",
          "and 'q3_rep'.", call. = FALSE)
+  }
+  n_per_pair <- table(q3_draws$item_pair)
+  if (length(unique(n_per_pair)) != 1L) {
+    stop("Every item pair in 'q3_draws' must have the same number of ",
+         "draws.", call. = FALSE)
   }
   
   sort_by <- match.arg(sort_by)
@@ -493,10 +546,28 @@ q3_post <- function(q3_draws,
       q3_obs  = round(mean(.data$q3, na.rm = TRUE), 3),
       q3_rep  = round(mean(.data$q3_rep, na.rm = TRUE), 3),
       .groups = "drop"
-    ) |>
+    )
+
+  # --- Max-T adjusted one-sided p-value over pairs ---
+  wide <- q3_draws |>
+    dplyr::ungroup() |>
+    dplyr::select("draw", "item_pair", "q3", "q3_rep")
+  pairs <- summary_tbl$item_pair
+  rep_mat <- vapply(pairs, function(p) {
+    d <- wide[wide$item_pair == p, ]
+    d$q3_rep[order(d$draw)]
+  }, numeric(sum(wide$item_pair == pairs[1])))
+  rep_mat <- matrix(rep_mat, ncol = length(pairs))
+  obs_mean <- vapply(pairs, function(p) {
+    mean(wide$q3[wide$item_pair == p], na.rm = TRUE)
+  }, numeric(1))
+  summary_tbl$q3_p_adj <- round(.ppp_maxt_upper(obs_mean, rep_mat), 3)
+
+  summary_tbl <- summary_tbl |>
     dplyr::select("item_pair", "item_1", "item_2", "q3_obs", "q3_rep",
-                  "q3_diff", "q3_ppp") |>
+                  "q3_diff", "q3_ppp", "q3_p_adj") |>
     dplyr::arrange(dplyr::desc(.data$q3_diff))
+  ref_line <- mean(q3_draws$q3_rep, na.rm = TRUE)
   
   # --- HDI table: LD / LR probabilities ---
   q3_rep_hdi <- q3_draws |>
@@ -577,7 +648,7 @@ q3_post <- function(q3_draws,
       na.value = "lightblue1"
     ) +
     ggplot2::geom_vline(
-      xintercept = 0, linetype = 2
+      xintercept = ref_line, linetype = 2
     ) +
     ggplot2::labs(
       x = "Observed and expected Q3 residual correlation",

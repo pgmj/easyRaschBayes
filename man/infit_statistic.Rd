@@ -115,7 +115,9 @@ its p-values are also conservative, because the item parameters are
 estimated from the same data. In simulations under a fitting Rasch
 model, two-sided p-values below .05 occurred for 0.5\% to 2\% of items,
 with the lowest rates for polytomous items. Misfit can therefore go
-undetected. It is suggested to also evaluate item fit with
+undetected. The shortfall is largest for the easiest and hardest
+dichotomous items, so misfit in an item far from the persons' locations
+is the most likely to be missed. It is suggested to also evaluate item fit with
 \code{\link{item_restscore_statistic}}, whose p-values were close to
 uniform in the same simulations.
 
