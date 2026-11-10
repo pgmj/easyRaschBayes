@@ -7,10 +7,9 @@
 - [`infit_post()`](https://pgmj.github.io/easyRaschBayes/reference/infit_post.md)
   : Summarize and Plot Posterior Predictive Infit Statistics
 - [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_statistic.md)
-  : Posterior Predictive Item-Restscore Association for Bayesian IRT
-  Models
+  : Item-Restscore Association Conditional on the Total Score
 - [`item_restscore_post()`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_post.md)
-  : Summarize and Plot Posterior Predictive Item-Restscore Associations
+  : Summarize and Plot Item-Restscore Associations
 - [`plot_icc()`](https://pgmj.github.io/easyRaschBayes/reference/plot_icc.md)
   : Item Characteristic Curves with Class Intervals
 - [`fit_statistic_pcm()`](https://pgmj.github.io/easyRaschBayes/reference/fit_statistic_pcm.md)
@@ -70,6 +69,13 @@
   : Extract Person Parameters from a Bayesian Rasch Model
 - [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/reference/posterior_to_prior.md)
   : Extract Informative Priors from a Fitted Bayesian IRT Model
+
+## Data
+
+- [`phq9`](https://pgmj.github.io/easyRaschBayes/reference/phq9.md) :
+  PHQ-9 Depression Screener (NHANES Subsample)
+- [`phq9_nhanes`](https://pgmj.github.io/easyRaschBayes/reference/phq9_nhanes.md)
+  : PHQ-9 Depression Screener (NHANES Random Sample)
 
 ## Hurdle-PCM specific
 

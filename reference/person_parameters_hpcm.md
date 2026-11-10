@@ -61,8 +61,8 @@ person_parameters_hpcm(
 
 - theta_range:
 
-  A numeric vector of length 2 giving the range for the Newton-Raphson
-  WLE search on the hurdle submodel. Default is `c(-7, 7)`.
+  A numeric vector of length 2 giving the search range for the WLE on
+  the hurdle submodel. Default is `c(-7, 7)`.
 
 ## Value
 
@@ -73,8 +73,10 @@ A list with three elements:
   A list with the same structure as
   [`person_parameters`](https://pgmj.github.io/easyRaschBayes/reference/person_parameters.md)
   for a dichotomous Rasch model: `person_estimates` (one row per person;
-  `sum_score` is the number of items with \\Y \> 0\\; both EAP and
-  Warm's WLE are provided), `score_table`, and optionally
+  `sum_score` is the number of items with \\Y \> 0\\ and `n_items` the
+  number of items answered; both EAP and Warm's WLE are provided, and
+  with missing responses the WLE uses the items the person answered),
+  `score_table` (persons who answered every item), and optionally
   `draws_matrix`. The hurdle EAP is the sign-flipped brms random effect
   on `hu`, so higher values mean greater presence / susceptibility.
 
@@ -89,9 +91,10 @@ A list with three elements:
 - `correlation`:
 
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html)
-  summarising the posterior of \\\rho(\theta\_{hurdle},
-  \theta\_{pcm})\\, identical to the `correlation` element returned by
-  [`item_parameters_hpcm`](https://pgmj.github.io/easyRaschBayes/reference/item_parameters_hpcm.md).
+  summarising the posterior of \\\rho(\theta\_{hurdle}, \theta\_{pcm})\\
+  with a 95% interval, the same as the `correlation` element returned by
+  [`item_parameters_hpcm`](https://pgmj.github.io/easyRaschBayes/reference/item_parameters_hpcm.md)
+  with `prob = 0.95`.
 
 ## Details
 

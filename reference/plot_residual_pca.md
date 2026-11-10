@@ -49,9 +49,11 @@ plot_residual_pca(
 
 - center:
 
-  Logical. If `TRUE` (the default), item locations are mean-centered to
-  zero, matching the convention used in
-  [`plot_targeting`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting.md).
+  Logical. If `TRUE` (the default), item locations (the mean of each
+  item's thresholds) are centred to mean zero.
+  [`plot_targeting`](https://pgmj.github.io/easyRaschBayes/reference/plot_targeting.md)
+  centres on the mean of all thresholds instead, so the two differ by a
+  constant when items have different numbers of categories.
 
 - prob:
 
@@ -65,12 +67,12 @@ plot_residual_pca(
 
 - style:
 
-  Character. Visual style for displaying uncertainty. `"density"` (the
-  default) overlays filled 2D density contours per item computed from
-  the draw-level location and loading values, showing the full joint
+  Character. Visual style for displaying uncertainty. `"density"`
+  overlays filled 2D density contours per item computed from the
+  draw-level location and loading values, showing the full joint
   posterior uncertainty. `"crosshair"` shows point estimates with
-  horizontal and vertical credible interval bars. `"both"` displays
-  density contours with crosshairs on top.
+  horizontal and vertical credible interval bars. `"both"` (the default)
+  displays density contours with crosshairs on top.
 
 - density_alpha:
 
@@ -202,7 +204,7 @@ library(ggplot2)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 %>%
+df_pcm <- phq9[1:200, 1:9] %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")

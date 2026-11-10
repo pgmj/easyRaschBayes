@@ -1,14 +1,19 @@
 # Posterior Predictive Infit Statistic for the Hurdle Partial Credit Model
 
-Computes conditional item infit statistics separately for the two
-submodels of a hurdle partial credit model fitted with brms using the
+Computes posterior predictive item infit statistics separately for the
+two submodels of a hurdle partial credit model fitted with brms using
+the
 [`hurdle_acat`](https://pgmj.github.io/easyRaschBayes/reference/hurdle_acat.md)
 custom family: (i) the *hurdle* submodel for \\P(Y \> 0)\\ (Bernoulli)
 and (ii) the *partial credit* severity submodel for \\P(Y = k \mid Y \>
 0)\\ on the positive categories. For each posterior draw, expected
 values and variances are derived from the submodel-specific category
 probabilities, and variance-weighted standardised residuals are computed
-for both observed and replicated data.
+for both observed and replicated data. Expectations are given each
+draw's person parameters, as in `infit_statistic(method = "theta")`,
+since the hurdle model has no sufficient total score. Use that method
+for a Rasch-family model when results should be comparable with this
+function.
 
 ## Usage
 
@@ -97,11 +102,11 @@ Observed and replicated scores are \\1\[Y\_{obs} \> 0\]\\ and
 **Partial credit submodel.** Only observations with \\Y\_{obs} \> 0\\
 contribute. Conditional probabilities are \$\$P(Y = k \mid Y \> 0) =
 epred\[, , k+1\] / (1 - hu), \quad k = 1, \ldots, K - 1.\$\$ The
-conditional expected value and variance use category scores \\1, \ldots,
-K - 1\\. Replicated severity values are drawn independently for each
-(draw, observation) from these conditional probabilities via inverse-CDF
-sampling, so the partial credit PPC is not contaminated by hurdle
-misfit.
+expected value and variance under these probabilities use category
+scores \\1, \ldots, K - 1\\. Replicated severity values are drawn
+independently for each (draw, observation) from these conditional
+probabilities via inverse-CDF sampling, so the partial credit PPC is not
+contaminated by hurdle misfit.
 
 Within each submodel the infit per item is \$\$Infit_i^{(s)} = \sum_v
 (X\_{vi} - E\_{vi}^{(s)})^2 / \sum_v Var\_{vi}^{(s)},\$\$ with the sum

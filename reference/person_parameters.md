@@ -42,6 +42,11 @@ person_parameters(
   :   e.g., `response ~ 0 + item + (1 | id)` with
       `family = bernoulli()`.
 
+  Rating scale model
+
+  :   `family = acat` with common thresholds and item effects, e.g.,
+      `response ~ 1 + (1 | item) + (1 | id)`.
+
 - item_var:
 
   An unquoted variable name identifying the item grouping variable in
@@ -66,8 +71,9 @@ person_parameters(
 
 - theta_range:
 
-  A numeric vector of length 2 specifying the range for the
-  Newton-Raphson WLE search. Default is `c(-7, 7)`.
+  A numeric vector of length 2 specifying the search range for the WLE.
+  A WLE outside it is set to the nearer bound with an `NA` standard
+  error. Default is `c(-7, 7)`.
 
 ## Value
 
@@ -76,19 +82,20 @@ A list with the following elements:
 - person_estimates:
 
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
-  one row per person containing: the person ID, `sum_score`, `eap`
-  (posterior mean of person random effect), `eap_se` (posterior SD),
-  `wle` (Warm's weighted likelihood estimate), and `wle_se` (asymptotic
-  SE of the WLE). Rows are ordered to match the original person order in
-  the model data (i.e., the order of first appearance of each person
-  ID).
+  one row per person containing: the person ID, `n_items` (number of
+  items answered), `sum_score` (sum of the item scores, each scored from
+  0), `eap` (posterior mean of person random effect), `eap_se`
+  (posterior SD), `wle` (Warm's weighted likelihood estimate), and
+  `wle_se` (asymptotic SE of the WLE). Rows are ordered to match the
+  original person order in the model data (i.e., the order of first
+  appearance of each person ID).
 
 - score_table:
 
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html)
-  mapping each observed ordinal sum score to its mean EAP, mean EAP SE,
-  WLE, and WLE SE. Extreme scores (0 and maximum) receive WLE estimates
-  at the boundary of `theta_range` with `NA` standard errors.
+  mapping each sum score observed among persons who answered every item
+  to the number of such persons, their mean EAP and mean EAP SE, and the
+  WLE and WLE SE for that score on the complete item set.
 
 - draws_matrix:
 
@@ -108,22 +115,19 @@ standard Bayesian point estimates and reflect shrinkage toward the
 population mean.
 
 **WLE estimates** (Warm, 1989) are computed from the posterior mean item
-parameters using Newton-Raphson iteration with adaptive step damping on
-the Warm-corrected likelihood. WLE adds a bias correction term
-\\J(\theta) / (2 I(\theta))\\ to the score equations, where
-\\I(\theta)\\ is the test information and \\J(\theta) = \sum_i \sum_c
-(c - E_i)^3 P\_{ic}\\ is the sum of third central moments. This produces
-estimates with reduced finite-sample bias compared to MLE, especially at
-extreme scores (Warm, 1989).
+parameters by solving the Warm-corrected score equation \$\$r -
+E(\theta) + J(\theta) / (2 I(\theta)) = 0\$\$ with
+[`uniroot`](https://rdrr.io/r/stats/uniroot.html), where \\r\\ is the
+sum score, \\E(\theta)\\ the expected sum score, \\I(\theta)\\ the test
+information and \\J(\theta) = \sum_i \sum_c (c - E_i)^3 P\_{ic}\\ the
+sum of third central moments. The correction reduces the finite-sample
+bias of the MLE and keeps the estimate finite at the minimum and maximum
+scores. The standard error is \\1 / \sqrt{I(\theta)}\\.
 
-The Newton-Raphson algorithm uses adaptive step damping following the
-approach in iarm (Mueller): the maximum allowed step size shrinks by a
-factor of 1.05 each iteration, preventing overshoot and ensuring
-convergence for near-extreme scores.
-
-For extreme scores (sum score = 0 or maximum possible), the WLE is not
-well-defined. These cases are assigned the boundary values of
-`theta_range` with `NA` standard errors.
+A sum score only has a WLE relative to the items that make it up.
+Persons with missing responses therefore get the WLE for their sum score
+on the items they answered, computed separately for each set of answered
+items.
 
 When `center = TRUE` (the default), item difficulty parameters are
 shifted so their mean is zero, and EAP person parameters are shifted by
@@ -166,8 +170,9 @@ library(tibble)
 
 # --- Dichotomous Rasch Model (random items) ---
 
-df_rm <- eRm::raschdat3 %>%
-  as.data.frame() %>%
+# PHQ-9 items dichotomised (any symptom vs none), for illustration only
+df_rm <- phq9[1:200, 1:9] %>%
+  mutate(across(everything(), ~ as.integer(.x > 0))) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
 
@@ -196,7 +201,7 @@ RMUreliability(pp_draws$draws_matrix)
 
 # --- Polytomous PCM (acat) ---
 
-df_pcm <- eRm::pcmdat2 %>%
+df_pcm <- phq9[1:200, 1:9] %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")

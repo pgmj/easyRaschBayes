@@ -1,13 +1,13 @@
-# Posterior Predictive Item-Restscore Association for Bayesian IRT Models
+# Item-Restscore Association Conditional on the Total Score
 
-Computes a Bayesian analogue of the item-restscore association test
-(Kreiner, 2011) for Rasch-family models fitted with brms. For each
-posterior draw, the Goodman-Kruskal gamma coefficient between each
-item's score and the rest-score (total score minus that item) is
-computed for both observed and replicated data. Posterior predictive
-p-values indicate whether the observed association is stronger than the
-model predicts, which signals violations of local independence or
-unidimensionality.
+Computes the item-restscore association (Kreiner, 2011) for Rasch-family
+models fitted with brms, with a posterior predictive check that
+conditions on each person's total score. The observed Goodman-Kruskal
+gamma between each item and its rest-score (total score minus that item)
+is compared with (i) its expected value under the model, conditional on
+the total scores, and (ii) the gammas of datasets replicated conditional
+on the total scores. Both are computed for each posterior draw of the
+item parameters.
 
 ## Usage
 
@@ -26,8 +26,11 @@ item_restscore_statistic(
 
   A fitted
   [`brmsfit`](https://paulbuerkner.com/brms/reference/brmsfit-class.html)
-  object from an ordinal IRT model (e.g., `family = acat` for a partial
-  credit model) or a dichotomous model (`family = bernoulli()`).
+  object from a Rasch-family model in which the total score is
+  sufficient for the person location: `family = acat` (partial credit or
+  rating scale model) or `family = bernoulli()` (dichotomous Rasch
+  model), both with the logit link, a person random intercept
+  `(1 | id)`, and no `disc` term. Other models stop with an error.
 
 - item_var:
 
@@ -47,82 +50,129 @@ item_restscore_statistic(
 
 ## Value
 
-A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
-the following columns:
+A list with two elements:
 
-- item:
+- result:
 
-  The item identifier.
+  A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
+  one row per item, sorted by `gamma_diff` in decreasing order, and the
+  columns:
 
-- gamma_obs:
+  item
 
-  Posterior mean of the observed Goodman-Kruskal gamma between this item
-  and the rest-score.
+  :   The item identifier, named after `item_var`.
 
-- gamma_rep:
+  gamma_obs
 
-  Posterior mean of the replicated gamma.
+  :   The observed gamma between the item and the rest-score.
 
-- gamma_diff:
+  gamma_exp
 
-  Posterior mean of `gamma_obs - gamma_rep`. Positive values indicate
-  the observed item-restscore association is stronger than the model
-  expects.
+  :   The expected gamma conditional on the total scores, as in Kreiner
+      (2011), averaged over posterior draws.
 
-- ppp:
+  gamma_diff
 
-  Posterior predictive p-value: `mean(gamma_obs > gamma_rep)` across
-  draws. Values close to 1 indicate the item discriminates more than the
-  model predicts (too high discrimination). Values close to 0 indicate
-  the item discriminates less than expected (too low discrimination,
-  e.g., noise or miskeyed item).
+  :   `gamma_obs - gamma_exp`.
 
-- gamma_obs_q025, gamma_obs_q975:
+  ppp
 
-  95\\ the observed gamma.
+  :   Mid-p posterior predictive p-value, the proportion of draws where
+      `gamma_obs` exceeds the replicated gamma, counting ties as one
+      half. Values near 1 indicate stronger association than the model
+      implies, values near 0 weaker.
 
-- gamma_obs_q005, gamma_obs_q995:
+  p_adj
 
-  99\\ the observed gamma.
+  :   Two-sided posterior predictive p-value adjusted for the number of
+      items by a single-step max-T procedure. See Details.
 
-- gamma_diff_q025, gamma_diff_q975:
+  gamma_rep
 
-  95\\ the gamma difference.
+  :   Mean of the replicated gamma across draws.
 
-- gamma_diff_q005, gamma_diff_q995:
+  gamma_diff_q025, gamma_diff_q975
 
-  99\\ the gamma difference.
+  :   95% credible interval for `gamma_obs` minus the expected gamma. It
+      reflects uncertainty in the item parameters only. See Details.
+
+  gamma_diff_q005, gamma_diff_q995
+
+  :   99% credible interval for the same difference.
+
+  gamma_rep_q025, gamma_rep_q975
+
+  :   95% posterior predictive interval for the gamma of a replicated
+      dataset.
+
+  gamma_rep_q005, gamma_rep_q995
+
+  :   99% posterior predictive interval for the same.
+
+- draws:
+
+  A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) in
+  long format with one row per item and draw, and the columns `item`
+  (named after `item_var`), `draw`, `gamma_rep` (replicated gamma) and
+  `gamma_exp` (expected gamma).
 
 ## Details
 
-The item-restscore association is a key diagnostic in Rasch measurement.
-Under the Rasch model, each item should relate to the latent trait (and
-hence the rest-score) only through the modelled relationship.
-Goodman-Kruskal's gamma is a rank-based measure of association for
-ordinal cross-tabulations that is well-suited for this purpose (Kreiner,
-2011).
+Observed gamma above the expected value means the item discriminates
+more than the equal discrimination of the Rasch model implies, and
+observed gamma below it means the item discriminates less.
 
-The procedure for each posterior draw \\s\\ is:
+Under a Rasch-family model the total score is sufficient for the person
+location. Given the total score, the distribution of a person's
+responses depends on the item parameters only. For each posterior draw
+\\s\\ the function:
 
-1.  Obtain replicated responses \\Y^{rep(s)}\\ from
-    [`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
+1.  Takes the category probabilities from
+    [`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html)
+    and removes the person location from them, which leaves item weights
+    that depend on that draw's item parameters only.
 
-2.  For each item \\i\\ and each person \\v\\, compute the rest-score:
-    \\R^{obs}\_{vi} = \sum\_{j \neq i} X\_{vj}\\ for observed data and
-    \\R^{rep(s)}\_{vi} = \sum\_{j \neq i} Y^{rep(s)}\_{vj}\\ for
-    replicated data.
+2.  Computes, with elementary symmetric functions, the probability of
+    each item score given each person's total score. Summed over
+    persons, these give the expected item \\\times\\ rest-score table
+    and its gamma, \\\gamma^{exp(s)}\_i\\.
 
-3.  Cross-tabulate item score \\\times\\ rest-score and compute the
-    Goodman-Kruskal gamma for both observed and replicated data.
+3.  Draws a replicated dataset in which every person keeps their
+    observed total score, and computes the replicated gamma
+    \\\gamma^{rep(s)}\_i\\.
 
-4.  Compare the two gammas across draws.
+The observed gamma \\\gamma^{obs}\_i\\ is computed once from the data.
+Persons with the minimum or maximum total score carry no information
+about fit and their responses are reproduced as observed in every
+replicated dataset.
 
-Items with `ppp` close to 1 have observed item-restscore association
-that is consistently stronger than the model predicts. This typically
-indicates that the item discriminates more than assumed under the
-equal-discrimination Rasch model (i.e., a violation of the Rasch
-assumption). Items with `ppp` close to 0 discriminate less than
-expected.
+Because replication conditions on the total scores, the reference
+distribution does not depend on the person locations. The data are still
+used to estimate the item parameters, but these are few relative to the
+number of persons. This removes the main reason why posterior predictive
+p-values based on person parameters drawn from the same data are
+conservative (Robins et al., 2000).
+
+The `gamma_diff` interval describes how far the observed sample departs
+from the model expectation, given the uncertainty in the item
+parameters. It contains no sampling variation, so it is not a test, and
+it is not a credible interval for misfit in the population. Use `ppp` or
+`p_adj` to judge whether a departure is larger than chance would
+produce. As with any test, they will flag smaller departures as the
+sample size grows.
+
+`p_adj` standardises each item's observed gamma by the mean and standard
+deviation of its replicated gammas. Its reference is the largest
+absolute standardised deviation across items within each replicated
+dataset, so it accounts for testing all items at once.
+
+With missing responses, the total and rest-scores are sums over the
+items a person answered, scored from 0. The conditional distribution is
+computed for each person's set of answered items.
+
+Replication uses random numbers, so call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) first for
+reproducible results.
 
 ## References
 
@@ -137,17 +187,20 @@ Bürkner, P.-C. (2021). Bayesian Item Response Modeling in R with brms
 and Stan. *Journal of Statistical Software*, *100*, 1–54.
 [doi:10.18637/jss.v100.i05](https://doi.org/10.18637/jss.v100.i05)
 
+Robins, J. M., van der Vaart, A. & Ventura, V. (2000). Asymptotic
+distribution of P values in composite null models. *Journal of the
+American Statistical Association*, *95*(452), 1143–1156.
+[doi:10.1080/01621459.2000.10474310](https://doi.org/10.1080/01621459.2000.10474310)
+
 ## See also
 
-[`fit_statistic_pcm`](https://pgmj.github.io/easyRaschBayes/reference/fit_statistic_pcm.md)
-for posterior predictive fit statistics,
-[`fit_statistic_rm`](https://pgmj.github.io/easyRaschBayes/reference/fit_statistic_rm.md)
-for posterior predictive fit statistics,
+[`item_restscore_post`](https://pgmj.github.io/easyRaschBayes/reference/item_restscore_post.md)
+for a summary table and plot,
 [`infit_statistic`](https://pgmj.github.io/easyRaschBayes/reference/infit_statistic.md)
-for Bayesian infit/outfit,
+for posterior predictive infit/outfit,
 [`q3_statistic`](https://pgmj.github.io/easyRaschBayes/reference/q3_statistic.md)
 for Bayesian Q3 residual correlations,
-[`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
+[`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html).
 
 ## Examples
 
@@ -160,7 +213,7 @@ library(tibble)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 %>%
+df_pcm <- phq9[1:200, 1:9] %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -193,8 +246,9 @@ irs_results$plot
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::raschdat3 %>%
-  as.data.frame() %>%
+# PHQ-9 items dichotomised (any symptom vs none), for illustration only
+df_rm <- phq9[1:200, 1:9] %>%
+  mutate(across(everything(), ~ as.integer(.x > 0))) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
 

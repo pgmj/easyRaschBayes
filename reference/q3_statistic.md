@@ -6,11 +6,21 @@ fitted with brms. For each posterior draw, residual correlations are
 computed for both observed and replicated data, yielding draw-level Q3
 values that can be summarized and visualized via
 [`q3_post`](https://pgmj.github.io/easyRaschBayes/reference/q3_post.md).
+By default (`method = "conditional"`) the residuals are taken from the
+expected responses given each person's total score, and the replicated
+data keep each person's observed total score. With `method = "theta"`
+they are computed given each draw's person locations instead.
 
 ## Usage
 
 ``` r
-q3_statistic(model, item_var = item, person_var = id, ndraws_use = NULL)
+q3_statistic(
+  model,
+  item_var = item,
+  person_var = id,
+  ndraws_use = NULL,
+  method = c("conditional", "theta")
+)
 ```
 
 ## Arguments
@@ -19,8 +29,12 @@ q3_statistic(model, item_var = item, person_var = id, ndraws_use = NULL)
 
   A fitted
   [`brmsfit`](https://paulbuerkner.com/brms/reference/brmsfit-class.html)
-  object from an ordinal IRT model (e.g., `family = acat` for a partial
-  credit model) or a dichotomous model (`family = bernoulli()`).
+  object. For `method = "conditional"` it must be a Rasch-family model
+  in which the total score is sufficient for the person location:
+  `family = acat` (partial credit or rating scale model) or
+  `family = bernoulli()` (dichotomous Rasch model), both with the logit
+  link, a person random intercept `(1 | id)`, and no `disc` term.
+  `method = "theta"` accepts any ordinal or Bernoulli model.
 
 - item_var:
 
@@ -37,6 +51,12 @@ q3_statistic(model, item_var = item, person_var = id, ndraws_use = NULL)
   Optional positive integer. If specified, a random subset of posterior
   draws of this size is used. If `NULL` (the default), all draws are
   used.
+
+- method:
+
+  Either `"conditional"` (the default), with expected responses
+  conditional on the total score, or `"theta"`, with expected responses
+  given each draw's person locations, as in easyRaschBayes 0.3.0.
 
 ## Value
 
@@ -75,23 +95,54 @@ for summary tables and plots.
 
 ## Details
 
-The procedure works as follows for each posterior draw \\s\\:
+**Conditional method.** Under a Rasch-family model the total score is
+sufficient for the person location, so the distribution of a person's
+responses given the total does not depend on the location. For each
+posterior draw \\s\\, the expected response \\E^{(s)}(X\_{vi} \mid
+R_v)\\ given the total score \\R_v\\ is computed from the item
+parameters of that draw with elementary symmetric functions. The
+observed residuals are \\X\_{vi} - E^{(s)}(X\_{vi} \mid R_v)\\.
+Replicated responses are drawn given each person's total score, and
+their residuals use the same expected values. Persons with the minimum
+or maximum total score have no residual variation and do not contribute.
 
-1.  Compute expected values \\E^{(s)}\_{vi}\\ from the category
-    probabilities returned by
-    [`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html).
-    For ordinal models: \\E^{(s)}\_{vi} = \sum_c c \cdot P^{(s)}(X\_{vi}
-    = c)\\. For binary models: \\E^{(s)}\_{vi} = P^{(s)}(X\_{vi} = 1)\\.
+Given the total score, a person's residuals sum to 0, so the observed Q3
+values centre on about \\-1/(k-1)\\ with \\k\\ items, not on 0
+(Christensen et al., 2017). The replicated Q3 values have the same
+centre, so the comparison of observed and replicated Q3 is not affected,
+and `q3_diff` in
+[`q3_post`](https://pgmj.github.io/easyRaschBayes/reference/q3_post.md)
+centres on 0.
 
-2.  Compute observed residuals: \\d^{(s)}\_{vi} = X\_{vi} -
-    E^{(s)}\_{vi}\\.
+**Theta method.** For each draw, the expected responses
+\\E^{(s)}\_{vi}\\ are computed from the category probabilities of
+[`posterior_epred`](https://mc-stan.org/rstantools/reference/posterior_epred.html),
+given the draw's person locations. The observed residuals are
+\\X\_{vi} - E^{(s)}\_{vi}\\, and the replicated residuals use responses
+from
+[`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html)
+for the same draw. Because the person locations are posterior draws
+rather than point estimates, the observed Q3 values centre on 0 under
+the model, as the replicated values do.
 
-3.  Compute replicated residuals: \\d^{rep(s)}\_{vi} =
-    Y^{rep(s)}\_{vi} - E^{(s)}\_{vi}\\, where \\Y^{rep}\\ is drawn via
-    [`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
+With both methods, Q3 for an item pair is the Pearson correlation of the
+residuals across all persons who responded to both items.
 
-4.  For each item pair \\(i, j)\\, compute Q3 as the Pearson correlation
-    of residuals across all persons who responded to both items.
+**Calibration.** In simulations under a fitting Rasch model (dichotomous
+and partial credit models, 300 and 1000 persons, 8 or 10 items), the
+conditional ppp from
+[`q3_post`](https://pgmj.github.io/easyRaschBayes/reference/q3_post.md)
+was close to uniform: 4.2\\ theta method was conservative, with 1.9\\
+locations are drawn given the observed responses. With many item pairs,
+some pair will usually exceed .95 by chance. The adjusted `q3_p_adj` in
+[`q3_post`](https://pgmj.github.io/easyRaschBayes/reference/q3_post.md)
+accounts for this. Under the conditional method, the proportion of
+simulated datasets with any pair flagged by it at .05 was 3.5\\
+condition, pooled).
+
+Replication uses random numbers, so call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) first for
+reproducible results.
 
 ## References
 
@@ -130,7 +181,7 @@ library(tibble)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 %>%
+df_pcm <- phq9[1:200, 1:9] %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -162,8 +213,9 @@ result$plot
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::raschdat3 %>%
-  as.data.frame() %>%
+# PHQ-9 items dichotomised (any symptom vs none), for illustration only
+df_rm <- phq9[1:200, 1:9] %>%
+  mutate(across(everything(), ~ as.integer(.x > 0))) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
 

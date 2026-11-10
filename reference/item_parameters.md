@@ -93,8 +93,10 @@ A list with the following elements:
   A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html)
   extending the long `locations` with: `se` (posterior SD), `hdci_lower`
   and `hdci_upper` (highest density continuous interval bounds at the
-  level specified by `prob`), and `n_eff` (effective sample size for the
-  parameter).
+  level specified by `prob`), and `n_eff` (bulk effective sample size
+  from
+  [`posterior::ess_bulk()`](https://mc-stan.org/posterior/reference/ess_bulk.html),
+  which accounts for disagreement between chains).
 
 - item_information:
 
@@ -194,7 +196,7 @@ library(tibble)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 %>%
+df_pcm <- phq9[1:200, 1:9] %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -243,8 +245,9 @@ dim(ip_draws$draws_matrix)
 
 # --- Dichotomous Rasch ---
 
-df_rm <- eRm::raschdat3 %>%
-  as.data.frame() %>%
+# PHQ-9 items dichotomised (any symptom vs none), for illustration only
+df_rm <- phq9[1:200, 1:9] %>%
+  mutate(across(everything(), ~ as.integer(.x > 0))) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
 

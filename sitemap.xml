@@ -1,6 +1,7 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://pgmj.github.io/easyRaschBayes/404.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/LICENSE.html</loc></url>
+<url><loc>https://pgmj.github.io/easyRaschBayes/articles/hpcm-rasch-analysis.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/articles/index.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/articles/pcm-rasch-analysis.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/authors.html</loc></url>
@@ -28,6 +29,8 @@
 <url><loc>https://pgmj.github.io/easyRaschBayes/reference/log_lik_hurdle_acat.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/reference/person_parameters.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/reference/person_parameters_hpcm.html</loc></url>
+<url><loc>https://pgmj.github.io/easyRaschBayes/reference/phq9.html</loc></url>
+<url><loc>https://pgmj.github.io/easyRaschBayes/reference/phq9_nhanes.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/reference/plot_bars.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/reference/plot_icc.html</loc></url>
 <url><loc>https://pgmj.github.io/easyRaschBayes/reference/plot_icc_hpcm.html</loc></url>
