@@ -84,7 +84,7 @@
 #' # --- Polytomous Rasch (Partial Credit Model) ---
 #'
 #' # Prepare data in long format
-#' df_pcm <- eRm::pcmdat2 %>%
+#' df_pcm <- phq9[1:200, 1:9] %>%
 #'   mutate(across(everything(), ~ .x + 1)) %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -360,8 +360,9 @@ fit_statistic_pcm <- function(model, criterion, group, ndraws_use = NULL) {
 #' # --- Dichotomous Rasch Model ---
 #'
 #' # Prepare binary response data in long format
-#' df_rm <- eRm::raschdat3 %>%
-#'   as.data.frame() %>%
+#' # PHQ-9 items dichotomised (any symptom vs none), for illustration only
+#' df_rm <- phq9[1:200, 1:9] %>%
+#'   mutate(across(everything(), ~ as.integer(.x > 0))) %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
 #'
@@ -696,7 +697,7 @@ fit_statistic_rm <- function(model, criterion, group,
 #'
 #' # --- Partial Credit Model (polytomous) ---
 #'
-#' df_pcm <- eRm::pcmdat2 %>%
+#' df_pcm <- phq9[1:200, 1:9] %>%
 #'   mutate(across(everything(), ~ .x + 1)) %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -724,8 +725,9 @@ fit_statistic_rm <- function(model, criterion, group,
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
-#' df_rm <- eRm::raschdat3 %>%
-#'   as.data.frame() %>%
+#' # PHQ-9 items dichotomised (any symptom vs none), for illustration only
+#' df_rm <- phq9[1:200, 1:9] %>%
+#'   mutate(across(everything(), ~ as.integer(.x > 0))) %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
 #'
@@ -1090,7 +1092,7 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #'
 #' # --- Partial Credit Model ---
 #'
-#' df_pcm <- eRm::pcmdat2 %>%
+#' df_pcm <- phq9[1:200, 1:9] %>%
 #'   mutate(across(everything(), ~ .x + 1)) %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -1117,8 +1119,9 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #'
 #' # --- Dichotomous Rasch Model ---
 #'
-#' df_rm <- eRm::raschdat3 %>%
-#'   as.data.frame() %>%
+#' # PHQ-9 items dichotomised (any symptom vs none), for illustration only
+#' df_rm <- phq9[1:200, 1:9] %>%
+#'   mutate(across(everything(), ~ as.integer(.x > 0))) %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
 #'

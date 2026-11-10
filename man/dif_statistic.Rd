@@ -191,7 +191,7 @@ library(tibble)
 # --- Dichotomous Rasch with DIF testing ---
 
 set.seed(123)
-df <- expand.grid(id = 1:200, item = paste0("I", 1:10)) \%>\%
+df <- expand.grid(item = paste0("I", 1:10), id = 1:200) \%>\%
   mutate(
     gender = rep(sample(c("M", "F"), 200, TRUE), each = 10),
     theta  = rep(rnorm(200), each = 10),
@@ -222,10 +222,10 @@ dif_result$plot
 
 # --- Partial Credit Model: uniform DIF ---
 
-df_pcm <- eRm::pcmdat2 \%>\%
-  mutate(across(everything(), ~ .x + 1)) \%>\%
+# The first 200 persons with gender recorded
+df_pcm <- na.omit(phq9[, 1:10])[1:200, ] \%>\%
+  mutate(across(q1:q9, ~ .x + 1)) \%>\%
   rownames_to_column("id") \%>\%
-  mutate(gender = sample(c("M", "F"), n(), TRUE)) \%>\%
   pivot_longer(!c(id, gender),
                names_to = "item", values_to = "response")
 

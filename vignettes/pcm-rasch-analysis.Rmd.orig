@@ -369,6 +369,14 @@ q3_results$summary
 q3_results$plot
 ```
 
+In the plot, the grey distributions are the replicated Q3 and the points
+are the observed Q3. The observed values vary little across draws, because
+the residuals given the total score depend only on the item parameters,
+which 600 persons estimate precisely. The replicated values also vary
+through the sampling of new responses, so they are wider. Each pair has its
+own expected value, so the grey distributions are not all centred on the
+dashed line.
+
 The largest difference by far is for `q1` and `q2`, the two core symptoms
 of depression (little interest and feeling down), with an observed Q3 of
 0.24 against about -0.12 replicated. Next, with differences of about 0.15

@@ -152,7 +152,7 @@ library(ggplot2)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 \%>\%
+df_pcm <- phq9[1:200, 1:9] \%>\%
   mutate(across(everything(), ~ .x + 1)) \%>\%
   rownames_to_column("id") \%>\%
   pivot_longer(!id, names_to = "item", values_to = "response")

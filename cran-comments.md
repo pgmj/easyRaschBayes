@@ -2,23 +2,35 @@
 
 ## R CMD check results
 
-0 errors | 0 warnings | 0 notes
+0 errors | 0 warnings | 1 note
+
+* The note on win-builder (R-devel) is a possibly invalid URL, explained
+  under Notes below.
 
 ## Test environments
 
-* local: macOS 26.5.1, R 4.5.3
-* rhub::check() - ubuntu-latest, macos-latest
+* local: macOS 26.7.2, R 4.6.1 and Ubuntu 24.04.5 LTS (aarch64), R 4.6.1
+* rhub::rhub_check(): ubuntu-next, linux-r-devel
 * devtools::check_win_devel()
 
 ## Notes
 
-* Update version 0.2.0.1 -> 0.3.0
+* Update version 0.3.0 -> 0.4.0.
 
-* Two minor bug fixes
+* The URL https://pgmj.github.io/easyRaschBayes/articles/hpcm-rasch-analysis.html
+  in README.md may be reported as invalid. It is a new article on the package
+  website, and it will be live when the 0.4.0 site is deployed.
 
-* New custom brms family `hurdle_acat` for hurdle partial credit models (H-PCM).
+* The item fit and local dependence functions (`item_restscore_statistic()`,
+  `infit_statistic()`, `q3_statistic()`) now condition on each person's
+  total score. Their results change, and the previous behaviour is kept as
+  `method = "theta"` where it applies. NEWS.md lists these under
+  "Breaking changes".
 
-* New post-processing/helper functions adapted for the H-PCM output.
+* Several bug fixes, including `dif_statistic()` for polytomous models and
+  rating scale models.
+
+* Two new datasets, `phq9` and `phq9_nhanes`.
 
 
 ## Downstream dependencies

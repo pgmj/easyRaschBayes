@@ -139,7 +139,7 @@
 #'
 #' # --- Partial Credit Model ---
 #'
-#' df_pcm <- eRm::pcmdat2 %>%
+#' df_pcm <- phq9[1:200, 1:9] %>%
 #'   mutate(across(everything(), ~ .x + 1)) %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -177,8 +177,9 @@
 #'
 #' # --- Dichotomous Rasch ---
 #'
-#' df_rm <- eRm::raschdat3 %>%
-#'   as.data.frame() %>%
+#' # PHQ-9 items dichotomised (any symptom vs none), for illustration only
+#' df_rm <- phq9[1:200, 1:9] %>%
+#'   mutate(across(everything(), ~ as.integer(.x > 0))) %>%
 #'   rownames_to_column("id") %>%
 #'   pivot_longer(!id, names_to = "item", values_to = "response")
 #'

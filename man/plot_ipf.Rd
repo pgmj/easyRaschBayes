@@ -106,7 +106,7 @@ library(ggplot2)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 \%>\%
+df_pcm <- phq9[1:200, 1:9] \%>\%
   mutate(across(everything(), ~ .x + 1)) \%>\%
   rownames_to_column("id") \%>\%
   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -125,7 +125,7 @@ plot_ipf(fit_pcm, item_var = item, person_var = id)
 
 # Plot a subset of items
 plot_ipf(fit_pcm, item_var = item, person_var = id,
-         items = c("I1", "I2", "I3"))
+         items = c("q1", "q2", "q3"))
 
 # Customise appearance
 plot_ipf(fit_pcm, item_var = item, person_var = id,

@@ -154,10 +154,11 @@
 #'
 #' # --- Partial Credit Model ---
 #'
-#' df_pcm <- eRm::pcmdat2 %>%
-#'   mutate(across(everything(), ~ .x + 1)) %>%
+#' # The first 200 persons with gender recorded, gender is used for DIF below
+#' df_pcm <- na.omit(phq9[, 1:10])[1:200, ] %>%
+#'   mutate(across(q1:q9, ~ .x + 1)) %>%
 #'   rownames_to_column("id") %>%
-#'   pivot_longer(!id, names_to = "item", values_to = "response")
+#'   pivot_longer(!c(id, gender), names_to = "item", values_to = "response")
 #'
 #' fit_pcm <- brm(
 #'   response | thres(gr = item) ~ 1 + (1 | id),
@@ -170,20 +171,12 @@
 #' plot_icc(fit_pcm)
 #'
 #' # Select specific items, one group per sum score
-#' plot_icc(fit_pcm, items = c("I1", "I2"), method = "score")
+#' plot_icc(fit_pcm, items = c("q1", "q2"), method = "score")
 #'
-#' # Groups defined by hand: sum scores 1-3, 4 and 5-7
-#' plot_icc(fit_pcm, method = "manual", score_breaks = c(4, 5))
+#' # Groups defined by hand: sum scores 1-9, 10-14, 15-19 and 20-26
+#' plot_icc(fit_pcm, method = "manual", score_breaks = c(10, 15, 20))
 #'
-#' # With DIF overlay and partial gamma annotation
-#' 
-#' # same dataset, adding a `gender` DIF variable
-#' df_pcm <- eRm::pcmdat2 %>%
-#'   mutate(across(everything(), ~ .x + 1)) %>%
-#'   rownames_to_column("id") %>%
-#'   mutate(gender = sample(c("M", "F"), nrow(.), TRUE)) %>% 
-#'   pivot_longer(!c(id,gender), names_to = "item", values_to = "response")
-#'   
+#' # With DIF overlay by gender and partial gamma annotation
 #' plot_icc(fit_pcm, dif_var = gender, dif_data = df_pcm,
 #'          dif_labels = c("Female", "Male"), class_intervals = 5)
 #' }

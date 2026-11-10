@@ -1,121 +1,95 @@
-# easyRaschBayes (development version)
+# easyRaschBayes 0.4.0
 
-- Bug fix - `q3_statistic()`, `q3_statistic_hpcm()`, `plot_residual_pca()`
-  and `item_restscore_statistic()` now stop with an error if a person x item
-  combination occurs more than once in the model data. Previously only the
-  last response of each duplicated combination was kept, without warning.
-  Results for data with one response per person and item are unchanged.
-- Breaking - `plot_targeting()` follows `easyRasch2::RMtargeting()`. The
-  bottom panel now shows response-category bands (`panel = "categories"`),
-  with red marks for categories that are never most likely and for
-  disordered thresholds, labelled with their posterior probabilities. New arguments
-  `panel`, `person_estimate` (EAP default, or WLE), `xlim`,
-  `category_labels`, `viridis_*`, `row_gap` and `output = "list"`, which
-  also returns the posterior category tables. Defaults for `bins` and the
-  x-axis follow RMtargeting, `prob = NULL` hides intervals, and
-  `sort_items = "location"` now puts the easiest item at the top. 'scales'
-  is added to Imports.
-- Breaking - `item_restscore_statistic()` now conditions on the total
-  score. It adds Kreiner's expected gamma (`gamma_exp`), replicates data
-  given each person's total score, uses a mid-p `ppp` and adds a max-T
-  `p_adj`. `gamma_diff` is now observed minus expected. The zero-width
-  `gamma_obs_q*` columns are replaced by `gamma_rep_q*`. Only Rasch-family
-  models (`bernoulli`, `acat`, logit, no `disc`) are accepted. Results
-  change. `item_restscore_post()` follows the new output and accepts any
-  item column name.
-- Breaking - `infit_statistic()` gains `method = c("conditional",
-  "theta")`. The default now computes conditional infit given the total
-  score, matching `iarm::out_infit()` for the same item parameters, and
-  replicates data given each person's total score. Only Rasch-family
-  models are accepted. `method = "theta"` gives the 0.3.0 results.
-- Breaking - `q3_statistic()` gains `method = c("conditional", "theta")`.
-  The default now takes residuals from the expected responses given each
-  person's total score and replicates data given the total score, so
-  observed and replicated Q3 centre on about -1/(k-1). Only Rasch-family
-  models are accepted. `method = "theta"` gives the 0.3.0 results.
-  `q3_post()` adds `q3_p_adj`, a one-sided max-T adjustment over item
-  pairs, and its reference line is the mean replicated Q3. Results change.
-- Breaking - `infit_post()` `infit_ppp` is now P(observed > replicated)
-  with mid-p ties, so values near 1 indicate underfit, as in `q3_post()`.
-  `infit_post()` accepts any item column name.
-- New datasets `phq9`, the same PHQ-9 data as in easyRasch2 (600 NHANES
-  respondents, nine items with four categories), and `phq9_nhanes`, a
-  random sample of 1000 NHANES PHQ-9 respondents with the zero responses
-  of a general population sample, for the hurdle partial credit model.
-- `plot_icc()` gains `method` (`"quantile"`, `"width"`, `"score"`,
-  `"manual"`) and `score_breaks`, as in easyRasch2's `RMitemICCPlot()`.
-  `n_intervals` is renamed `class_intervals` in `plot_icc()` and
-  `plot_icc_hpcm()` (the old name still works, with a deprecation
-  warning). A caption states the grouping used, also when tied sum scores
-  give fewer quantile groups than requested.
-- `plot_icc_hpcm()` severity panel places each class interval where the
-  item curve equals the model-expected mean for the same responses, as
-  `plot_icc()` does with the total score. Placing intervals at their mean
-  EAP had made the observed points look misfitting. Plots change.
-- `plot_icc()` with `dif_var` distinguishes groups by shape and line type
-  as well as colour.
-- Breaking - `plot_targeting_hpcm()` uses the same design as
-  `plot_targeting()`: response-category bands with red marks and posterior
-  probabilities for collapsed categories and disordered thresholds, or
-  `panel = "thresholds"`. New arguments `panel`, `xlim`,
-  `category_labels`, `viridis_*`, `row_gap` and `output = "list"`; the
-  default `bins` follows `plot_targeting()`. Persons who answered 0 on
-  every item are left out of the severity histogram, with a caption.
-- `plot_targeting()` labels a category collapse caused by disordered
-  thresholds once, on the arrow, and spaces rows more widely, so labels no
-  longer overlap when many items have disordered thresholds.
-- Docs - `infit_statistic()` and `infit_post()` state that the infit ppp is
-  conservative, also with the conditional method, and suggest also using
-  `item_restscore_statistic()`.
-- Bug fix - `dif_statistic()` for polytomous models loaded any difference in
-  group latent means onto every item as DIF, and the uniform DIF parameter
-  was not identified. Both types now estimate impact separately (new
-  `impact` element) with DIF relative to the average item. Uniform DIF uses
-  item random slopes of a group indicator. All types share one sign:
-  positive = easier for the focal (second) group. Item labels that brms
-  renames no longer give silent zeros. Results change for polytomous models.
-- Bug fix - rating scale models (`acat` with `(1 | item)` and common
-  thresholds) gave every item the same thresholds, and `0 + item` models
-  failed in `plot_residual_pca()` and `plot_targeting()`. All functions now
-  share one item parameter extractor. Results change for rating scale models.
-- Bug fix - `person_parameters()` and `person_parameters_hpcm()` gave persons
-  with missing responses the full-test WLE for their sum score. The WLE now
-  uses the items each person answered, and a new `n_items` column counts
-  them. `score_table` covers persons who answered every item.
-- Bug fix - `person_parameters()` and `plot_icc()` counted ordinal sum scores
-  from the lowest category observed in the data, not from category 1, which
-  shifted all scores when nobody used category 1.
-- Bug fix - `plot_icc()` partial gamma used the wrong column for numeric item
-  labels.
-- Bug fix - `plot_residual_pca()` aligned eigenvector signs across draws by
-  counting signs, which could pull a small group of strongly loading items
-  toward zero. Signs now follow the dot product with the mean direction.
-- Bug fix - `posterior_epred()` for `hurdle_acat` failed when items had
-  different numbers of categories.
-- Bug fix - `plot_ipf()` and `plot_icc()` always used the logistic curve.
-  They now use the model's link for cumulative, sratio and cratio models,
-  and stop for non-logit acat models and models that estimate `disc`.
-- Bug fix - `infit_statistic_hpcm()` and `q3_statistic_hpcm()` failed with
-  ordered-factor responses or a single draw. `plot_icc_hpcm()` no longer
-  shifts responses down when there are no zeros. Hurdle item parameters are
-  found for labels that brms renames.
-- `plot_icc()`, `plot_icc_hpcm()` (hurdle panel) and `plot_residual_pca()`
-  now report how many persons with missing responses they leave out.
-- `item_parameters()` `n_eff` is now `posterior::ess_bulk()`, which accounts
-  for disagreement between chains. 'posterior' is added to Imports.
-- `plot_tile()` and `plot_stackedbars()` use `theme_bw()`. The
-  `plot_stackedbars()` legend now runs lowest to highest from the top.
-  `plot_ipf()` adds line types to the category colours.
-- Docs - corrected `RMUreliability()` return value, the `plot_residual_pca()`
-  `style` default and centring, the `plot_icc()` partial gamma sign, and
-  added caveats to `posterior_to_prior()` (independent priors) and
-  `plot_icc_hpcm()` (EAP binning).
-- Bug fix - `infit_post()` `infit_ppp` and `q3_post()` `q3_ppp` compared
-  each draw's observed value with the mean of the replicated values, not
-  with the replicated value of the same draw. Results change.
-- Docs - `infit_statistic_hpcm()` is no longer described as conditional
-  infit. The `hdi` tables of `infit_post()` and `q3_post()` are described
-  as exceedance proportions. Results are unchanged.
+## Breaking changes
+
+- `item_restscore_statistic()`, `infit_statistic()` and `q3_statistic()` now
+  condition on each person's total score, both for the expected values and
+  for the replicated data. They accept only Rasch-family models (`bernoulli`
+  or `acat`, logit link, no `disc`). `method = "theta"` in
+  `infit_statistic()` and `q3_statistic()` gives the 0.3.0 results.
+  **Results change.**
+  - `item_restscore_statistic()` adds Kreiner's expected gamma
+    (`gamma_exp`), a mid-p `ppp` and a max-T adjusted `p_adj`. `gamma_diff`
+    is now observed minus expected, and `gamma_obs_q*` is replaced by
+    `gamma_rep_q*`.
+  - Conditional infit matches `iarm::out_infit()` for the same item
+    parameters.
+  - `q3_post()` adds `q3_p_adj`, adjusted over item pairs, and its reference
+    line is the mean replicated Q3.
+- `infit_post()` `infit_ppp` and `q3_post()` `q3_ppp` compared each draw's
+  observed value with the mean of the replicated values, not with the same
+  draw's replicated value. `infit_ppp` is now also P(observed > replicated)
+  with mid-p ties, so values near 1 indicate underfit, as for `q3_ppp`.
+  **Results change.**
+- `plot_targeting()` and `plot_targeting_hpcm()` follow
+  `easyRasch2::RMtargeting()`. The bottom panel shows response-category
+  bands, with categories that are never most likely and disordered
+  thresholds marked in red and labelled with their posterior probabilities.
+  `panel = "thresholds"` gives a dot-and-whisker plot. New arguments
+  `panel`, `xlim`, `category_labels`, `viridis_*`, `row_gap` and
+  `output = "list"`, plus `person_estimate` in `plot_targeting()`. The
+  defaults for `bins` and the x-axis change, and `sort_items = "location"`
+  puts the easiest item at the top. 'scales' is added to Imports.
+
+## New features
+
+- New datasets `phq9` (600 NHANES respondents, nine items with four
+  categories, as in easyRasch2) and `phq9_nhanes` (1000 NHANES respondents,
+  including zero responses, for the hurdle partial credit model).
+- `plot_icc()` gains `method` and `score_breaks` for forming class
+  intervals, as in `easyRasch2::RMitemICCPlot()`, and a caption stating the
+  grouping. `n_intervals` is renamed `class_intervals` in `plot_icc()` and
+  `plot_icc_hpcm()`, and the old name is deprecated.
+- `plot_icc()` with `dif_var` separates groups by shape and line type as
+  well as colour. `plot_ipf()` adds line types, and `plot_tile()` and
+  `plot_stackedbars()` use `theme_bw()`.
+- `plot_icc()`, `plot_icc_hpcm()` and `plot_residual_pca()` report how many
+  persons with missing responses they leave out.
+- `item_restscore_post()` and `infit_post()` accept any item column name.
+- `item_parameters()` `n_eff` is now `posterior::ess_bulk()`. 'posterior' is
+  added to Imports.
+
+## Bug fixes
+
+- `dif_statistic()` for polytomous models loaded differences in group means
+  onto the items as DIF. Impact is now estimated separately (new `impact`
+  element), and all DIF types share one sign: positive means easier for the
+  focal group. **Results change for polytomous models.**
+- Rating scale models gave every item the same thresholds.
+  **Results change for rating scale models.** `0 + item` models no longer
+  fail in `plot_residual_pca()` and `plot_targeting()`.
+- `person_parameters()` and `person_parameters_hpcm()` now compute the WLE
+  of persons with missing responses from the items they answered, with a
+  new `n_items` column.
+- `person_parameters()` and `plot_icc()` counted sum scores from the lowest
+  observed category instead of category 1.
+- `q3_statistic()`, `q3_statistic_hpcm()`, `plot_residual_pca()` and
+  `item_restscore_statistic()` stop if a person and item combination occurs
+  more than once. Previously only the last response was kept.
+- `plot_icc_hpcm()` placed class intervals in the severity panel at their
+  mean EAP, which made observed points look misfitting, and shifted
+  responses down when there were no zeros. **Plots change.**
+- `plot_ipf()` and `plot_icc()` use the model's link for cumulative, sratio
+  and cratio models, and stop for non-logit `acat` models and models that
+  estimate `disc`.
+- `plot_residual_pca()` aligns eigenvector signs across draws by the dot
+  product with the mean direction.
+- `plot_icc()` partial gamma used the wrong column for numeric item labels.
+- `posterior_epred_hurdle_acat()` failed when items had different numbers
+  of categories.
+- `infit_statistic_hpcm()` and `q3_statistic_hpcm()` failed with
+  ordered-factor responses or a single draw, and with item labels that brms
+  renames.
+
+## Documentation
+
+- `infit_statistic()` and `infit_post()` state that the infit ppp is
+  conservative, also with the conditional method, and suggest
+  `item_restscore_statistic()` as well.
+- Corrected `RMUreliability()` return value, `plot_residual_pca()` `style`
+  default and centring, and `plot_icc()` partial gamma sign. Added caveats
+  to `posterior_to_prior()` and `plot_icc_hpcm()`. `infit_statistic_hpcm()`
+  is no longer described as conditional infit.
 
 # easyRaschBayes 0.3.0
 

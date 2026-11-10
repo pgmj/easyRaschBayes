@@ -82,33 +82,36 @@ and at least 1 row (person).
 }
 \examples{
 library(ggplot2)
-if (requireNamespace("eRm", quietly = TRUE))
+items <- phq9[, 1:9]
 
 # Basic response distribution plot
-plot_bars(eRm::pcmdat2)
+plot_bars(items)
 
 # With custom item labels
 plot_bars(
-  eRm::pcmdat2,
-  item_labels = c("Mood", "Sleep", "Appetite", "Energy")
+  items,
+  item_labels = c("Interest", "Mood", "Sleep", "Energy", "Appetite",
+                  "Self-worth", "Concentration", "Psychomotor",
+                  "Self-harm")
 )
 
-# Two-column layout with wrapped labels
+# Two-column layout with wrapped labels, first four items
 plot_bars(
-  eRm::pcmdat2,
+  items[, 1:4],
   item_labels = c(
-    "General mood and emotional wellbeing",
-    "Quality of sleep at night",
-    "Appetite and eating habits",
-    "Overall energy level during the day"
+    "Little interest or pleasure in doing things",
+    "Feeling down, depressed, or hopeless",
+    "Trouble falling or staying asleep, or sleeping too much",
+    "Feeling tired or having little energy"
   ),
   ncol = 2, label_wrap = 20
 )
 
 # With custom category labels
 plot_bars(
-  eRm::pcmdat2,
-  category_labels = c("Never", "Sometimes", "Often")
+  items,
+  category_labels = c("Not at all", "Several days",
+                      "More than half the days", "Nearly every day")
 )
 
 }

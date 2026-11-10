@@ -55,26 +55,29 @@
 #'
 #' @examples
 #' library(ggplot2)
-#' if (requireNamespace("eRm", quietly = TRUE))
+#' items <- phq9[, 1:9]
 #'
 #' # Basic tile plot
-#' plot_tile(eRm::pcmdat2)
+#' plot_tile(items)
 #'
 #' # With custom item labels
 #' plot_tile(
-#'   eRm::pcmdat2,
-#'   item_labels = c("Mood", "Sleep", "Appetite", "Energy")
+#'   items,
+#'   item_labels = c("Interest", "Mood", "Sleep", "Energy", "Appetite",
+#'                   "Self-worth", "Concentration", "Psychomotor",
+#'                   "Self-harm")
 #' )
 #'
 #' # With custom category labels and percentages
 #' plot_tile(
-#'   eRm::pcmdat2,
-#'   category_labels = c("Never", "Sometimes", "Often"),
+#'   items,
+#'   category_labels = c("Not at all", "Several days",
+#'                       "More than half the days", "Nearly every day"),
 #'   percent = TRUE
 #' )
 #'
 #' # Adjust cutoff for highlighting
-#' plot_tile(eRm::pcmdat2, cutoff = 20, highlight = TRUE)
+#' plot_tile(items, cutoff = 20, highlight = TRUE)
 #'
 #' @importFrom rlang .data
 #' @export
@@ -337,33 +340,36 @@ plot_tile <- function(
 #'
 #' @examples
 #' library(ggplot2)
-#' if (requireNamespace("eRm", quietly = TRUE))
-#' 
+#' items <- phq9[, 1:9]
+#'
 #' # Basic response distribution plot
-#' plot_bars(eRm::pcmdat2)
+#' plot_bars(items)
 #'
 #' # With custom item labels
 #' plot_bars(
-#'   eRm::pcmdat2,
-#'   item_labels = c("Mood", "Sleep", "Appetite", "Energy")
+#'   items,
+#'   item_labels = c("Interest", "Mood", "Sleep", "Energy", "Appetite",
+#'                   "Self-worth", "Concentration", "Psychomotor",
+#'                   "Self-harm")
 #' )
 #'
-#' # Two-column layout with wrapped labels
+#' # Two-column layout with wrapped labels, first four items
 #' plot_bars(
-#'   eRm::pcmdat2,
+#'   items[, 1:4],
 #'   item_labels = c(
-#'     "General mood and emotional wellbeing",
-#'     "Quality of sleep at night",
-#'     "Appetite and eating habits",
-#'     "Overall energy level during the day"
+#'     "Little interest or pleasure in doing things",
+#'     "Feeling down, depressed, or hopeless",
+#'     "Trouble falling or staying asleep, or sleeping too much",
+#'     "Feeling tired or having little energy"
 #'   ),
 #'   ncol = 2, label_wrap = 20
 #' )
 #'
 #' # With custom category labels
 #' plot_bars(
-#'   eRm::pcmdat2,
-#'   category_labels = c("Never", "Sometimes", "Often")
+#'   items,
+#'   category_labels = c("Not at all", "Several days",
+#'                       "More than half the days", "Nearly every day")
 #' )
 #'
 #' @importFrom rlang .data
@@ -609,21 +615,24 @@ plot_bars <- function(
 #'
 #' @examples
 #' library(ggplot2)
-#' if (requireNamespace("eRm", quietly = TRUE))
+#' items <- phq9[, 1:9]
 #'
 #' # Basic stacked bar chart
-#' plot_stackedbars(eRm::pcmdat2)
+#' plot_stackedbars(items)
 #'
 #' # With custom item and category labels
 #' plot_stackedbars(
-#'   eRm::pcmdat2,
-#'   item_labels = c("Mood", "Sleep", "Appetite", "Energy"),
-#'   category_labels = c("Never", "Sometimes", "Often")
+#'   items,
+#'   item_labels = c("Interest", "Mood", "Sleep", "Energy", "Appetite",
+#'                   "Self-worth", "Concentration", "Psychomotor",
+#'                   "Self-harm"),
+#'   category_labels = c("Not at all", "Several days",
+#'                       "More than half the days", "Nearly every day")
 #' )
 #'
 #' # Show percentages, suppress small segments
 #' plot_stackedbars(
-#'   eRm::pcmdat2,
+#'   items,
 #'   show_percent = TRUE,
 #'   show_n       = FALSE,
 #'   min_label_n  = 5

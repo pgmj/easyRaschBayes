@@ -78,25 +78,28 @@ and at least 1 row (person).
 }
 \examples{
 library(ggplot2)
-if (requireNamespace("eRm", quietly = TRUE))
+items <- phq9[, 1:9]
 
 # Basic tile plot
-plot_tile(eRm::pcmdat2)
+plot_tile(items)
 
 # With custom item labels
 plot_tile(
-  eRm::pcmdat2,
-  item_labels = c("Mood", "Sleep", "Appetite", "Energy")
+  items,
+  item_labels = c("Interest", "Mood", "Sleep", "Energy", "Appetite",
+                  "Self-worth", "Concentration", "Psychomotor",
+                  "Self-harm")
 )
 
 # With custom category labels and percentages
 plot_tile(
-  eRm::pcmdat2,
-  category_labels = c("Never", "Sometimes", "Often"),
+  items,
+  category_labels = c("Not at all", "Several days",
+                      "More than half the days", "Nearly every day"),
   percent = TRUE
 )
 
 # Adjust cutoff for highlighting
-plot_tile(eRm::pcmdat2, cutoff = 20, highlight = TRUE)
+plot_tile(items, cutoff = 20, highlight = TRUE)
 
 }

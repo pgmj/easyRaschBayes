@@ -195,7 +195,7 @@ library(patchwork)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 \%>\%
+df_pcm <- phq9[1:200, 1:9] \%>\%
   mutate(across(everything(), ~ .x + 1)) \%>\%
   rownames_to_column("id") \%>\%
   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -214,7 +214,9 @@ plot_targeting(fit_pcm)
 
 # WLE person locations, items sorted by location, labelled categories
 plot_targeting(fit_pcm, person_estimate = "wle", sort_items = "location",
-               category_labels = c("Never", "Sometimes", "Often"))
+               category_labels = c("Not at all", "Several days",
+                                  "More than half the days",
+                                  "Nearly every day"))
 
 # Dot-and-whisker panel
 plot_targeting(fit_pcm, panel = "thresholds")
@@ -226,8 +228,9 @@ res$disordered
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::raschdat3 \%>\%
-  as.data.frame() \%>\%
+# PHQ-9 items dichotomised (any symptom vs none), for illustration only
+df_rm <- phq9[1:200, 1:9] \%>\%
+  mutate(across(everything(), ~ as.integer(.x > 0))) \%>\%
   rownames_to_column("id") \%>\%
   pivot_longer(!id, names_to = "item", values_to = "response")
 
