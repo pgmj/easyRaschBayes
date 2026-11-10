@@ -131,7 +131,7 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
   response category is the most likely, threshold credible intervals, and
   the posterior probability of collapsed categories and disordered thresholds
 - `RMUreliability()`: reliability from relative measurement uncertainty
-  (Bignardi et al., 2025)
+  (Bignardi et al., 2026)
 
 ### Item and person parameters
 
@@ -212,9 +212,9 @@ plot_targeting(fit)
 
 ## References
 
-- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general method for
+- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2026). A general method for
   estimating reliability using Bayesian measurement uncertainty. *OSF*.
-  <https://doi.org/10.31234/osf.io/h54k8_v1>
+  <https://osf.io/preprints/psyarxiv/h54k8>
 - Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS)
   with Bayesian item response models. *Journal of Intelligence, 8*(1).
   <https://doi.org/10.3390/jintelligence8010005>

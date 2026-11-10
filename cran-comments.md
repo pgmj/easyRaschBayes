@@ -2,10 +2,7 @@
 
 ## R CMD check results
 
-0 errors | 0 warnings | 1 note
-
-* The note on win-builder (R-devel) is a possibly invalid URL, explained
-  under Notes below.
+0 errors | 0 warnings | 0 note
 
 ## Test environments
 
@@ -17,10 +14,6 @@
 
 * Update version 0.3.0 -> 0.4.0.
 
-* The URL https://pgmj.github.io/easyRaschBayes/articles/hpcm-rasch-analysis.html
-  in README.md may be reported as invalid. It is a new article on the package
-  website, and it will be live when the 0.4.0 site is deployed.
-
 * The item fit and local dependence functions (`item_restscore_statistic()`,
   `infit_statistic()`, `q3_statistic()`) now condition on each person's
   total score. Their results change, and the previous behaviour is kept as
@@ -31,7 +24,6 @@
   rating scale models.
 
 * Two new datasets, `phq9` and `phq9_nhanes`.
-
 
 ## Downstream dependencies
 

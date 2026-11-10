@@ -36,7 +36,7 @@
 #' \code{input_draws} give a warning and an \code{NA} result.
 #'
 #' @references
-#' Bignardi, G., Kievit, R., & Bürkner, P. C. (2025). A general method for estimating reliability using Bayesian Measurement Uncertainty. PsyArXiv. \href{https://osf.io/preprints/psyarxiv/h54k8}{doi:10.31234/osf.io/h54k8}
+#' Bignardi, G., Kievit, R., & Bürkner, P. C. (2026). A general method for estimating reliability using Bayesian Measurement Uncertainty. PsyArXiv. \url{https://osf.io/preprints/psyarxiv/h54k8}
 #'
 #' @examples
 #' \donttest{

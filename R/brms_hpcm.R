@@ -2003,7 +2003,7 @@ person_parameters_hpcm <- function(model,
 #' Relative Measurement Uncertainty Reliability for the Hurdle PCM
 #'
 #' Computes posterior reliability via Relative Measurement Uncertainty
-#' (Bignardi, Kievit & Bürkner, 2025) separately for each of the two
+#' (Bignardi, Kievit & Bürkner, 2026) separately for each of the two
 #' person traits in a hurdle partial credit model fitted with the
 #' \code{\link{hurdle_acat}} custom family: the presence /
 #' susceptibility trait \eqn{\theta_{hurdle}} and the severity trait
@@ -2085,9 +2085,9 @@ person_parameters_hpcm <- function(model,
 #' \code{RMUreliability_hpcm}, \code{\link{plot_targeting}}, etc.
 #'
 #' @references
-#' Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general
+#' Bignardi, G., Kievit, R., & Bürkner, P.-C. (2026). A general
 #' method for estimating reliability using Bayesian Measurement
-#' Uncertainty. \emph{PsyArXiv}. \doi{10.31234/osf.io/h54k8_v1}
+#' Uncertainty. \emph{PsyArXiv}. \url{https://osf.io/preprints/psyarxiv/h54k8}
 #'
 #' Magnus, B. E. & Garnier-Villarreal, M. (2022). A multidimensional
 #' zero-inflated graded response model for ordinal symptom data.
