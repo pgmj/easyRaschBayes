@@ -674,7 +674,7 @@ rel$pcm
 ```
 
 Reliability is computed per submodel with relative measurement
-uncertainty ([Bignardi et al. 2025](#ref-bignardi_general_2025)). For
+uncertainty ([Bignardi et al. 2026](#ref-bignardi_general_2025)). For
 comparison, the RMU reliability of the PCM:
 
 ``` r
@@ -744,9 +744,9 @@ gain holds for every item, and is largest for `q1` and smallest for
 
 ## References
 
-Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2025. *A
+Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2026. *A
 General Method for Estimating Reliability Using Bayesian Measurement
-Uncertainty*. OSF. <https://doi.org/10.31234/osf.io/h54k8_v1>.
+Uncertainty*. OSF. <https://osf.io/preprints/psyarxiv/h54k8>.
 
 Bürkner, Paul-Christian. 2021. “Bayesian Item Response Modeling in R
 with Brms and Stan.” *Journal of Statistical Software* 100: 1–54.

@@ -655,7 +655,7 @@ category is never the most likely response.
 
 [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/reference/RMUreliability.md)
 gives a Bayesian reliability estimate based on relative measurement
-uncertainty (RMU, [Bignardi et al. 2025](#ref-bignardi_general_2025)).
+uncertainty (RMU, [Bignardi et al. 2026](#ref-bignardi_general_2025)).
 It takes a matrix of person location draws, persons by draws, and
 returns the posterior mean with a 95% highest density continuous
 interval.
@@ -767,9 +767,9 @@ hist(ppar$person_estimates$eap, col = "lightblue", main = "",
 
 ## References
 
-Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2025. *A
+Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2026. *A
 General Method for Estimating Reliability Using Bayesian Measurement
-Uncertainty*. OSF. <https://doi.org/10.31234/osf.io/h54k8_v1>.
+Uncertainty*. OSF. <https://osf.io/preprints/psyarxiv/h54k8>.
 
 Bürkner, Paul-Christian. 2021. “Bayesian Item Response Modeling in R
 with Brms and Stan.” *Journal of Statistical Software* 100: 1–54.

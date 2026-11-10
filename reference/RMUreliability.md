@@ -59,9 +59,9 @@ an `NA` result.
 
 ## References
 
-Bignardi, G., Kievit, R., & Bürkner, P. C. (2025). A general method for
+Bignardi, G., Kievit, R., & Bürkner, P. C. (2026). A general method for
 estimating reliability using Bayesian Measurement Uncertainty. PsyArXiv.
-[doi:10.31234/osf.io/h54k8](https://osf.io/preprints/psyarxiv/h54k8)
+<https://osf.io/preprints/psyarxiv/h54k8>
 
 ## Examples
 

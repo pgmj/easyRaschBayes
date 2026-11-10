@@ -144,7 +144,7 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
   thresholds
 - [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/reference/RMUreliability.md):
   reliability from relative measurement uncertainty (Bignardi et al.,
-  2025)
+  2026)
 
 ### Item and person parameters
 
@@ -239,9 +239,9 @@ plot_targeting(fit)
 
 ## References
 
-- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general method
+- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2026). A general method
   for estimating reliability using Bayesian measurement uncertainty.
-  *OSF*. <https://doi.org/10.31234/osf.io/h54k8_v1>
+  *OSF*. <https://osf.io/preprints/psyarxiv/h54k8>
 - Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices
   (SPM-LS) with Bayesian item response models. *Journal of Intelligence,
   8*(1). <https://doi.org/10.3390/jintelligence8010005>

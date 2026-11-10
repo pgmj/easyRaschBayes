@@ -1,7 +1,7 @@
 # Relative Measurement Uncertainty Reliability for the Hurdle PCM
 
 Computes posterior reliability via Relative Measurement Uncertainty
-(Bignardi, Kievit & Bürkner, 2025) separately for each of the two person
+(Bignardi, Kievit & Bürkner, 2026) separately for each of the two person
 traits in a hurdle partial credit model fitted with the
 [`hurdle_acat`](https://pgmj.github.io/easyRaschBayes/reference/hurdle_acat.md)
 custom family: the presence / susceptibility trait \\\theta\_{hurdle}\\
@@ -125,10 +125,9 @@ etc.
 
 ## References
 
-Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general method for
+Bignardi, G., Kievit, R., & Bürkner, P.-C. (2026). A general method for
 estimating reliability using Bayesian Measurement Uncertainty.
-*PsyArXiv*.
-[doi:10.31234/osf.io/h54k8_v1](https://doi.org/10.31234/osf.io/h54k8_v1)
+*PsyArXiv*. <https://osf.io/preprints/psyarxiv/h54k8>
 
 Magnus, B. E. & Garnier-Villarreal, M. (2022). A multidimensional
 zero-inflated graded response model for ordinal symptom data.
