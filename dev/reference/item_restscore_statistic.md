@@ -16,7 +16,8 @@ item_restscore_statistic(
   model,
   item_var = item,
   person_var = id,
-  ndraws_use = NULL
+  ndraws_use = NULL,
+  facet_var = NULL
 )
 ```
 
@@ -47,6 +48,12 @@ item_restscore_statistic(
   Optional positive integer. If specified, a random subset of posterior
   draws of this size is used. If `NULL` (the default), all draws are
   used.
+
+- facet_var:
+
+  Optional unquoted variable name of a third facet in a many-facet Rasch
+  model, for example `rater`. Each item x facet combination (cell) is
+  then treated as an item. See the section on many-facet models.
 
 ## Value
 
@@ -150,8 +157,8 @@ Because replication conditions on the total scores, the reference
 distribution does not depend on the person locations. The data are still
 used to estimate the item parameters, but these are few relative to the
 number of persons. This removes the main reason why posterior predictive
-p-values based on person parameters drawn from the same data are
-conservative (Robins et al., 2000).
+p-values based on person parameters drawn from the same data flag misfit
+less often than their nominal level (Robins et al., 2000).
 
 The `gamma_diff` interval describes how far the observed sample departs
 from the model expectation, given the uncertainty in the item
@@ -165,6 +172,23 @@ sample size grows.
 deviation of its replicated gammas. Its reference is the largest
 absolute standardised deviation across items within each replicated
 dataset, so it accounts for testing all items at once.
+
+## Many-facet models
+
+With `facet_var`, for a model such as
+`rating ~ 1 + item + (1 | rater) + (1 | id)`, each item x facet
+combination (cell) is treated as an item. The rest score is the person's
+total over all their ratings minus the cell, and the total score is
+sufficient for the person location as long as every facet enters the
+model additively. Persons rated by different raters have different sets
+of cells, which is handled like missing responses. In both output tables
+the first columns are `cell` (labelled `"item:facet"`), the item
+variable and the facet variable. `p_adj` adjusts over all cells. Gamma
+does not pool over cells, so there is no `by` argument as in
+[`infit_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic.md).
+The facet variable must be in the model formula. A person x facet (halo)
+term is handled as described in
+[`infit_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic.md).
 
 With missing responses, the total and rest-scores are sums over the
 items a person answered, scored from 0. The conditional distribution is
@@ -213,7 +237,7 @@ library(tibble)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 %>%
+df_pcm <- phq9[1:200, 1:9] %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -246,8 +270,9 @@ irs_results$plot
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::raschdat3 %>%
-  as.data.frame() %>%
+# PHQ-9 items dichotomised (any symptom vs none), for illustration only
+df_rm <- phq9[1:200, 1:9] %>%
+  mutate(across(everything(), ~ as.integer(.x > 0))) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
 

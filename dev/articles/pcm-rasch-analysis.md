@@ -269,23 +269,24 @@ with local dependence. `infit_ppp` is the proportion of posterior draws
 where the observed infit exceeds the replicated one. Values near 0.5
 indicate good fit, values near 1 underfit, and values near 0 overfit.
 
-The ppp is conservative, because the item parameters are estimated from
-the same data. In simulations under a fitting model it rarely came close
-to 0 or 1, so misfit can go undetected. We therefore also use the
-item-restscore association below, whose ppp was close to uniform in the
-same simulations. The ppp is not a measure of the size of misfit.
+The ppp flags misfit less often than its nominal level, because the item
+parameters are estimated from the same data. In simulations under a
+fitting model it rarely came close to 0 or 1, so misfit can go
+undetected. We therefore also use the item-restscore association below,
+whose ppp was close to uniform in the same simulations. The ppp is not a
+measure of the size of misfit.
 
 Three items underfit: `q9` (thoughts of self-harm, infit about 1.33),
 `q8` (moving slowly or restless, 1.27) and `q3` (sleep, 1.24), all with
 `infit_ppp` near 1. Two overfit: `q2` (feeling down, 0.78) and `q4`
-(feeling tired, 0.83). Given how conservative the ppp is, values this
-close to 0 or 1 are clear signals, but they should not be read item by
-item. Infit is relative to the other items. An item in a strongly
-dependent pair usually overfits, and that makes the remaining items look
-more underfit than they would otherwise. `q2` is part of the strongest
-dependent pair (see local dependence below), so fit should be checked
-again after the dependence is dealt with, for example by removing one
-item of the pair.
+(feeling tired, 0.83). Since the ppp flags misfit less often than its
+nominal level, values this close to 0 or 1 are clear signals, but they
+should not be read item by item. Infit is relative to the other items.
+An item in a strongly dependent pair usually overfits, and that makes
+the remaining items look more underfit than they would otherwise. `q2`
+is part of the strongest dependent pair (see local dependence below), so
+fit should be checked again after the dependence is dealt with, for
+example by removing one item of the pair.
 
 ### Item-restscore association
 
@@ -444,6 +445,14 @@ q3_results$plot
 ![\*\*Figure 6.\*\* \*Q3 residual correlations\*](figures/pcm-q3-1.png)
 
 **Figure 6.** *Q3 residual correlations*
+
+In the plot, the grey distributions are the replicated Q3 and the points
+are the observed Q3. The observed values vary little across draws,
+because the residuals given the total score depend only on the item
+parameters, which 600 persons estimate precisely. The replicated values
+also vary through the sampling of new responses, so they are wider. Each
+pair has its own expected value, so the grey distributions are not all
+centred on the dashed line.
 
 The largest difference by far is for `q1` and `q2`, the two core
 symptoms of depression (little interest and feeling down), with an
@@ -647,7 +656,7 @@ category is never the most likely response.
 
 [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/dev/reference/RMUreliability.md)
 gives a Bayesian reliability estimate based on relative measurement
-uncertainty (RMU, [Bignardi et al. 2025](#ref-bignardi_general_2025)).
+uncertainty (RMU, [Bignardi et al. 2026](#ref-bignardi_general_2025)).
 It takes a matrix of person location draws, persons by draws, and
 returns the posterior mean with a 95% highest density continuous
 interval.
@@ -759,9 +768,9 @@ hist(ppar$person_estimates$eap, col = "lightblue", main = "",
 
 ## References
 
-Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2025. *A
+Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2026. *A
 General Method for Estimating Reliability Using Bayesian Measurement
-Uncertainty*. OSF. <https://doi.org/10.31234/osf.io/h54k8_v1>.
+Uncertainty*. OSF. <https://osf.io/preprints/psyarxiv/h54k8>.
 
 Bürkner, Paul-Christian. 2021. “Bayesian Item Response Modeling in R
 with Brms and Stan.” *Journal of Statistical Software* 100: 1–54.

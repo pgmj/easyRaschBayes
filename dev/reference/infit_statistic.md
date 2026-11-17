@@ -18,7 +18,9 @@ infit_statistic(
   person_var = id,
   ndraws_use = NULL,
   outfit = FALSE,
-  method = c("conditional", "theta")
+  method = c("conditional", "theta"),
+  facet_var = NULL,
+  by = c("cell", "item", "facet")
 )
 ```
 
@@ -65,6 +67,19 @@ infit_statistic(
   [`infit_statistic_hpcm`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic_hpcm.md)
   and as `infit_statistic()` in easyRaschBayes 0.3.0.
 
+- facet_var:
+
+  Optional unquoted variable name of a third facet in a many-facet Rasch
+  model, for example `rater`. If `NULL` (the default), the model is a
+  standard person x item model. See the section on many-facet models.
+
+- by:
+
+  Only used with `facet_var`. `"cell"` (the default) gives one statistic
+  per item x facet combination, `"item"` one per item over all facet
+  elements, and `"facet"` one per facet element (for example per rater)
+  over all items.
+
 ## Value
 
 A [`tibble`](https://tibble.tidyverse.org/reference/tibble.html) with
@@ -98,7 +113,11 @@ the following columns:
 
 The output is grouped by the item variable. Use
 [`infit_post`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_post.md)
-for posterior predictive p-values and a plot.
+for posterior predictive p-values and a plot. With `facet_var` and
+`by = "cell"`, the first columns are `cell` (labelled `"item:facet"`),
+the item variable and the facet variable, and the output is grouped by
+`cell`. With `by = "item"` or `by = "facet"`, the first column is the
+item or facet variable.
 
 ## Details
 
@@ -137,19 +156,20 @@ probabilities given the person location \\\theta_v^{(s)}\\ of each draw,
 and replicated responses come from
 [`posterior_predict`](https://mc-stan.org/rstantools/reference/posterior_predict.html).
 The person locations are estimated from the same data, which makes
-posterior predictive p-values of this kind conservative. They tend to
-cluster around 0.5, so values near 0 or 1 are rarer than p-values of the
-same size would be (Robins et al., 2000).
+posterior predictive p-values of this kind flag misfit less often than
+their nominal level. They tend to cluster around 0.5, so values near 0
+or 1 are rarer than p-values of the same size would be (Robins et al.,
+2000).
 
 The conditional method is better calibrated than the theta method, but
-its p-values are also conservative, because the item parameters are
-estimated from the same data. In simulations under a fitting Rasch
-model, two-sided p-values below .05 occurred for 0.5% to 2% of items,
-with the lowest rates for polytomous items. Misfit can therefore go
-undetected. The shortfall is largest for the easiest and hardest
-dichotomous items, so misfit in an item far from the persons' locations
-is the most likely to be missed. It is suggested to also evaluate item
-fit with
+its p-values also flag misfit less often than their nominal level,
+because the item parameters are estimated from the same data. In
+simulations under a fitting Rasch model, two-sided p-values below .05
+occurred for 0.5% to 2% of items, with the lowest rates for polytomous
+items. Misfit can therefore go undetected. The shortfall is largest for
+the easiest and hardest dichotomous items, so misfit in an item far from
+the persons' locations is the most likely to be missed. It is suggested
+to also evaluate item fit with
 [`item_restscore_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md),
 whose p-values were close to uniform in the same simulations.
 
@@ -160,6 +180,43 @@ as the sample size grows.
 Replication uses random numbers, so call
 [`set.seed()`](https://rdrr.io/r/base/Random.html) first for
 reproducible results.
+
+## Many-facet models
+
+In a many-facet Rasch model a third facet, usually raters, adds to the
+person and item effects, for example
+`rating ~ 1 + item + (1 | rater) + (1 | id)`. The data are long, with
+one row per person, item and rater. With `facet_var = rater`, each item
+x rater combination (cell) is treated as an item. The conditional method
+conditions on each person's total score over all their ratings, which is
+sufficient for the person location when every facet enters the model
+additively, as in the formula above. Persons rated by different raters
+have different sets of cells, which the method handles like missing
+responses.
+
+With `by = "item"` or `by = "facet"`, squared residuals and variances
+are summed over the cells of each item or facet element before dividing,
+so a rater's infit is computed over all of that rater's ratings. The
+facet variable must be in the model formula, since brms keeps only
+formula variables in the model data.
+
+A person x facet term such as `(1 | rater:id)` models a halo effect (one
+rater's impression of a person carried across items). The conditional
+method treats these effects as known in each draw, and the theta method
+includes them in the expected values, so with either method fit is
+assessed after the halo is accounted for. A message says so. In
+simulations with a halo term in the data and the model, conditional
+infit then flagged misfit less often than the nominal level: about 2% of
+fitting cells, and 1-2% of raters, at .05 instead of 5%. Some misfit may
+then be missed.
+
+In simulations without a halo term, rater infit (`by = "facet"`) flagged
+an inconsistent rater as underfitting and a rater with central tendency
+as overfitting. It did not react to a halo, which shows in
+[`q3_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/q3_statistic.md)
+instead. With rater-specific thresholds (`thres(gr = rater)`), the
+central-tendency rater fitted. See
+[`vignette("mfrm-rasch-analysis", package = "easyRaschBayes")`](https://pgmj.github.io/easyRaschBayes/dev/articles/mfrm-rasch-analysis.md).
 
 ## References
 
@@ -203,7 +260,7 @@ library(tibble)
 
 # --- Partial Credit Model (polytomous) ---
 
-df_pcm <- eRm::pcmdat2 %>%
+df_pcm <- phq9[1:200, 1:9] %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
@@ -238,8 +295,9 @@ infit_results$plot
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::raschdat3 %>%
-  as.data.frame() %>%
+# PHQ-9 items dichotomised (any symptom vs none), for illustration only
+df_rm <- phq9[1:200, 1:9] %>%
+  mutate(across(everything(), ~ as.integer(.x > 0))) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
 

@@ -19,7 +19,8 @@ item_restscore_post(item_restscore)
   A list as returned by
   [`item_restscore_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md),
   with elements `result` and `draws`. The first column of both is the
-  item identifier.
+  item identifier. For many-facet output (`facet_var`) it is `cell`, and
+  the item and facet columns are kept in the summary.
 
 ## Value
 

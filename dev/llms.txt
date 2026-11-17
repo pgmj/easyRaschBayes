@@ -3,9 +3,10 @@
 `easyRaschBayes` provides Rasch measurement theory analysis workflows
 for Bayesian item response theory models fitted with
 [brms](https://paulbuerkner.com/brms/). It supports dichotomous Rasch
-models, partial credit and rating scale models, and a hurdle partial
-credit model for data with many zero responses. All output exposes the
-full posterior distribution.
+models, partial credit and rating scale models, many-facet Rasch models
+(for example items rated by raters), and a hurdle partial credit model
+for data with many zero responses. All output exposes the full posterior
+distribution.
 
 The frequentist counterpart is
 [`easyRasch2`](https://pgmj.github.io/easyRasch2/), which uses
@@ -43,9 +44,11 @@ Or install the development version from GitHub:
 remotes::install_github("pgmj/easyRaschBayes")
 ```
 
-The development version changes several defaults and outputs, among them
-conditional item fit given the total score and a new targeting plot. See
-the [changelog](https://pgmj.github.io/easyRaschBayes/news/index.html).
+The development version adds many-facet Rasch models (`facet_var`,
+[`facet_parameters()`](https://pgmj.github.io/easyRaschBayes/dev/reference/facet_parameters.md),
+[`contr_sum_zero()`](https://pgmj.github.io/easyRaschBayes/dev/reference/contr_sum_zero.md)).
+See the
+[changelog](https://pgmj.github.io/easyRaschBayes/news/index.html).
 
 The hurdle partial credit model needs a patched version of `brms`, since
 CRAN `brms` 2.23 cannot fit custom ordinal families with item-specific
@@ -144,7 +147,7 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
   thresholds
 - [`RMUreliability()`](https://pgmj.github.io/easyRaschBayes/dev/reference/RMUreliability.md):
   reliability from relative measurement uncertainty (Bignardi et al.,
-  2025)
+  2026)
 
 ### Item and person parameters
 
@@ -154,6 +157,24 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
   EAP and WLE person locations, and a sum score to WLE table
 - [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/dev/reference/posterior_to_prior.md):
   informative priors from a fitted model, for use in a new model
+
+### Many-facet Rasch models
+
+- `facet_var` in
+  [`infit_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic.md),
+  [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md),
+  [`q3_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/q3_statistic.md)
+  and
+  [`plot_residual_pca()`](https://pgmj.github.io/easyRaschBayes/dev/reference/plot_residual_pca.md):
+  fit with raters (or another facet), each item x rater combination
+  treated as an item; Q3 pairs are labelled by `pair_type` (same rater,
+  same item, other)
+- [`facet_parameters()`](https://pgmj.github.io/easyRaschBayes/dev/reference/facet_parameters.md):
+  rater severity with credible intervals, number of ratings, observed
+  and fair average rating
+- [`contr_sum_zero()`](https://pgmj.github.io/easyRaschBayes/dev/reference/contr_sum_zero.md):
+  orthonormal sum-to-zero contrasts for a small fixed facet, so every
+  level gets the same prior variance
 
 ### Hurdle partial credit model
 
@@ -196,6 +217,10 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
   model](https://pgmj.github.io/easyRaschBayes/articles/hpcm-rasch-analysis.html),
   `phq9_nhanes` analysed with an ordinary and a hurdle partial credit
   model
+- [Many-facet Rasch
+  models](https://pgmj.github.io/easyRaschBayes/articles/mfrm-rasch-analysis.html),
+  simulated ratings by raters, with rater severity, fit and halo
+  (development version)
 
 There is also a [comparison with frequentist Rasch tools in
 R](https://pgmj.github.io/rasch_bayes_comp.html).
@@ -239,9 +264,9 @@ plot_targeting(fit)
 
 ## References
 
-- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2025). A general method
+- Bignardi, G., Kievit, R., & Bürkner, P.-C. (2026). A general method
   for estimating reliability using Bayesian measurement uncertainty.
-  *OSF*. <https://doi.org/10.31234/osf.io/h54k8_v1>
+  *OSF*. <https://osf.io/preprints/psyarxiv/h54k8>
 - Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices
   (SPM-LS) with Bayesian item response models. *Journal of Intelligence,
   8*(1). <https://doi.org/10.3390/jintelligence8010005>
@@ -354,6 +379,16 @@ GPL (\>= 3)
 - [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/dev/reference/posterior_to_prior.md)
   : Extract Informative Priors from a Fitted Bayesian IRT Model
 
+## Many-Facet Models
+
+Use `facet_var` in infit_statistic(), item_restscore_statistic(),
+q3_statistic() and plot_residual_pca() for fit with raters.
+
+- [`facet_parameters()`](https://pgmj.github.io/easyRaschBayes/dev/reference/facet_parameters.md)
+  : Facet Parameters from a Many-Facet Rasch Model
+- [`contr_sum_zero()`](https://pgmj.github.io/easyRaschBayes/dev/reference/contr_sum_zero.md)
+  : Orthonormal sum-to-zero contrasts
+
 ## Data
 
 - [`phq9`](https://pgmj.github.io/easyRaschBayes/dev/reference/phq9.md)
@@ -387,5 +422,7 @@ GPL (\>= 3)
 
 - [Hurdle Partial Credit Model with
   easyRaschBayes](https://pgmj.github.io/easyRaschBayes/dev/articles/hpcm-rasch-analysis.md):
+- [Many-Facet Rasch Models with
+  easyRaschBayes](https://pgmj.github.io/easyRaschBayes/dev/articles/mfrm-rasch-analysis.md):
 - [Rasch Partial Credit Model with
   easyRaschBayes](https://pgmj.github.io/easyRaschBayes/dev/articles/pcm-rasch-analysis.md):

@@ -22,8 +22,9 @@ infit_post(infit_draws, ci = 0.84)
   [`infit_statistic_hpcm`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic_hpcm.md),
   containing the columns `infit` (observed infit per draw) and
   `infit_rep` (replicated infit per draw). The item identifier is taken
-  from a column named `item` if there is one, and otherwise from the
-  first column.
+  from a column named `cell` if there is one (many-facet output, whose
+  item and facet columns are kept in the tables), then from a column
+  named `item`, and otherwise from the first column.
 
 - ci:
 
@@ -111,8 +112,9 @@ distribution sits systematically above the replicated HDI indicate
 underfit (more variation than expected); items below indicate overfit
 (less variation than expected).
 
-The infit ppp is conservative. Values near 0 or 1 are rarer than for a
-uniform p-value, and misfit can go undetected (see
+The infit ppp flags misfit less often than its nominal level. Values
+near 0 or 1 are rarer than for a uniform p-value, and misfit can go
+undetected (see
 [`infit_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/infit_statistic.md)).
 It is suggested to also evaluate item fit with
 [`item_restscore_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md)

@@ -116,8 +116,9 @@ Two complementary summary tables are provided:
 With `q3_statistic(method = "conditional")`, the default, `q3_ppp` was
 close to uniform in simulations under a fitting Rasch model, and
 `q3_p_adj` kept the proportion of datasets with any pair flagged at .05
-near or below .05. With `method = "theta"`, `q3_ppp` is conservative,
-and so is `q3_p_adj` (2\\ datasets with any pair flagged at .05). See
+near or below .05. With `method = "theta"`, `q3_ppp` flags pairs less
+often than its nominal level, and so does `q3_p_adj` (2% to 3% of
+datasets with any pair flagged at .05). See
 [`q3_statistic`](https://pgmj.github.io/easyRaschBayes/dev/reference/q3_statistic.md).
 
 **Reading `q3_p_adj`.** For the pair with the smallest value, `q3_p_adj`
@@ -135,7 +136,8 @@ Each pair is compared with its own mean replicated Q3 rather than with
 the mean over all pairs. Given the total score, expected Q3 differs
 between pairs, and is highest for pairs of the easiest and hardest
 items. In simulations, a reference at the mean over all pairs made such
-a pair the most deviant one in 11\\ dependence, against about 2\\
+a pair the most deviant one in 11% to 13% of datasets without local
+dependence, against about 2% if every pair were equally likely.
 
 ## References
 

@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.4.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
     <li><a class="dropdown-item" href="../articles/hpcm-rasch-analysis.html">Hurdle Partial Credit Model</a></li>
-    <li><a class="external-link dropdown-item" href="https://pgmj.github.io/rasch_bayes_comp.html">Comparing Rasch with CML/MML and `brms`</a></li>
+    <li><a class="dropdown-item" href="../articles/mfrm-rasch-analysis.html">Many-Facet Rasch Models</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -359,23 +359,24 @@ which can come with local dependence. <code>infit_ppp</code> is the
 proportion of posterior draws where the observed infit exceeds the
 replicated one. Values near 0.5 indicate good fit, values near 1
 underfit, and values near 0 overfit.</p>
-<p>The ppp is conservative, because the item parameters are estimated
-from the same data. In simulations under a fitting model it rarely came
-close to 0 or 1, so misfit can go undetected. We therefore also use the
-item-restscore association below, whose ppp was close to uniform in the
-same simulations. The ppp is not a measure of the size of misfit.</p>
+<p>The ppp flags misfit less often than its nominal level, because the
+item parameters are estimated from the same data. In simulations under a
+fitting model it rarely came close to 0 or 1, so misfit can go
+undetected. We therefore also use the item-restscore association below,
+whose ppp was close to uniform in the same simulations. The ppp is not a
+measure of the size of misfit.</p>
 <p>Three items underfit: <code>q9</code> (thoughts of self-harm, infit
 about 1.33), <code>q8</code> (moving slowly or restless, 1.27) and
 <code>q3</code> (sleep, 1.24), all with <code>infit_ppp</code> near 1.
 Two overfit: <code>q2</code> (feeling down, 0.78) and <code>q4</code>
-(feeling tired, 0.83). Given how conservative the ppp is, values this
-close to 0 or 1 are clear signals, but they should not be read item by
-item. Infit is relative to the other items. An item in a strongly
-dependent pair usually overfits, and that makes the remaining items look
-more underfit than they would otherwise. <code>q2</code> is part of the
-strongest dependent pair (see local dependence below), so fit should be
-checked again after the dependence is dealt with, for example by
-removing one item of the pair.</p>
+(feeling tired, 0.83). Since the ppp flags misfit less often than its
+nominal level, values this close to 0 or 1 are clear signals, but they
+should not be read item by item. Infit is relative to the other items.
+An item in a strongly dependent pair usually overfits, and that makes
+the remaining items look more underfit than they would otherwise.
+<code>q2</code> is part of the strongest dependent pair (see local
+dependence below), so fit should be checked again after the dependence
+is dealt with, for example by removing one item of the pair.</p>
 </div>
 <div class="section level3">
 <h3 id="item-restscore-association">Item-restscore association<a class="anchor" aria-label="anchor" href="#item-restscore-association"></a>
@@ -529,6 +530,13 @@ line in the plot is the mean replicated Q3.</p>
 <strong>Figure 6.</strong> <em>Q3 residual correlations</em>
 </p>
 </div>
+<p>In the plot, the grey distributions are the replicated Q3 and the
+points are the observed Q3. The observed values vary little across
+draws, because the residuals given the total score depend only on the
+item parameters, which 600 persons estimate precisely. The replicated
+values also vary through the sampling of new responses, so they are
+wider. Each pair has its own expected value, so the grey distributions
+are not all centred on the dashed line.</p>
 <p>The largest difference by far is for <code>q1</code> and
 <code>q2</code>, the two core symptoms of depression (little interest
 and feeling down), with an observed Q3 of 0.24 against about -0.12
@@ -771,7 +779,7 @@ is never the most likely response.</p>
 </h2>
 <p><code><a href="../reference/RMUreliability.html">RMUreliability()</a></code> gives a Bayesian reliability estimate
 based on relative measurement uncertainty <span class="citation">(RMU,
-<a href="#ref-bignardi_general_2025">Bignardi et al. 2025</a>)</span>.
+<a href="#ref-bignardi_general_2025">Bignardi et al. 2026</a>)</span>.
 It takes a matrix of person location draws, persons by draws, and
 returns the posterior mean with a 95% highest density continuous
 interval.</p>
@@ -1306,10 +1314,10 @@ for persons who answered every item.</p>
 </h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-bignardi_general_2025" class="csl-entry">
-Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2025.
+Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2026.
 <em>A General Method for Estimating Reliability Using
 <span>Bayesian</span> <span>Measurement</span>
-<span>Uncertainty</span></em>. OSF. <a href="https://doi.org/10.31234/osf.io/h54k8_v1" class="external-link">https://doi.org/10.31234/osf.io/h54k8_v1</a>.
+<span>Uncertainty</span></em>. OSF. <a href="https://osf.io/preprints/psyarxiv/h54k8" class="external-link">https://osf.io/preprints/psyarxiv/h54k8</a>.
 </div>
 <div id="ref-burkner_bayesian_2021" class="csl-entry">
 Bürkner, Paul-Christian. 2021. <span>“Bayesian Item Response Modeling in

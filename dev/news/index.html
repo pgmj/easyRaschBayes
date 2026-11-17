@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.4.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -20,7 +20,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
     <li><a class="dropdown-item" href="../articles/hpcm-rasch-analysis.html">Hurdle Partial Credit Model</a></li>
-    <li><a class="external-link dropdown-item" href="https://pgmj.github.io/rasch_bayes_comp.html">Comparing Rasch with CML/MML and `brms`</a></li>
+    <li><a class="dropdown-item" href="../articles/mfrm-rasch-analysis.html">Many-Facet Rasch Models</a></li>
   </ul></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -39,43 +39,97 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="development version" id="easyraschbayes-development-version">easyRaschBayes (development version)<a class="anchor" aria-label="anchor" href="#easyraschbayes-development-version"></a></h2>
-<ul><li>Bug fix - <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code>, <code><a href="../reference/q3_statistic_hpcm.html">q3_statistic_hpcm()</a></code>, <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> and <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> now stop with an error if a person x item combination occurs more than once in the model data. Previously only the last response of each duplicated combination was kept, without warning. Results for data with one response per person and item are unchanged.</li>
-<li>Breaking - <code><a href="../reference/plot_targeting.html">plot_targeting()</a></code> follows <code>easyRasch2::RMtargeting()</code>. The bottom panel now shows response-category bands (<code>panel = "categories"</code>), with red marks for categories that are never most likely and for disordered thresholds, labelled with their posterior probabilities. New arguments <code>panel</code>, <code>person_estimate</code> (EAP default, or WLE), <code>xlim</code>, <code>category_labels</code>, <code>viridis_*</code>, <code>row_gap</code> and <code>output = "list"</code>, which also returns the posterior category tables. Defaults for <code>bins</code> and the x-axis follow RMtargeting, <code>prob = NULL</code> hides intervals, and <code>sort_items = "location"</code> now puts the easiest item at the top. ‘scales’ is added to Imports.</li>
-<li>Breaking - <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> now conditions on the total score. It adds Kreiner’s expected gamma (<code>gamma_exp</code>), replicates data given each person’s total score, uses a mid-p <code>ppp</code> and adds a max-T <code>p_adj</code>. <code>gamma_diff</code> is now observed minus expected. The zero-width <code>gamma_obs_q*</code> columns are replaced by <code>gamma_rep_q*</code>. Only Rasch-family models (<code>bernoulli</code>, <code>acat</code>, logit, no <code>disc</code>) are accepted. Results change. <code><a href="../reference/item_restscore_post.html">item_restscore_post()</a></code> follows the new output and accepts any item column name.</li>
-<li>Breaking - <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> gains <code>method = c("conditional", "theta")</code>. The default now computes conditional infit given the total score, matching <code><a href="https://rdrr.io/pkg/iarm/man/out_infit.html" class="external-link">iarm::out_infit()</a></code> for the same item parameters, and replicates data given each person’s total score. Only Rasch-family models are accepted. <code>method = "theta"</code> gives the 0.3.0 results.</li>
-<li>Breaking - <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> gains <code>method = c("conditional", "theta")</code>. The default now takes residuals from the expected responses given each person’s total score and replicates data given the total score, so observed and replicated Q3 centre on about -1/(k-1). Only Rasch-family models are accepted. <code>method = "theta"</code> gives the 0.3.0 results. <code><a href="../reference/q3_post.html">q3_post()</a></code> adds <code>q3_p_adj</code>, a one-sided max-T adjustment over item pairs, and its reference line is the mean replicated Q3. Results change.</li>
-<li>Breaking - <code><a href="../reference/infit_post.html">infit_post()</a></code> <code>infit_ppp</code> is now P(observed &gt; replicated) with mid-p ties, so values near 1 indicate underfit, as in <code><a href="../reference/q3_post.html">q3_post()</a></code>. <code><a href="../reference/infit_post.html">infit_post()</a></code> accepts any item column name.</li>
-<li>New datasets <code>phq9</code>, the same PHQ-9 data as in easyRasch2 (600 NHANES respondents, nine items with four categories), and <code>phq9_nhanes</code>, a random sample of 1000 NHANES PHQ-9 respondents with the zero responses of a general population sample, for the hurdle partial credit model.</li>
+<h2 class="pkg-version" data-toc-text="0.4.0.9001" id="easyraschbayes-0409001">easyRaschBayes 0.4.0.9001<a class="anchor" aria-label="anchor" href="#easyraschbayes-0409001"></a></h2>
+<div class="section level3">
+<h3 id="new-features-0-4-0-9001">New features<a class="anchor" aria-label="anchor" href="#new-features-0-4-0-9001"></a></h3>
+<ul><li>Many-facet Rasch models: <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code>, <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code>, <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> and <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> get a <code>facet_var</code> argument (for example <code>facet_var = rater</code>). Each item x rater combination is treated as an item. <code>infit_statistic(by = "item")</code> or <code>by = "facet"</code> pools over raters or items. Q3 output gets a <code>pair_type</code> column and leaves out cell pairs that no person shares. <code><a href="../reference/infit_post.html">infit_post()</a></code> and <code><a href="../reference/item_restscore_post.html">item_restscore_post()</a></code> keep the item and facet columns, and <code><a href="../reference/q3_post.html">q3_post()</a></code> keeps <code>pair_type</code>. A warning flags rating designs that do not connect all raters and items. A message notes when the model has a person x rater (halo) term, since the conditional methods then assess fit after the halo is accounted for.</li>
 <li>
-<code><a href="../reference/plot_icc.html">plot_icc()</a></code> gains <code>method</code> (<code>"quantile"</code>, <code>"width"</code>, <code>"score"</code>, <code>"manual"</code>) and <code>score_breaks</code>, as in easyRasch2’s <code>RMitemICCPlot()</code>. <code>n_intervals</code> is renamed <code>class_intervals</code> in <code><a href="../reference/plot_icc.html">plot_icc()</a></code> and <code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code> (the old name still works, with a deprecation warning). A caption states the grouping used, also when tied sum scores give fewer quantile groups than requested.</li>
+<code><a href="../reference/facet_parameters.html">facet_parameters()</a></code>: locations (severity) of the facet elements, for example raters, with the number of ratings, observed average and fair average rating. With <code>draws = TRUE</code> the draws can go to <code><a href="../reference/RMUreliability.html">RMUreliability()</a></code>.</li>
 <li>
-<code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code> severity panel places each class interval where the item curve equals the model-expected mean for the same responses, as <code><a href="../reference/plot_icc.html">plot_icc()</a></code> does with the total score. Placing intervals at their mean EAP had made the observed points look misfitting. Plots change.</li>
+<code><a href="../reference/contr_sum_zero.html">contr_sum_zero()</a></code>: orthonormal sum-to-zero contrasts, which give every level of a fixed factor the same prior variance (unlike <code><a href="https://rdrr.io/r/stats/contrast.html" class="external-link">contr.sum()</a></code>).</li>
+<li>New vignette “Many-Facet Rasch Models with easyRaschBayes”.</li>
+<li>The conditional methods of <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code>, <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> and <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> are faster and use far less memory when persons answer only some items (planned missing data, many-facet designs). Results for complete data are unchanged. With missing responses the replicated data differ only by simulation noise.</li>
 <li>
-<code><a href="../reference/plot_icc.html">plot_icc()</a></code> with <code>dif_var</code> distinguishes groups by shape and line type as well as colour.</li>
-<li>Breaking - <code><a href="../reference/plot_targeting_hpcm.html">plot_targeting_hpcm()</a></code> uses the same design as <code><a href="../reference/plot_targeting.html">plot_targeting()</a></code>: response-category bands with red marks and posterior probabilities for collapsed categories and disordered thresholds, or <code>panel = "thresholds"</code>. New arguments <code>panel</code>, <code>xlim</code>, <code>category_labels</code>, <code>viridis_*</code>, <code>row_gap</code> and <code>output = "list"</code>; the default <code>bins</code> follows <code><a href="../reference/plot_targeting.html">plot_targeting()</a></code>. Persons who answered 0 on every item are left out of the severity histogram, with a caption.</li>
-<li>
-<code><a href="../reference/plot_targeting.html">plot_targeting()</a></code> labels a category collapse caused by disordered thresholds once, on the arrow, and spaces rows more widely, so labels no longer overlap when many items have disordered thresholds.</li>
-<li>Docs - <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> and <code><a href="../reference/infit_post.html">infit_post()</a></code> state that the infit ppp is conservative, also with the conditional method, and suggest also using <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code>.</li>
-<li>Bug fix - <code><a href="../reference/dif_statistic.html">dif_statistic()</a></code> for polytomous models loaded any difference in group latent means onto every item as DIF, and the uniform DIF parameter was not identified. Both types now estimate impact separately (new <code>impact</code> element) with DIF relative to the average item. Uniform DIF uses item random slopes of a group indicator. All types share one sign: positive = easier for the focal (second) group. Item labels that brms renames no longer give silent zeros. Results change for polytomous models.</li>
-<li>Bug fix - rating scale models (<code>acat</code> with <code>(1 | item)</code> and common thresholds) gave every item the same thresholds, and <code>0 + item</code> models failed in <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> and <code><a href="../reference/plot_targeting.html">plot_targeting()</a></code>. All functions now share one item parameter extractor. Results change for rating scale models.</li>
-<li>Bug fix - <code><a href="../reference/person_parameters.html">person_parameters()</a></code> and <code><a href="../reference/person_parameters_hpcm.html">person_parameters_hpcm()</a></code> gave persons with missing responses the full-test WLE for their sum score. The WLE now uses the items each person answered, and a new <code>n_items</code> column counts them. <code>score_table</code> covers persons who answered every item.</li>
-<li>Bug fix - <code><a href="../reference/person_parameters.html">person_parameters()</a></code> and <code><a href="../reference/plot_icc.html">plot_icc()</a></code> counted ordinal sum scores from the lowest category observed in the data, not from category 1, which shifted all scores when nobody used category 1.</li>
-<li>Bug fix - <code><a href="../reference/plot_icc.html">plot_icc()</a></code> partial gamma used the wrong column for numeric item labels.</li>
-<li>Bug fix - <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> aligned eigenvector signs across draws by counting signs, which could pull a small group of strongly loading items toward zero. Signs now follow the dot product with the mean direction.</li>
-<li>Bug fix - <code><a href="https://mc-stan.org/rstantools/reference/posterior_epred.html" class="external-link">posterior_epred()</a></code> for <code>hurdle_acat</code> failed when items had different numbers of categories.</li>
-<li>Bug fix - <code><a href="../reference/plot_ipf.html">plot_ipf()</a></code> and <code><a href="../reference/plot_icc.html">plot_icc()</a></code> always used the logistic curve. They now use the model’s link for cumulative, sratio and cratio models, and stop for non-logit acat models and models that estimate <code>disc</code>.</li>
-<li>Bug fix - <code><a href="../reference/infit_statistic_hpcm.html">infit_statistic_hpcm()</a></code> and <code><a href="../reference/q3_statistic_hpcm.html">q3_statistic_hpcm()</a></code> failed with ordered-factor responses or a single draw. <code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code> no longer shifts responses down when there are no zeros. Hurdle item parameters are found for labels that brms renames.</li>
-<li>
-<code><a href="../reference/plot_icc.html">plot_icc()</a></code>, <code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code> (hurdle panel) and <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> now report how many persons with missing responses they leave out.</li>
-<li>
-<code><a href="../reference/item_parameters.html">item_parameters()</a></code> <code>n_eff</code> is now <code><a href="https://mc-stan.org/posterior/reference/ess_bulk.html" class="external-link">posterior::ess_bulk()</a></code>, which accounts for disagreement between chains. ‘posterior’ is added to Imports.</li>
-<li>
-<code><a href="../reference/plot_tile.html">plot_tile()</a></code> and <code><a href="../reference/plot_stackedbars.html">plot_stackedbars()</a></code> use <code><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw()</a></code>. The <code><a href="../reference/plot_stackedbars.html">plot_stackedbars()</a></code> legend now runs lowest to highest from the top. <code><a href="../reference/plot_ipf.html">plot_ipf()</a></code> adds line types to the category colours.</li>
-<li>Docs - corrected <code><a href="../reference/RMUreliability.html">RMUreliability()</a></code> return value, the <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> <code>style</code> default and centring, the <code><a href="../reference/plot_icc.html">plot_icc()</a></code> partial gamma sign, and added caveats to <code><a href="../reference/posterior_to_prior.html">posterior_to_prior()</a></code> (independent priors) and <code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code> (EAP binning).</li>
-<li>Bug fix - <code><a href="../reference/infit_post.html">infit_post()</a></code> <code>infit_ppp</code> and <code><a href="../reference/q3_post.html">q3_post()</a></code> <code>q3_ppp</code> compared each draw’s observed value with the mean of the replicated values, not with the replicated value of the same draw. Results change.</li>
-<li>Docs - <code><a href="../reference/infit_statistic_hpcm.html">infit_statistic_hpcm()</a></code> is no longer described as conditional infit. The <code>hdi</code> tables of <code><a href="../reference/infit_post.html">infit_post()</a></code> and <code><a href="../reference/q3_post.html">q3_post()</a></code> are described as exceedance proportions. Results are unchanged.</li>
+<code><a href="../reference/q3_post.html">q3_post()</a></code> and the theta method of <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> are faster with many item pairs.</li>
 </ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-4-0-9001">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-0-9001"></a></h3>
+<ul><li>Item parameters from models with fixed item effects and an intercept now respect the contrasts of the item factor. Before, treatment coding was assumed. With other contrasts (for example <code><a href="https://rdrr.io/r/stats/contrast.html" class="external-link">contr.sum()</a></code>) the functions stopped with an error, or, for item labels with spaces or punctuation, returned wrong item locations. Treatment-coded models are unchanged.</li>
+<li>Fixed item effects are matched by their exact parameter names. Before, a covariate whose name starts with the item variable name (for example <code>item_order</code> next to <code>item</code>) was read as an item effect: the functions stopped with an error, or, for item labels with spaces or punctuation, returned wrong item locations. For contrasts set by <code>options(contrasts = ...)</code> instead of on the factor, the same option must be set when the functions are run. If the names fit both that option and treatment coding, the functions stop with an error. Other results are unchanged.</li>
+<li>
+<code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> failed when a person with a total score of 0 had a pattern of missing responses that no other person had. Results for other data are unchanged.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-4-0-9001">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-4-0-9001"></a></h3>
+<ul><li>Help pages and vignettes now say that a p-value “flags misfit less often than its nominal level” instead of calling it “conservative”.</li>
+<li>Percent signs in the <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> and <code><a href="../reference/q3_post.html">q3_post()</a></code> help pages were shown with a backslash.</li>
+</ul></div>
+</div>
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="0.4.0" id="easyraschbayes-040">easyRaschBayes 0.4.0<a class="anchor" aria-label="anchor" href="#easyraschbayes-040"></a></h2><p class="text-muted">CRAN release: 2026-11-10</p>
+<div class="section level3">
+<h3 id="breaking-changes-0-4-0">Breaking changes<a class="anchor" aria-label="anchor" href="#breaking-changes-0-4-0"></a></h3>
+<ul><li>
+<code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code>, <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> and <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> now condition on each person’s total score, both for the expected values and for the replicated data. They accept only Rasch-family models (<code>bernoulli</code> or <code>acat</code>, logit link, no <code>disc</code>). <code>method = "theta"</code> in <code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> and <code><a href="../reference/q3_statistic.html">q3_statistic()</a></code> gives the 0.3.0 results. <strong>Results change.</strong>
+<ul><li>
+<code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> adds Kreiner’s expected gamma (<code>gamma_exp</code>), a mid-p <code>ppp</code> and a max-T adjusted <code>p_adj</code>. <code>gamma_diff</code> is now observed minus expected, and <code>gamma_obs_q*</code> is replaced by <code>gamma_rep_q*</code>.</li>
+<li>Conditional infit matches <code><a href="https://rdrr.io/pkg/iarm/man/out_infit.html" class="external-link">iarm::out_infit()</a></code> for the same item parameters.</li>
+<li>
+<code><a href="../reference/q3_post.html">q3_post()</a></code> adds <code>q3_p_adj</code>, adjusted over item pairs, and its reference line is the mean replicated Q3.</li>
+</ul></li>
+<li>
+<code><a href="../reference/infit_post.html">infit_post()</a></code> <code>infit_ppp</code> and <code><a href="../reference/q3_post.html">q3_post()</a></code> <code>q3_ppp</code> compared each draw’s observed value with the mean of the replicated values, not with the same draw’s replicated value. <code>infit_ppp</code> is now also P(observed &gt; replicated) with mid-p ties, so values near 1 indicate underfit, as for <code>q3_ppp</code>. <strong>Results change.</strong>
+</li>
+<li>
+<code><a href="../reference/plot_targeting.html">plot_targeting()</a></code> and <code><a href="../reference/plot_targeting_hpcm.html">plot_targeting_hpcm()</a></code> follow <code>easyRasch2::RMtargeting()</code>. The bottom panel shows response-category bands, with categories that are never most likely and disordered thresholds marked in red and labelled with their posterior probabilities. <code>panel = "thresholds"</code> gives a dot-and-whisker plot. New arguments <code>panel</code>, <code>xlim</code>, <code>category_labels</code>, <code>viridis_*</code>, <code>row_gap</code> and <code>output = "list"</code>, plus <code>person_estimate</code> in <code><a href="../reference/plot_targeting.html">plot_targeting()</a></code>. The defaults for <code>bins</code> and the x-axis change, and <code>sort_items = "location"</code> puts the easiest item at the top. ‘scales’ is added to Imports.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="new-features-0-4-0">New features<a class="anchor" aria-label="anchor" href="#new-features-0-4-0"></a></h3>
+<ul><li>New datasets <code>phq9</code> (600 NHANES respondents, nine items with four categories, as in easyRasch2) and <code>phq9_nhanes</code> (1000 NHANES respondents, including zero responses, for the hurdle partial credit model).</li>
+<li>
+<code><a href="../reference/plot_icc.html">plot_icc()</a></code> gains <code>method</code> and <code>score_breaks</code> for forming class intervals, as in <code>easyRasch2::RMitemICCPlot()</code>, and a caption stating the grouping. <code>n_intervals</code> is renamed <code>class_intervals</code> in <code><a href="../reference/plot_icc.html">plot_icc()</a></code> and <code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code>, and the old name is deprecated.</li>
+<li>
+<code><a href="../reference/plot_icc.html">plot_icc()</a></code> with <code>dif_var</code> separates groups by shape and line type as well as colour. <code><a href="../reference/plot_ipf.html">plot_ipf()</a></code> adds line types, and <code><a href="../reference/plot_tile.html">plot_tile()</a></code> and <code><a href="../reference/plot_stackedbars.html">plot_stackedbars()</a></code> use <code><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw()</a></code>.</li>
+<li>
+<code><a href="../reference/plot_icc.html">plot_icc()</a></code>, <code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code> and <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> report how many persons with missing responses they leave out.</li>
+<li>
+<code><a href="../reference/item_restscore_post.html">item_restscore_post()</a></code> and <code><a href="../reference/infit_post.html">infit_post()</a></code> accept any item column name.</li>
+<li>
+<code><a href="../reference/item_parameters.html">item_parameters()</a></code> <code>n_eff</code> is now <code><a href="https://mc-stan.org/posterior/reference/ess_bulk.html" class="external-link">posterior::ess_bulk()</a></code>. ‘posterior’ is added to Imports.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="bug-fixes-0-4-0">Bug fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-0-4-0"></a></h3>
+<ul><li>
+<code><a href="../reference/dif_statistic.html">dif_statistic()</a></code> for polytomous models loaded differences in group means onto the items as DIF. Impact is now estimated separately (new <code>impact</code> element), and all DIF types share one sign: positive means easier for the focal group. <strong>Results change for polytomous models.</strong>
+</li>
+<li>Rating scale models gave every item the same thresholds. <strong>Results change for rating scale models.</strong> <code>0 + item</code> models no longer fail in <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> and <code><a href="../reference/plot_targeting.html">plot_targeting()</a></code>.</li>
+<li>
+<code><a href="../reference/person_parameters.html">person_parameters()</a></code> and <code><a href="../reference/person_parameters_hpcm.html">person_parameters_hpcm()</a></code> now compute the WLE of persons with missing responses from the items they answered, with a new <code>n_items</code> column.</li>
+<li>
+<code><a href="../reference/person_parameters.html">person_parameters()</a></code> and <code><a href="../reference/plot_icc.html">plot_icc()</a></code> counted sum scores from the lowest observed category instead of category 1.</li>
+<li>
+<code><a href="../reference/q3_statistic.html">q3_statistic()</a></code>, <code><a href="../reference/q3_statistic_hpcm.html">q3_statistic_hpcm()</a></code>, <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> and <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> stop if a person and item combination occurs more than once. Previously only the last response was kept.</li>
+<li>
+<code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code> placed class intervals in the severity panel at their mean EAP, which made observed points look misfitting, and shifted responses down when there were no zeros. <strong>Plots change.</strong>
+</li>
+<li>
+<code><a href="../reference/plot_ipf.html">plot_ipf()</a></code> and <code><a href="../reference/plot_icc.html">plot_icc()</a></code> use the model’s link for cumulative, sratio and cratio models, and stop for non-logit <code>acat</code> models and models that estimate <code>disc</code>.</li>
+<li>
+<code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> aligns eigenvector signs across draws by the dot product with the mean direction.</li>
+<li>
+<code><a href="../reference/plot_icc.html">plot_icc()</a></code> partial gamma used the wrong column for numeric item labels.</li>
+<li>
+<code><a href="../reference/posterior_epred_hurdle_acat.html">posterior_epred_hurdle_acat()</a></code> failed when items had different numbers of categories.</li>
+<li>
+<code><a href="../reference/infit_statistic_hpcm.html">infit_statistic_hpcm()</a></code> and <code><a href="../reference/q3_statistic_hpcm.html">q3_statistic_hpcm()</a></code> failed with ordered-factor responses or a single draw, and with item labels that brms renames.</li>
+</ul></div>
+<div class="section level3">
+<h3 id="documentation-0-4-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-4-0"></a></h3>
+<ul><li>
+<code><a href="../reference/infit_statistic.html">infit_statistic()</a></code> and <code><a href="../reference/infit_post.html">infit_post()</a></code> state that the infit ppp is conservative, also with the conditional method, and suggest <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> as well.</li>
+<li>Corrected <code><a href="../reference/RMUreliability.html">RMUreliability()</a></code> return value, <code><a href="../reference/plot_residual_pca.html">plot_residual_pca()</a></code> <code>style</code> default and centring, and <code><a href="../reference/plot_icc.html">plot_icc()</a></code> partial gamma sign. Added caveats to <code><a href="../reference/posterior_to_prior.html">posterior_to_prior()</a></code> and <code><a href="../reference/plot_icc_hpcm.html">plot_icc_hpcm()</a></code>. <code><a href="../reference/infit_statistic_hpcm.html">infit_statistic_hpcm()</a></code> is no longer described as conditional infit.</li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="0.3.0" id="easyraschbayes-030">easyRaschBayes 0.3.0<a class="anchor" aria-label="anchor" href="#easyraschbayes-030"></a></h2><p class="text-muted">CRAN release: 2026-06-18</p>
 <ul><li>New custom brms family <code>hurdle_acat</code> for hurdle partial credit models (H-PCM). This is written by <a href="https://rpsychologist.com/" class="external-link">Kristoffer Magnusson</a>

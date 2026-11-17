@@ -11,8 +11,8 @@
 <script src="deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Bayesian Rasch Analysis Using brms">
-<meta name="description" content="Reproduces classic Rasch psychometric analysis features using Bayesian item response theory models fitted with brms following Bürkner (2021) &lt;doi:10.18637/jss.v100.i05&gt; and Bürkner (2020) &lt;doi:10.3390/jintelligence8010005&gt;. Supports dichotomous and polytomous Rasch models, and a hurdle partial credit model. Features include posterior predictive item fit, including infit and item-restscore associations conditional on the total score, person fit, differential item functioning, local dependence assessment via Q3 residual correlations, dimensionality assessment with residual principal components analysis, person-item targeting plots, item category probability curves, and reliability using relative measurement uncertainty following Bignardi et al. (2025) &lt;doi:10.31234/osf.io/h54k8_v1&gt;.">
-<meta property="og:description" content="Reproduces classic Rasch psychometric analysis features using Bayesian item response theory models fitted with brms following Bürkner (2021) &lt;doi:10.18637/jss.v100.i05&gt; and Bürkner (2020) &lt;doi:10.3390/jintelligence8010005&gt;. Supports dichotomous and polytomous Rasch models, and a hurdle partial credit model. Features include posterior predictive item fit, including infit and item-restscore associations conditional on the total score, person fit, differential item functioning, local dependence assessment via Q3 residual correlations, dimensionality assessment with residual principal components analysis, person-item targeting plots, item category probability curves, and reliability using relative measurement uncertainty following Bignardi et al. (2025) &lt;doi:10.31234/osf.io/h54k8_v1&gt;.">
+<meta name="description" content="Reproduces classic Rasch psychometric analysis features using Bayesian item response theory models fitted with brms following Bürkner (2021) &lt;doi:10.18637/jss.v100.i05&gt; and Bürkner (2020) &lt;doi:10.3390/jintelligence8010005&gt;. Supports dichotomous and polytomous Rasch models, a hurdle partial credit model, and many-facet Rasch models with a third facet such as raters. Features include posterior predictive item fit, including infit and item-restscore associations conditional on the total score, person fit, differential item functioning, local dependence assessment via Q3 residual correlations, dimensionality assessment with residual principal components analysis, person-item targeting plots, item category probability curves, and reliability using relative measurement uncertainty following Bignardi et al. (2025) &lt;doi:10.31234/osf.io/h54k8_v1&gt;.">
+<meta property="og:description" content="Reproduces classic Rasch psychometric analysis features using Bayesian item response theory models fitted with brms following Bürkner (2021) &lt;doi:10.18637/jss.v100.i05&gt; and Bürkner (2020) &lt;doi:10.3390/jintelligence8010005&gt;. Supports dichotomous and polytomous Rasch models, a hurdle partial credit model, and many-facet Rasch models with a third facet such as raters. Features include posterior predictive item fit, including infit and item-restscore associations conditional on the total score, person fit, differential item functioning, local dependence assessment via Q3 residual correlations, dimensionality assessment with residual principal components analysis, person-item targeting plots, item category probability curves, and reliability using relative measurement uncertainty following Bignardi et al. (2025) &lt;doi:10.31234/osf.io/h54k8_v1&gt;.">
 <meta name="robots" content="noindex">
 </head>
 <body>
@@ -23,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.4.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -38,7 +38,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
     <li><a class="dropdown-item" href="articles/hpcm-rasch-analysis.html">Hurdle Partial Credit Model</a></li>
-    <li><a class="external-link dropdown-item" href="https://pgmj.github.io/rasch_bayes_comp.html">Comparing Rasch with CML/MML and `brms`</a></li>
+    <li><a class="dropdown-item" href="articles/mfrm-rasch-analysis.html">Many-Facet Rasch Models</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="news/index.html">Changelog</a></li>
@@ -60,7 +60,7 @@
 </h1></div>
 <!-- badges: start -->
 
-<p><code>easyRaschBayes</code> provides Rasch measurement theory analysis workflows for Bayesian item response theory models fitted with <a href="https://paulbuerkner.com/brms/" class="external-link">brms</a>. It supports dichotomous Rasch models, partial credit and rating scale models, and a hurdle partial credit model for data with many zero responses. All output exposes the full posterior distribution.</p>
+<p><code>easyRaschBayes</code> provides Rasch measurement theory analysis workflows for Bayesian item response theory models fitted with <a href="https://paulbuerkner.com/brms/" class="external-link">brms</a>. It supports dichotomous Rasch models, partial credit and rating scale models, many-facet Rasch models (for example items rated by raters), and a hurdle partial credit model for data with many zero responses. All output exposes the full posterior distribution.</p>
 <p>The frequentist counterpart is <a href="https://pgmj.github.io/easyRasch2/" class="external-link"><code>easyRasch2</code></a>, which uses conditional maximum likelihood and simulation-based critical values. Both packages include the same <code>phq9</code> example data, and their vignettes analyse it side by side. For broader Rasch-analysis tutorials, see the <a href="https://pgmj.github.io/raschrvignette/RaschRvign.html" class="external-link">vignette</a> for the archived package <a href="https://pgmj.github.io/easyRasch/" class="external-link"><code>easyRasch</code></a>.</p>
 <div class="section level2">
 <h2 id="statement-of-need">Statement of need<a class="anchor" aria-label="anchor" href="#statement-of-need"></a>
@@ -77,7 +77,7 @@
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes") # if needed</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"pgmj/easyRaschBayes"</span><span class="op">)</span></span></code></pre></div>
-<p>The development version changes several defaults and outputs, among them conditional item fit given the total score and a new targeting plot. See the <a href="https://pgmj.github.io/easyRaschBayes/news/index.html">changelog</a>.</p>
+<p>The development version adds many-facet Rasch models (<code>facet_var</code>, <code><a href="reference/facet_parameters.html">facet_parameters()</a></code>, <code><a href="reference/contr_sum_zero.html">contr_sum_zero()</a></code>). See the <a href="https://pgmj.github.io/easyRaschBayes/news/index.html">changelog</a>.</p>
 <p>The hurdle partial credit model needs a patched version of <code>brms</code>, since CRAN <code>brms</code> 2.23 cannot fit custom ordinal families with item-specific thresholds:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"rpsychologist/brms@fix-custom-ordinal-grouped-thres"</span><span class="op">)</span></span></code></pre></div>
@@ -156,7 +156,7 @@
 <li>
 <code><a href="reference/plot_targeting.html">plot_targeting()</a></code>: person-item targeting plot with the ranges where each response category is the most likely, threshold credible intervals, and the posterior probability of collapsed categories and disordered thresholds</li>
 <li>
-<code><a href="reference/RMUreliability.html">RMUreliability()</a></code>: reliability from relative measurement uncertainty (Bignardi et al., 2025)</li>
+<code><a href="reference/RMUreliability.html">RMUreliability()</a></code>: reliability from relative measurement uncertainty (Bignardi et al., 2026)</li>
 </ul>
 </div>
 <div class="section level3">
@@ -169,6 +169,18 @@
 <code><a href="reference/person_parameters.html">person_parameters()</a></code>: EAP and WLE person locations, and a sum score to WLE table</li>
 <li>
 <code><a href="reference/posterior_to_prior.html">posterior_to_prior()</a></code>: informative priors from a fitted model, for use in a new model</li>
+</ul>
+</div>
+<div class="section level3">
+<h3 id="many-facet-rasch-models">Many-facet Rasch models<a class="anchor" aria-label="anchor" href="#many-facet-rasch-models"></a>
+</h3>
+<ul>
+<li>
+<code>facet_var</code> in <code><a href="reference/infit_statistic.html">infit_statistic()</a></code>, <code><a href="reference/item_restscore_statistic.html">item_restscore_statistic()</a></code>, <code><a href="reference/q3_statistic.html">q3_statistic()</a></code> and <code><a href="reference/plot_residual_pca.html">plot_residual_pca()</a></code>: fit with raters (or another facet), each item x rater combination treated as an item; Q3 pairs are labelled by <code>pair_type</code> (same rater, same item, other)</li>
+<li>
+<code><a href="reference/facet_parameters.html">facet_parameters()</a></code>: rater severity with credible intervals, number of ratings, observed and fair average rating</li>
+<li>
+<code><a href="reference/contr_sum_zero.html">contr_sum_zero()</a></code>: orthonormal sum-to-zero contrasts for a small fixed facet, so every level gets the same prior variance</li>
 </ul>
 </div>
 <div class="section level3">
@@ -210,6 +222,8 @@
 </li>
 <li>
 <a href="https://pgmj.github.io/easyRaschBayes/articles/hpcm-rasch-analysis.html">Hurdle partial credit model</a>, <code>phq9_nhanes</code> analysed with an ordinary and a hurdle partial credit model</li>
+<li>
+<a href="https://pgmj.github.io/easyRaschBayes/articles/mfrm-rasch-analysis.html">Many-facet Rasch models</a>, simulated ratings by raters, with rater severity, fit and halo (development version)</li>
 </ul>
 <p>There is also a <a href="https://pgmj.github.io/rasch_bayes_comp.html" class="external-link">comparison with frequentist Rasch tools in R</a>.</p>
 </div>
@@ -253,7 +267,7 @@
 <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <ul>
-<li>Bignardi, G., Kievit, R., &amp; Bürkner, P.-C. (2025). A general method for estimating reliability using Bayesian measurement uncertainty. <em>OSF</em>. <a href="https://doi.org/10.31234/osf.io/h54k8_v1" class="external-link uri">https://doi.org/10.31234/osf.io/h54k8_v1</a>
+<li>Bignardi, G., Kievit, R., &amp; Bürkner, P.-C. (2026). A general method for estimating reliability using Bayesian measurement uncertainty. <em>OSF</em>. <a href="https://osf.io/preprints/psyarxiv/h54k8" class="external-link uri">https://osf.io/preprints/psyarxiv/h54k8</a>
 </li>
 <li>Bürkner, P.-C. (2020). Analysing Standard Progressive Matrices (SPM-LS) with Bayesian item response models. <em>Journal of Intelligence, 8</em>(1). <a href="https://doi.org/10.3390/jintelligence8010005" class="external-link uri">https://doi.org/10.3390/jintelligence8010005</a>
 </li>

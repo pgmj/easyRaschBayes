@@ -59,9 +59,9 @@ an `NA` result.
 
 ## References
 
-Bignardi, G., Kievit, R., & Bürkner, P. C. (2025). A general method for
+Bignardi, G., Kievit, R., & Bürkner, P. C. (2026). A general method for
 estimating reliability using Bayesian Measurement Uncertainty. PsyArXiv.
-[doi:10.31234/osf.io/h54k8](https://osf.io/preprints/psyarxiv/h54k8)
+<https://osf.io/preprints/psyarxiv/h54k8>
 
 ## Examples
 
@@ -91,8 +91,9 @@ library(tibble)
 
 # --- Dichotomous Rasch Model ---
 
-df_rm <- eRm::raschdat3 %>%
-  as.data.frame() %>%
+# PHQ-9 items dichotomised (any symptom vs none), for illustration only
+df_rm <- phq9[1:200, 1:9] %>%
+  mutate(across(everything(), ~ as.integer(.x > 0))) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
 

@@ -21,7 +21,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.4.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -36,7 +36,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
     <li><a class="dropdown-item" href="../articles/hpcm-rasch-analysis.html">Hurdle Partial Credit Model</a></li>
-    <li><a class="external-link dropdown-item" href="https://pgmj.github.io/rasch_bayes_comp.html">Comparing Rasch with CML/MML and `brms`</a></li>
+    <li><a class="dropdown-item" href="../articles/mfrm-rasch-analysis.html">Many-Facet Rasch Models</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -131,10 +131,14 @@ locations follow a bivariate normal distribution,</p>
 </span></p>
 <p>Each submodel thus has its own person location, and the two are
 allowed to correlate. The correlation shows whether presence and
-severity are close to the same trait or two distinct ones. This follows
-the zero-inflated graded response model of <span class="citation">Magnus
-and Garnier-Villarreal (<a href="#ref-magnus_multidimensional_2022">2022</a>)</span>, with partial
-credit in place of graded response.</p>
+severity are close to the same trait or two distinct ones. The two
+correlated traits come from the zero-inflated graded response model of
+<span class="citation">Magnus and Garnier-Villarreal (<a href="#ref-magnus_multidimensional_2022">2022</a>)</span>. The hPCM is
+the Rasch counterpart of the hurdle version of that model <span class="citation">(<a href="#ref-magnus_symptom_2022">Magnus and Liu
+2022</a>)</span>, with partial credit in place of graded response. In a
+hurdle model every zero comes from the hurdle submodel: everyone can
+have the symptom, and a zero means that it was not reported, not that it
+could not occur.</p>
 <p>The model is fitted with the custom <code>brms</code> <span class="citation">(<a href="#ref-burkner_bayesian_2021">Bürkner
 2021</a>)</span> family <code><a href="../reference/hurdle_acat.html">hurdle_acat()</a></code>, contributed by
 Kristoffer Magnusson. The functions with the suffix <code>_hpcm</code>
@@ -624,10 +628,10 @@ expected values use the person locations in each posterior draw, not the
 total score. The total score is not sufficient for the person locations
 in the hurdle model, so the conditional method does not apply. Since the
 person locations are estimated from the same data, the posterior
-predictive p-values are conservative: values near 0 or 1 occur less
-often than they should when an item misfits. For the same reason,
-<code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> is not available for the hurdle
-model.</p>
+predictive p-values flag misfit less often than their nominal level:
+values near 0 or 1 occur less often than they should when an item
+misfits. For the same reason, <code><a href="../reference/item_restscore_statistic.html">item_restscore_statistic()</a></code> is
+not available for the hurdle model.</p>
 <p>The conditional item characteristic curves show where along each
 latent variable the observed responses depart from the model.</p>
 <div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
@@ -742,12 +746,16 @@ for <code>q8</code> and <code>q9</code> (about 1.15), and nothing is
 flagged.</li>
 <li>
 <strong>Local dependence.</strong> The core mood items depend on
-each other in both parts. In the hurdle part, one pair stands out
-(<code>q2</code> and <code>q6</code>, 0.30), followed by <code>q1</code>
-and <code>q2</code> (0.19), and the rest are below 0.1. In the severity
-part, more pairs have residual correlations above 0.1, including
-<code>q8</code> with <code>q9</code>, <code>q5</code> with
-<code>q6</code> and <code>q3</code> with <code>q4</code>, so which
+each other in both parts. In the hurdle part, two pairs are flagged
+after adjustment for the 36 pairs, <code>q2</code> with <code>q6</code>
+(<code>q3_diff</code> 0.31) and <code>q1</code> with <code>q2</code>
+(0.19), and the next largest difference is 0.09. In the severity part,
+<code>q1</code> with <code>q2</code> is the only flagged pair (0.28,
+<code>q3_p_adj</code> .004), but six more pairs have differences from
+0.10 to 0.19, including <code>q8</code> with <code>q9</code>,
+<code>q5</code> with <code>q6</code> and <code>q3</code> with
+<code>q4</code>. Their <code>q3_ppp</code> values range from 0.79 to
+0.99, so these differences are uncertain. If they are real, which
 symptoms occur together frequently is less well described by one
 severity trait than which symptoms occur at all.</li>
 </ul>
@@ -757,12 +765,26 @@ such response have only one or two. Its statistics are much less
 certain, and with this sample it has little power to flag misfit or
 dependence. A severity part without flagged items is therefore weak
 evidence that it fits. The posterior predictive p-values in both parts
-are also conservative.</p>
-<!-- Draft note: a brief discussion of why susceptibility and severity can
-differ in local dependence and fit. The user recalls a paper reporting
-that mental disorders are strongly correlated at low symptom levels and
-less correlated at higher levels. Add the reference once found, and
-phrase the link to this example as a possibility, not a finding. -->
+also flag misfit less often than their nominal level.</p>
+<p>Why would the two parts differ? <span class="citation">Watts et al.
+(<a href="#ref-watts_covariation_2026">2026</a>)</span> found that broad
+dimensions of psychopathology are strongly associated among people with
+few or no symptoms and only weakly among people with more symptoms. Much
+of the covariation between the dimensions thus came from people with few
+or no symptoms. If the same holds for the items of one scale, people
+with few or no symptoms would account for much of the association
+between items in the hurdle part, which models whether each symptom is
+present. Among those who report a symptom, how often it occurs would
+depend more on the particular symptom, which would show as more residual
+dependence in the severity part. That would fit the pattern above, but
+other explanations fit it too, and this example was not set up to tell
+them apart. The additional dependence in the severity part rests on
+pairs whose differences are uncertain, because that part has little
+information. It also uses only responses above 0, and that selection by
+itself can change how strongly the items are associated. A more direct
+check would compare residual correlations between groups of persons at
+different levels of symptom presence, which needs a larger sample than
+this one.</p>
 </div>
 <div class="section level2">
 <h2 id="person-locations-and-reliability">Person locations and reliability<a class="anchor" aria-label="anchor" href="#person-locations-and-reliability"></a>
@@ -802,7 +824,7 @@ location only, since that person gave no severity responses.</p>
 <span><span class="co">#&gt;   rmu_estimate hdci_lowerbound hdci_upperbound .width .point .interval</span></span>
 <span><span class="co">#&gt; 1    0.5777624       0.5348526        0.625631   0.95   mean      hdci</span></span></code></pre></div>
 <p>Reliability is computed per submodel with relative measurement
-uncertainty <span class="citation">(<a href="#ref-bignardi_general_2025">Bignardi et al. 2025</a>)</span>. For
+uncertainty <span class="citation">(<a href="#ref-bignardi_general_2025">Bignardi et al. 2026</a>)</span>. For
 comparison, the RMU reliability of the PCM:</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">person_draws_pcm</span> <span class="op">&lt;-</span> <span class="va">fit_pcm</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -864,10 +886,10 @@ all.</p>
 </h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-bignardi_general_2025" class="csl-entry">
-Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2025.
+Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2026.
 <em>A General Method for Estimating Reliability Using
 <span>Bayesian</span> <span>Measurement</span>
-<span>Uncertainty</span></em>. OSF. <a href="https://doi.org/10.31234/osf.io/h54k8_v1" class="external-link">https://doi.org/10.31234/osf.io/h54k8_v1</a>.
+<span>Uncertainty</span></em>. OSF. <a href="https://osf.io/preprints/psyarxiv/h54k8" class="external-link">https://osf.io/preprints/psyarxiv/h54k8</a>.
 </div>
 <div id="ref-burkner_bayesian_2021" class="csl-entry">
 Bürkner, Paul-Christian. 2021. <span>“Bayesian Item Response Modeling in
@@ -884,6 +906,19 @@ Medicine</em> 16 (9): 606–13. <a href="https://doi.org/10.1046/j.1525-1497.200
 Magnus, Brooke E., and Mauricio Garnier-Villarreal. 2022. <span>“A
 Multidimensional Zero-Inflated Graded Response Model for Ordinal Symptom
 Data.”</span> <em>Psychological Methods</em> 27 (2): 261–79. <a href="https://doi.org/10.1037/met0000395" class="external-link">https://doi.org/10.1037/met0000395</a>.
+</div>
+<div id="ref-magnus_symptom_2022" class="csl-entry">
+Magnus, Brooke E., and Yang Liu. 2022. <span>“Symptom Presence and
+Symptom Severity as Unique Indicators of Psychopathology:
+<span>An</span> Application of Multidimensional Zero-Inflated and Hurdle
+Graded Response Models.”</span> <em>Educational and Psychological
+Measurement</em> 82 (5): 938–66. <a href="https://doi.org/10.1177/00131644211061820" class="external-link">https://doi.org/10.1177/00131644211061820</a>.
+</div>
+<div id="ref-watts_covariation_2026" class="csl-entry">
+Watts, Ashley L., Adon F. G. Rosen, Ashley L. Greene, et al. 2026.
+<span>“Covariation Among Higher-Order Psychopathology Dimensions Is
+Driven by Nomorbidity and Not Comorbidity.”</span> <em>Nature Mental
+Health</em> 4: 1674–85. <a href="https://doi.org/10.1038/s44220-026-00727-0" class="external-link">https://doi.org/10.1038/s44220-026-00727-0</a>.
 </div>
 </div>
 </div>

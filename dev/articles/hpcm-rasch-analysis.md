@@ -42,10 +42,14 @@ person locations follow a bivariate normal distribution,
 
 Each submodel thus has its own person location, and the two are allowed
 to correlate. The correlation shows whether presence and severity are
-close to the same trait or two distinct ones. This follows the
-zero-inflated graded response model of Magnus and Garnier-Villarreal
-([2022](#ref-magnus_multidimensional_2022)), with partial credit in
-place of graded response.
+close to the same trait or two distinct ones. The two correlated traits
+come from the zero-inflated graded response model of Magnus and
+Garnier-Villarreal ([2022](#ref-magnus_multidimensional_2022)). The hPCM
+is the Rasch counterpart of the hurdle version of that model ([Magnus
+and Liu 2022](#ref-magnus_symptom_2022)), with partial credit in place
+of graded response. In a hurdle model every zero comes from the hurdle
+submodel: everyone can have the symptom, and a zero means that it was
+not reported, not that it could not occur.
 
 The model is fitted with the custom `brms` ([Bürkner
 2021](#ref-burkner_bayesian_2021)) family
@@ -464,9 +468,9 @@ for Rasch models, these expected values use the person locations in each
 posterior draw, not the total score. The total score is not sufficient
 for the person locations in the hurdle model, so the conditional method
 does not apply. Since the person locations are estimated from the same
-data, the posterior predictive p-values are conservative: values near 0
-or 1 occur less often than they should when an item misfits. For the
-same reason,
+data, the posterior predictive p-values flag misfit less often than
+their nominal level: values near 0 or 1 occur less often than they
+should when an item misfits. For the same reason,
 [`item_restscore_statistic()`](https://pgmj.github.io/easyRaschBayes/dev/reference/item_restscore_statistic.md)
 is not available for the hurdle model.
 
@@ -589,12 +593,15 @@ Splitting the model in two shows where the misfit of the PCM comes from.
   0.83, with the highest infit for `q8` and `q9` (about 1.15), and
   nothing is flagged.
 - **Local dependence.** The core mood items depend on each other in both
-  parts. In the hurdle part, one pair stands out (`q2` and `q6`, 0.30),
-  followed by `q1` and `q2` (0.19), and the rest are below 0.1. In the
-  severity part, more pairs have residual correlations above 0.1,
-  including `q8` with `q9`, `q5` with `q6` and `q3` with `q4`, so which
-  symptoms occur together frequently is less well described by one
-  severity trait than which symptoms occur at all.
+  parts. In the hurdle part, two pairs are flagged after adjustment for
+  the 36 pairs, `q2` with `q6` (`q3_diff` 0.31) and `q1` with `q2`
+  (0.19), and the next largest difference is 0.09. In the severity part,
+  `q1` with `q2` is the only flagged pair (0.28, `q3_p_adj` .004), but
+  six more pairs have differences from 0.10 to 0.19, including `q8` with
+  `q9`, `q5` with `q6` and `q3` with `q4`. Their `q3_ppp` values range
+  from 0.79 to 0.99, so these differences are uncertain. If they are
+  real, which symptoms occur together frequently is less well described
+  by one severity trait than which symptoms occur at all.
 
 Both comparisons need care. The severity part uses only the responses
 above 0, about a third of all responses here, and 37% of those with any
@@ -602,7 +609,26 @@ such response have only one or two. Its statistics are much less
 certain, and with this sample it has little power to flag misfit or
 dependence. A severity part without flagged items is therefore weak
 evidence that it fits. The posterior predictive p-values in both parts
-are also conservative.
+also flag misfit less often than their nominal level.
+
+Why would the two parts differ? Watts et al.
+([2026](#ref-watts_covariation_2026)) found that broad dimensions of
+psychopathology are strongly associated among people with few or no
+symptoms and only weakly among people with more symptoms. Much of the
+covariation between the dimensions thus came from people with few or no
+symptoms. If the same holds for the items of one scale, people with few
+or no symptoms would account for much of the association between items
+in the hurdle part, which models whether each symptom is present. Among
+those who report a symptom, how often it occurs would depend more on the
+particular symptom, which would show as more residual dependence in the
+severity part. That would fit the pattern above, but other explanations
+fit it too, and this example was not set up to tell them apart. The
+additional dependence in the severity part rests on pairs whose
+differences are uncertain, because that part has little information. It
+also uses only responses above 0, and that selection by itself can
+change how strongly the items are associated. A more direct check would
+compare residual correlations between groups of persons at different
+levels of symptom presence, which needs a larger sample than this one.
 
 ## Person locations and reliability
 
@@ -648,7 +674,7 @@ rel$pcm
 ```
 
 Reliability is computed per submodel with relative measurement
-uncertainty ([Bignardi et al. 2025](#ref-bignardi_general_2025)). For
+uncertainty ([Bignardi et al. 2026](#ref-bignardi_general_2025)). For
 comparison, the RMU reliability of the PCM:
 
 ``` r
@@ -718,9 +744,9 @@ gain holds for every item, and is largest for `q1` and smallest for
 
 ## References
 
-Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2025. *A
+Bignardi, Giacomo, Rogier Kievit, and Paul-Christian Bürkner. 2026. *A
 General Method for Estimating Reliability Using Bayesian Measurement
-Uncertainty*. OSF. <https://doi.org/10.31234/osf.io/h54k8_v1>.
+Uncertainty*. OSF. <https://osf.io/preprints/psyarxiv/h54k8>.
 
 Bürkner, Paul-Christian. 2021. “Bayesian Item Response Modeling in R
 with Brms and Stan.” *Journal of Statistical Software* 100: 1–54.
@@ -735,3 +761,14 @@ Magnus, Brooke E., and Mauricio Garnier-Villarreal. 2022. “A
 Multidimensional Zero-Inflated Graded Response Model for Ordinal Symptom
 Data.” *Psychological Methods* 27 (2): 261–79.
 <https://doi.org/10.1037/met0000395>.
+
+Magnus, Brooke E., and Yang Liu. 2022. “Symptom Presence and Symptom
+Severity as Unique Indicators of Psychopathology: An Application of
+Multidimensional Zero-Inflated and Hurdle Graded Response Models.”
+*Educational and Psychological Measurement* 82 (5): 938–66.
+<https://doi.org/10.1177/00131644211061820>.
+
+Watts, Ashley L., Adon F. G. Rosen, Ashley L. Greene, et al. 2026.
+“Covariation Among Higher-Order Psychopathology Dimensions Is Driven by
+Nomorbidity and Not Comorbidity.” *Nature Mental Health* 4: 1674–85.
+<https://doi.org/10.1038/s44220-026-00727-0>.

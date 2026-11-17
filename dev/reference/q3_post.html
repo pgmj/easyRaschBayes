@@ -13,7 +13,7 @@ to the posterior predictive distribution for each item pair."><meta name="robots
 
     <a class="navbar-brand me-2" href="../index.html">easyRaschBayes</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.0.9000</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.4.0.9001</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -26,7 +26,7 @@ to the posterior predictive distribution for each item pair."><meta name="robots
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/pcm-rasch-analysis.html">Rasch Partial Credit Model</a></li>
     <li><a class="dropdown-item" href="../articles/hpcm-rasch-analysis.html">Hurdle Partial Credit Model</a></li>
-    <li><a class="external-link dropdown-item" href="https://pgmj.github.io/rasch_bayes_comp.html">Comparing Rasch with CML/MML and `brms`</a></li>
+    <li><a class="dropdown-item" href="../articles/mfrm-rasch-analysis.html">Many-Facet Rasch Models</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -167,7 +167,8 @@ dependence.</p></dd>
 <code>q3_ppp</code> was close to uniform in simulations under a fitting Rasch
 model, and <code>q3_p_adj</code> kept the proportion of datasets with any
 pair flagged at .05 near or below .05. With <code>method = "theta"</code>,
-<code>q3_ppp</code> is conservative, and so is <code>q3_p_adj</code> (2\<!-- % to 3\\% of -->
+<code>q3_ppp</code> flags pairs less often than its nominal level, and so
+does <code>q3_p_adj</code> (2% to 3% of
 datasets with any pair flagged at .05). See <code><a href="q3_statistic.html">q3_statistic</a></code>.</p>
 <p><strong>Reading <code>q3_p_adj</code>.</strong> For the pair with the smallest value,
 <code>q3_p_adj</code> is a test of local independence over all pairs, and it
@@ -183,8 +184,8 @@ pairs of one call, not other fit statistics computed on the same data.</p>
 the mean over all pairs. Given the total score, expected Q3 differs
 between pairs, and is highest for pairs of the easiest and hardest
 items. In simulations, a reference at the mean over all pairs made such
-a pair the most deviant one in 11\<!-- % to 13\\% of datasets without local -->
-dependence, against about 2\<!-- % if every pair were equally likely. --></p>
+a pair the most deviant one in 11% to 13% of datasets without local
+dependence, against about 2% if every pair were equally likely.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>

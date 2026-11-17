@@ -70,6 +70,16 @@
 - [`posterior_to_prior()`](https://pgmj.github.io/easyRaschBayes/dev/reference/posterior_to_prior.md)
   : Extract Informative Priors from a Fitted Bayesian IRT Model
 
+## Many-Facet Models
+
+Use `facet_var` in infit_statistic(), item_restscore_statistic(),
+q3_statistic() and plot_residual_pca() for fit with raters.
+
+- [`facet_parameters()`](https://pgmj.github.io/easyRaschBayes/dev/reference/facet_parameters.md)
+  : Facet Parameters from a Many-Facet Rasch Model
+- [`contr_sum_zero()`](https://pgmj.github.io/easyRaschBayes/dev/reference/contr_sum_zero.md)
+  : Orthonormal sum-to-zero contrasts
+
 ## Data
 
 - [`phq9`](https://pgmj.github.io/easyRaschBayes/dev/reference/phq9.md)

@@ -24,7 +24,8 @@ plot_residual_pca(
   density_palette = NULL,
   label_items = TRUE,
   point_size = 2.5,
-  point_color = "#0072B2"
+  point_color = "#0072B2",
+  facet_var = NULL
 )
 ```
 
@@ -105,6 +106,12 @@ plot_residual_pca(
 
   Color for the item points and error bars. Default is `"#0072B2"`.
 
+- facet_var:
+
+  Optional unquoted variable name of a third facet in a many-facet Rasch
+  model, for example `rater`. Each person x facet combination is then
+  one row of the residual matrix. See the section on many-facet models.
+
 ## Value
 
 A list with three elements:
@@ -172,6 +179,18 @@ progressively darker fills.
 Item loadings are aligned across draws using majority-sign alignment to
 resolve the sign indeterminacy of eigenvectors.
 
+## Many-facet models
+
+With `facet_var`, for a model such as
+`rating ~ 1 + item + (1 | rater) + (1 | id)`, each person x facet
+combination (for example one rater's ratings of one person) is one row
+of the residual matrix, and the components are taken across items.
+Residuals use the person location and the facet effect of each draw. A
+halo effect (a rater's overall impression of a person carried across
+items) shows as a first component on which all items load in the same
+direction. Only person x facet combinations with every item are used.
+The facet variable must be in the model formula.
+
 ## References
 
 Smith, E. V. (2002). Detecting and evaluating the impact of
@@ -204,7 +223,7 @@ library(ggplot2)
 
 # --- Partial Credit Model ---
 
-df_pcm <- eRm::pcmdat2 %>%
+df_pcm <- phq9[1:200, 1:9] %>%
   mutate(across(everything(), ~ .x + 1)) %>%
   rownames_to_column("id") %>%
   pivot_longer(!id, names_to = "item", values_to = "response")
