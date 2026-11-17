@@ -30,6 +30,10 @@
 #'   responses conditional on the total score, or \code{"theta"}, with
 #'   expected responses given each draw's person locations, as in
 #'   easyRaschBayes 0.3.0.
+#' @param facet_var Optional unquoted variable name of a third facet in a
+#'   many-facet Rasch model, for example \code{rater}. Each item x facet
+#'   combination (cell) is then treated as an item, and the output gets a
+#'   \code{pair_type} column. See the section on many-facet models.
 #'
 #' @return A \code{\link[tibble]{tibble}} in long format with one row
 #'   per draw per item pair, containing:
@@ -46,6 +50,36 @@
 #' This long-format output parallels the structure of
 #' \code{\link{infit_statistic}} and can be passed directly to
 #' \code{\link{q3_post}} for summary tables and plots.
+#'
+#' @section Many-facet models:
+#' With \code{facet_var}, for a model such as
+#' \code{rating ~ 1 + item + (1 | rater) + (1 | id)}, each item x facet
+#' combination (cell) is treated as an item, and Q3 is computed for every
+#' pair of cells. \code{item_1} and \code{item_2} are then cell labels
+#' (\code{"item:facet"}), and a \code{pair_type} column says whether the
+#' two cells share the facet element (for example \code{"same rater"}:
+#' two items scored by one rater), the item (\code{"same item"}: one item
+#' scored by two raters), or neither.
+#'
+#' Positive Q3 for \code{"same rater"} pairs is the residual dependence
+#' expected from a halo effect, where a rater's overall impression of a
+#' person carries across items. If the model includes a person x facet
+#' term such as \code{(1 | rater:id)}, the conditional method treats its
+#' effects as known in each draw, and the theta method includes them in
+#' the expected values, so Q3 then shows the dependence left after the
+#' halo term. A message says so. Pairs of cells that no person has in common have
+#' no Q3 and are left out. The facet variable must be in the model formula.
+#'
+#' Positive same-rater Q3 is not specific to a halo. In simulations, a
+#' rater with central tendency also showed it when the model had common
+#' thresholds, and so did the raters who shared persons with an
+#' inconsistent rater, while the inconsistent rater did not. Rater infit
+#' (\code{\link{infit_statistic}} with \code{by = "facet"}) separates
+#' these cases: an inconsistent rater underfits, a rater with central
+#' tendency overfits, and a halo leaves infit near 1. A halo in a single
+#' rater was flagged in about half of the simulated datasets with 300
+#' persons and four categories, and rarely with dichotomous ratings. See
+#' \code{vignette("mfrm-rasch-analysis", package = "easyRaschBayes")}.
 #'
 #' @details
 #' \strong{Conditional method.} Under a Rasch-family model the total score
@@ -82,13 +116,14 @@
 #' \strong{Calibration.} In simulations under a fitting Rasch model
 #' (dichotomous and partial credit models, 300 and 1000 persons, 8 or 10
 #' items), the conditional ppp from \code{\link{q3_post}} was close to
-#' uniform: 4.2\% to 4.9\% of item pairs had \code{q3_ppp} above .95. The
-#' theta method was conservative, with 1.9\% to 3.1\%, because the person
+#' uniform: 4.2% to 4.9% of item pairs had \code{q3_ppp} above .95. The
+#' theta method flagged fewer pairs than that nominal 5%, 1.9% to
+#' 3.1%, because the person
 #' locations are drawn given the observed responses. With many item pairs,
 #' some pair will usually exceed .95 by chance. The adjusted
 #' \code{q3_p_adj} in \code{\link{q3_post}} accounts for this. Under the
 #' conditional method, the proportion of simulated datasets with any pair
-#' flagged by it at .05 was 3.5\% to 5.3\% (two runs of 200 datasets per
+#' flagged by it at .05 was 3.5% to 5.3% (two runs of 200 datasets per
 #' condition, pooled).
 #'
 #' Replication uses random numbers, so call \code{set.seed()} first for
@@ -181,7 +216,8 @@
 #' @export
 q3_statistic <- function(model, item_var = item, person_var = id,
                          ndraws_use = NULL,
-                         method = c("conditional", "theta")) {
+                         method = c("conditional", "theta"),
+                         facet_var = NULL) {
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
@@ -205,15 +241,37 @@ q3_statistic <- function(model, item_var = item, person_var = id,
          call. = FALSE)
   }
 
+  method <- match.arg(method)
+  facet_name <- .optional_name(rlang::enquo(facet_var))
+  if (!is.null(facet_name)) {
+    fs <- .facet_setup(model, person_name, item_name, facet_name,
+                       "q3_statistic")
+    .facet_halo_message(fs$facet, "q3_statistic", method = method)
+    # Only cell pairs that some person shares are computed. Of those,
+    # pairs with no Q3 in any draw are left out as well.
+    q3_fun <- if (method == "conditional") .q3_conditional else .q3_theta
+    out <- q3_fun(fs$model, resp_var, .cell_col, person_name, ndraws_use,
+                  shared_only = TRUE)
+    shared <- tapply(!is.na(out$q3), out$item_pair, any)
+    out <- out[shared[out$item_pair], ]
+    return(.q3_pair_types(out, fs$facet, item_name, facet_name))
+  }
+
   .check_unique_person_item(model$data[[person_name]], model$data[[item_name]],
                             person_name, item_name, "q3_statistic")
 
-  method <- match.arg(method)
   if (method == "conditional") {
     return(.q3_conditional(model, resp_var, item_name, person_name,
                            ndraws_use))
   }
-  
+  .q3_theta(model, resp_var, item_name, person_name, ndraws_use)
+}
+
+# Theta branch of q3_statistic(): residuals from posterior_epred() and
+# posterior_predict(). With shared_only = TRUE only item pairs that at
+# least one person answered both are computed (many-facet cells).
+.q3_theta <- function(model, resp_var, item_name, person_name, ndraws_use,
+                      shared_only = FALSE) {
   # --- Determine posterior draw subset ---
   draw_ids <- NULL
   total_draws <- brms::ndraws(model)
@@ -273,12 +331,17 @@ q3_statistic <- function(model, item_var = item, person_var = id,
   pair_grid <- expand.grid(j = seq_len(k), i = seq_len(k))
   pair_grid <- pair_grid[pair_grid$i < pair_grid$j, ]
   pair_grid <- pair_grid[order(pair_grid$i, pair_grid$j), ]
+  if (shared_only) {
+    pair_grid <- pair_grid[.q3_shared_pairs(person_idx, item_idx,
+                                            n_persons, k), ]
+  }
   n_pairs <- nrow(pair_grid)
   
   pair_labels <- paste0(unique_items[pair_grid$i], " : ",
                         unique_items[pair_grid$j])
   
   # --- Q3 per draw ---
+  pair_idx <- cbind(pair_grid$i, pair_grid$j)
   q3_obs_draws <- matrix(NA_real_, nrow = n_draws, ncol = n_pairs)
   q3_rep_draws <- matrix(NA_real_, nrow = n_draws, ncol = n_pairs)
   
@@ -291,25 +354,17 @@ q3_statistic <- function(model, item_var = item, person_var = id,
     cor_obs <- stats::cor(resid_obs_wide, use = "pairwise.complete.obs")
     cor_rep <- stats::cor(resid_rep_wide, use = "pairwise.complete.obs")
     
-    for (p in seq_len(n_pairs)) {
-      q3_obs_draws[s, p] <- cor_obs[pair_grid$i[p], pair_grid$j[p]]
-      q3_rep_draws[s, p] <- cor_rep[pair_grid$i[p], pair_grid$j[p]]
-    }
+    q3_obs_draws[s, ] <- cor_obs[pair_idx]
+    q3_rep_draws[s, ] <- cor_rep[pair_idx]
   }
   
-  # --- Build long-format output ---
-  result_list <- vector("list", n_pairs)
-  for (p in seq_len(n_pairs)) {
-    result_list[[p]] <- tibble::tibble(
-      draw      = seq_len(n_draws),
-      item_pair = pair_labels[p],
-      item_1    = unique_items[pair_grid$i[p]],
-      item_2    = unique_items[pair_grid$j[p]],
-      q3        = q3_obs_draws[, p],
-      q3_rep    = q3_rep_draws[, p]
-    )
-  }
-  
-  result <- do.call(rbind, result_list)
-  tibble::as_tibble(result)
+  # --- Build long-format output (pairs in order, draws within pair) ---
+  tibble::tibble(
+    draw      = rep(seq_len(n_draws), times = n_pairs),
+    item_pair = rep(pair_labels, each = n_draws),
+    item_1    = rep(unique_items[pair_grid$i], each = n_draws),
+    item_2    = rep(unique_items[pair_grid$j], each = n_draws),
+    q3        = as.vector(q3_obs_draws),
+    q3_rep    = as.vector(q3_rep_draws)
+  )
 }

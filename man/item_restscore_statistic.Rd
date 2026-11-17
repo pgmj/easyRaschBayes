@@ -8,7 +8,8 @@ item_restscore_statistic(
   model,
   item_var = item,
   person_var = id,
-  ndraws_use = NULL
+  ndraws_use = NULL,
+  facet_var = NULL
 )
 }
 \arguments{
@@ -28,6 +29,11 @@ grouping variable in the model data (e.g., \code{id}).}
 \item{ndraws_use}{Optional positive integer. If specified, a random
 subset of posterior draws of this size is used. If \code{NULL} (the
 default), all draws are used.}
+
+\item{facet_var}{Optional unquoted variable name of a third facet in a
+many-facet Rasch model, for example \code{rater}. Each item x facet
+combination (cell) is then treated as an item. See the section on
+many-facet models.}
 }
 \value{
 A list with two elements:
@@ -110,7 +116,8 @@ distribution does not depend on the person locations. The data are
 still used to estimate the item parameters, but these are few relative
 to the number of persons. This removes the main reason why posterior
 predictive p-values based on person parameters drawn from the same
-data are conservative (Robins et al., 2000).
+data flag misfit less often than their nominal level (Robins et al.,
+2000).
 
 The \code{gamma_diff} interval describes how far the observed sample
 departs from the model expectation, given the uncertainty in the item
@@ -124,6 +131,22 @@ departures as the sample size grows.
 standard deviation of its replicated gammas. Its reference is the
 largest absolute standardised deviation across items within each
 replicated dataset, so it accounts for testing all items at once.
+}
+\section{Many-facet models}{
+
+With \code{facet_var}, for a model such as
+\code{rating ~ 1 + item + (1 | rater) + (1 | id)}, each item x facet
+combination (cell) is treated as an item. The rest score is the
+person's total over all their ratings minus the cell, and the total
+score is sufficient for the person location as long as every facet
+enters the model additively. Persons rated by different raters have
+different sets of cells, which is handled like missing responses. In
+both output tables the first columns are \code{cell} (labelled
+\code{"item:facet"}), the item variable and the facet variable.
+\code{p_adj} adjusts over all cells. Gamma does not pool over cells, so
+there is no \code{by} argument as in \code{\link{infit_statistic}}. The
+facet variable must be in the model formula. A person x facet (halo)
+term is handled as described in \code{\link{infit_statistic}}.
 
 With missing responses, the total and rest-scores are sums over the
 items a person answered, scored from 0. The conditional distribution
@@ -132,6 +155,7 @@ is computed for each person's set of answered items.
 Replication uses random numbers, so call \code{set.seed()} first for
 reproducible results.
 }
+
 \examples{
 \donttest{
 library(brms)

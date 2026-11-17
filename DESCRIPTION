@@ -1,6 +1,6 @@
 Package: easyRaschBayes
 Title: Bayesian Rasch Analysis Using 'brms'
-Version: 0.4.0
+Version: 0.4.0.9001
 Authors@R: c(
     person("Magnus", "Johansson",
            role = c("aut", "cre"),
@@ -17,8 +17,9 @@ Authors@R: c(
 Description: Reproduces classic Rasch psychometric analysis features
     using Bayesian item response theory models fitted with 'brms' following 
     Bürkner (2021) <doi:10.18637/jss.v100.i05> and Bürkner (2020) <doi:10.3390/jintelligence8010005>.
-    Supports dichotomous and polytomous Rasch models, and a hurdle
-    partial credit model. Features include posterior predictive item fit,
+    Supports dichotomous and polytomous Rasch models, a hurdle
+    partial credit model, and many-facet Rasch models with a third facet
+    such as raters. Features include posterior predictive item fit,
     including infit and item-restscore associations conditional on the
     total score, person fit, differential item functioning, local dependence
     assessment via Q3 residual correlations, dimensionality assessment with

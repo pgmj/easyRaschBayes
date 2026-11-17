@@ -12,8 +12,9 @@ infit_post(infit_draws, ci = 0.84)
 \code{\link{infit_statistic_hpcm}}, containing the columns
 \code{infit} (observed infit per draw) and \code{infit_rep}
 (replicated infit per draw). The item identifier is taken from a
-column named \code{item} if there is one, and otherwise from the
-first column.}
+column named \code{cell} if there is one (many-facet output, whose
+item and facet columns are kept in the tables), then from a column
+named \code{item}, and otherwise from the first column.}
 
 \item{ci}{Numeric in \eqn{(0, 1)}. Width of the highest density
 continuous interval of the replicated (posterior predictive)
@@ -93,7 +94,8 @@ where the observed distribution sits systematically above the
 replicated HDI indicate underfit (more variation than expected);
 items below indicate overfit (less variation than expected).
 
-The infit ppp is conservative. Values near 0 or 1 are rarer than for a
+The infit ppp flags misfit less often than its nominal level. Values
+near 0 or 1 are rarer than for a
 uniform p-value, and misfit can go undetected (see
 \code{\link{infit_statistic}}).
 It is suggested to also evaluate item fit with

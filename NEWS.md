@@ -1,3 +1,60 @@
+# easyRaschBayes 0.4.0.9001
+
+## New features
+
+- Many-facet Rasch models: `infit_statistic()`, `item_restscore_statistic()`,
+  `q3_statistic()` and `plot_residual_pca()` get a `facet_var` argument
+  (for example `facet_var = rater`). Each item x rater combination is
+  treated as an item. `infit_statistic(by = "item")` or `by = "facet"`
+  pools over raters or items. Q3 output gets a `pair_type` column and
+  leaves out cell pairs that no person shares. `infit_post()` and
+  `item_restscore_post()` keep the item and facet columns, and `q3_post()`
+  keeps `pair_type`. A warning flags rating designs that do not connect all
+  raters and items. A message notes when the model has a person x rater
+  (halo) term, since the conditional methods then assess fit after the halo
+  is accounted for.
+- `facet_parameters()`: locations (severity) of the facet elements, for
+  example raters, with the number of ratings, observed average and fair
+  average rating. With `draws = TRUE` the draws can go to
+  `RMUreliability()`.
+- `contr_sum_zero()`: orthonormal sum-to-zero contrasts, which give every
+  level of a fixed factor the same prior variance (unlike `contr.sum()`).
+- New vignette "Many-Facet Rasch Models with easyRaschBayes".
+- The conditional methods of `infit_statistic()`,
+  `item_restscore_statistic()` and `q3_statistic()` are faster and use far
+  less memory when persons answer only some items (planned missing data,
+  many-facet designs). Results for complete data are unchanged. With
+  missing responses the replicated data differ only by simulation noise.
+- `q3_post()` and the theta method of `q3_statistic()` are faster with
+  many item pairs.
+
+## Bug fixes
+
+- Item parameters from models with fixed item effects and an intercept now
+  respect the contrasts of the item factor. Before, treatment coding was
+  assumed. With other contrasts (for example `contr.sum()`) the functions
+  stopped with an error, or, for item labels with spaces or punctuation,
+  returned wrong item locations. Treatment-coded models are unchanged.
+- Fixed item effects are matched by their exact parameter names. Before, a
+  covariate whose name starts with the item variable name (for example
+  `item_order` next to `item`) was read as an item effect: the functions
+  stopped with an error, or, for item labels with spaces or punctuation,
+  returned wrong item locations. For contrasts set by
+  `options(contrasts = ...)` instead of on the factor, the same option must
+  be set when the functions are run. If the names fit both that option and
+  treatment coding, the functions stop with an error. Other results are
+  unchanged.
+- `item_restscore_statistic()` failed when a person with a total score of 0
+  had a pattern of missing responses that no other person had. Results for
+  other data are unchanged.
+
+## Documentation
+
+- Help pages and vignettes now say that a p-value "flags misfit less often
+  than its nominal level" instead of calling it "conservative".
+- Percent signs in the `q3_statistic()` and `q3_post()` help pages were
+  shown with a backslash.
+
 # easyRaschBayes 0.4.0
 
 ## Breaking changes

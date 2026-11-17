@@ -586,6 +586,14 @@ fit_statistic_rm <- function(model, criterion, group,
 #'   expectations given each draw's person locations. \code{"theta"} gives
 #'   the same computation as \code{\link{infit_statistic_hpcm}} and as
 #'   \code{infit_statistic()} in easyRaschBayes 0.3.0.
+#' @param facet_var Optional unquoted variable name of a third facet in a
+#'   many-facet Rasch model, for example \code{rater}. If \code{NULL} (the
+#'   default), the model is a standard person x item model. See the
+#'   section on many-facet models.
+#' @param by Only used with \code{facet_var}. \code{"cell"} (the default)
+#'   gives one statistic per item x facet combination, \code{"item"} one
+#'   per item over all facet elements, and \code{"facet"} one per facet
+#'   element (for example per rater) over all items.
 #'
 #' @return A \code{\link[tibble]{tibble}} with the following columns:
 #' \describe{
@@ -600,7 +608,46 @@ fit_statistic_rm <- function(model, criterion, group,
 #'     outfit statistic for that item and draw.}
 #' }
 #' The output is grouped by the item variable. Use \code{\link{infit_post}}
-#' for posterior predictive p-values and a plot.
+#' for posterior predictive p-values and a plot. With \code{facet_var} and
+#' \code{by = "cell"}, the first columns are \code{cell} (labelled
+#' \code{"item:facet"}), the item variable and the facet variable, and the
+#' output is grouped by \code{cell}. With \code{by = "item"} or
+#' \code{by = "facet"}, the first column is the item or facet variable.
+#'
+#' @section Many-facet models:
+#' In a many-facet Rasch model a third facet, usually raters, adds to the
+#' person and item effects, for example
+#' \code{rating ~ 1 + item + (1 | rater) + (1 | id)}. The data are long,
+#' with one row per person, item and rater. With \code{facet_var = rater},
+#' each item x rater combination (cell) is treated as an item. The
+#' conditional method conditions on each person's total score over all
+#' their ratings, which is sufficient for the person location when every
+#' facet enters the model additively, as in the formula above. Persons
+#' rated by different raters have different sets of cells, which the
+#' method handles like missing responses.
+#'
+#' With \code{by = "item"} or \code{by = "facet"}, squared residuals and
+#' variances are summed over the cells of each item or facet element
+#' before dividing, so a rater's infit is computed over all of that
+#' rater's ratings. The facet variable must be in the model formula,
+#' since brms keeps only formula variables in the model data.
+#'
+#' A person x facet term such as \code{(1 | rater:id)} models a halo
+#' effect (one rater's impression of a person carried across items). The
+#' conditional method treats these effects as known in each draw, and the
+#' theta method includes them in the expected values, so with either
+#' method fit is assessed after the halo is accounted for. A message says
+#' so. In simulations with a halo term in the data and the model, conditional
+#' infit then flagged misfit less often than the nominal level: about 2%
+#' of fitting cells, and 1-2% of raters, at .05 instead of 5%. Some misfit
+#' may then be missed.
+#'
+#' In simulations without a halo term, rater infit (\code{by = "facet"})
+#' flagged an inconsistent rater as underfitting and a rater with central
+#' tendency as overfitting. It did not react to a halo, which shows in
+#' \code{\link{q3_statistic}} instead. With rater-specific thresholds
+#' (\code{thres(gr = rater)}), the central-tendency rater fitted. See
+#' \code{vignette("mfrm-rasch-analysis", package = "easyRaschBayes")}.
 #'
 #' @details
 #' Both methods use the infit and outfit mean squares (Christensen et al.,
@@ -638,12 +685,14 @@ fit_statistic_rm <- function(model, criterion, group,
 #' \eqn{\theta_v^{(s)}} of each draw, and replicated responses come from
 #' \code{\link[brms]{posterior_predict}}. The person locations are
 #' estimated from the same data, which makes posterior predictive
-#' p-values of this kind conservative. They tend to cluster around 0.5,
+#' p-values of this kind flag misfit less often than their nominal level.
+#' They tend to cluster around 0.5,
 #' so values near 0 or 1 are rarer than p-values of the same size would
 #' be (Robins et al., 2000).
 #'
 #' The conditional method is better calibrated than the theta method, but
-#' its p-values are also conservative, because the item parameters are
+#' its p-values also flag misfit less often than their nominal level,
+#' because the item parameters are
 #' estimated from the same data. In simulations under a fitting Rasch
 #' model, two-sided p-values below .05 occurred for 0.5% to 2% of items,
 #' with the lowest rates for polytomous items. Misfit can therefore go
@@ -761,7 +810,9 @@ fit_statistic_rm <- function(model, criterion, group,
 #' @export
 infit_statistic <- function(model, item_var = item, person_var = id,
                             ndraws_use = NULL, outfit = FALSE,
-                            method = c("conditional", "theta")) {
+                            method = c("conditional", "theta"),
+                            facet_var = NULL,
+                            by = c("cell", "item", "facet")) {
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
@@ -790,6 +841,15 @@ infit_statistic <- function(model, item_var = item, person_var = id,
   }
 
   method <- match.arg(method)
+  facet_name <- .optional_name(rlang::enquo(facet_var))
+  if (!is.null(facet_name)) {
+    return(.infit_facets(model, resp_var, item_name, person_name,
+                         facet_name, ndraws_use, outfit, method,
+                         match.arg(by)))
+  }
+  if (!missing(by)) {
+    stop("'by' is only used together with 'facet_var'.", call. = FALSE)
+  }
   if (method == "conditional") {
     return(.infit_conditional(model, resp_var, item_name, person_name,
                               ndraws_use, outfit))
@@ -970,6 +1030,10 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' @param ndraws_use Optional positive integer. If specified, a random
 #'   subset of posterior draws of this size is used. If \code{NULL} (the
 #'   default), all draws are used.
+#' @param facet_var Optional unquoted variable name of a third facet in a
+#'   many-facet Rasch model, for example \code{rater}. Each item x facet
+#'   combination (cell) is then treated as an item. See the section on
+#'   many-facet models.
 #'
 #' @return A list with two elements:
 #' \describe{
@@ -1037,7 +1101,8 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' still used to estimate the item parameters, but these are few relative
 #' to the number of persons. This removes the main reason why posterior
 #' predictive p-values based on person parameters drawn from the same
-#' data are conservative (Robins et al., 2000).
+#' data flag misfit less often than their nominal level (Robins et al.,
+#' 2000).
 #'
 #' The \code{gamma_diff} interval describes how far the observed sample
 #' departs from the model expectation, given the uncertainty in the item
@@ -1051,6 +1116,21 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' standard deviation of its replicated gammas. Its reference is the
 #' largest absolute standardised deviation across items within each
 #' replicated dataset, so it accounts for testing all items at once.
+#'
+#' @section Many-facet models:
+#' With \code{facet_var}, for a model such as
+#' \code{rating ~ 1 + item + (1 | rater) + (1 | id)}, each item x facet
+#' combination (cell) is treated as an item. The rest score is the
+#' person's total over all their ratings minus the cell, and the total
+#' score is sufficient for the person location as long as every facet
+#' enters the model additively. Persons rated by different raters have
+#' different sets of cells, which is handled like missing responses. In
+#' both output tables the first columns are \code{cell} (labelled
+#' \code{"item:facet"}), the item variable and the facet variable.
+#' \code{p_adj} adjusts over all cells. Gamma does not pool over cells, so
+#' there is no \code{by} argument as in \code{\link{infit_statistic}}. The
+#' facet variable must be in the model formula. A person x facet (halo)
+#' term is handled as described in \code{\link{infit_statistic}}.
 #'
 #' With missing responses, the total and rest-scores are sums over the
 #' items a person answered, scored from 0. The conditional distribution
@@ -1151,7 +1231,7 @@ infit_statistic <- function(model, item_var = item, person_var = id,
 #' @importFrom stats formula quantile runif sd
 #' @export
 item_restscore_statistic <- function(model, item_var = item, person_var = id,
-                                     ndraws_use = NULL) {
+                                     ndraws_use = NULL, facet_var = NULL) {
   if (!inherits(model, "brmsfit")) {
     stop("'model' must be a brmsfit object.", call. = FALSE)
   }
@@ -1177,6 +1257,20 @@ item_restscore_statistic <- function(model, item_var = item, person_var = id,
   if (!person_name %in% names(model$data)) {
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
+  }
+
+  facet_name <- .optional_name(rlang::enquo(facet_var))
+  if (!is.null(facet_name)) {
+    fs <- .facet_setup(model, person_name, item_name, facet_name,
+                       "item_restscore_statistic")
+    .facet_halo_message(fs$facet, "item_restscore_statistic")
+    out <- item_restscore_statistic(
+      fs$model, item_var = !!rlang::sym(.cell_col),
+      person_var = !!rlang::sym(person_name), ndraws_use = ndraws_use
+    )
+    out$result <- .label_cells(out$result, fs$facet, item_name, facet_name)
+    out$draws <- .label_cells(out$draws, fs$facet, item_name, facet_name)
+    return(out)
   }
 
   .check_unique_person_item(model$data[[person_name]], model$data[[item_name]],

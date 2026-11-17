@@ -257,8 +257,8 @@ the proportion of posterior draws where the observed infit exceeds the
 replicated one. Values near 0.5 indicate good fit, values near 1 underfit,
 and values near 0 overfit.
 
-The ppp is conservative, because the item parameters are estimated from
-the same data. In simulations under a fitting model it rarely came close to
+The ppp flags misfit less often than its nominal level, because the item
+parameters are estimated from the same data. In simulations under a fitting model it rarely came close to
 0 or 1, so misfit can go undetected. We therefore also use the
 item-restscore association below, whose ppp was close to uniform in the
 same simulations. The ppp is not a measure of the size of misfit.
@@ -266,8 +266,8 @@ same simulations. The ppp is not a measure of the size of misfit.
 Three items underfit: `q9` (thoughts of self-harm, infit about 1.33),
 `q8` (moving slowly or restless, 1.27) and `q3` (sleep, 1.24), all with
 `infit_ppp` near 1. Two overfit: `q2` (feeling down, 0.78) and `q4`
-(feeling tired, 0.83). Given how conservative the ppp is, values this close
-to 0 or 1 are clear signals, but they should not be read item by item.
+(feeling tired, 0.83). Since the ppp flags misfit less often than its
+nominal level, values this close to 0 or 1 are clear signals, but they should not be read item by item.
 Infit is relative to the other items. An item in a strongly dependent pair
 usually overfits, and that makes the remaining items look more underfit
 than they would otherwise. `q2` is part of the strongest dependent pair

@@ -62,7 +62,7 @@ one_rep <- function(seed, a) {
   st <- .cond_draw_setup(prob, person_idx, item_idx, x)
   gr <- st$groups[[1]]; ri <- match(r, gr$r_vals)
   pc <- lapply(1:K, function(i) gr$probs[[i]][ri, , drop = FALSE])   # n x C each
-  yrep_c <- replicate(B, .cond_sample(st$W, st$suffix, st$key, st$r))  # n x K x B
+  yrep_c <- replicate(B, .cond_replicate(st))  # n x K x B
   # --- theta-based: ML theta per raw score with CML betas
   th_r <- sapply(sort(unique(r)), function(s) uniroot(function(t) {
     e <- sapply(1:K, function(i) { q <- exp(beta[i, ] + (0:(C - 1)) * t); sum((0:(C - 1)) * q) / sum(q) })

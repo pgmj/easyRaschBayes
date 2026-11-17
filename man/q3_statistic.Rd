@@ -9,7 +9,8 @@ q3_statistic(
   item_var = item,
   person_var = id,
   ndraws_use = NULL,
-  method = c("conditional", "theta")
+  method = c("conditional", "theta"),
+  facet_var = NULL
 )
 }
 \arguments{
@@ -36,6 +37,11 @@ default), all draws are used.}
 responses conditional on the total score, or \code{"theta"}, with
 expected responses given each draw's person locations, as in
 easyRaschBayes 0.3.0.}
+
+\item{facet_var}{Optional unquoted variable name of a third facet in a
+many-facet Rasch model, for example \code{rater}. Each item x facet
+combination (cell) is then treated as an item, and the output gets a
+\code{pair_type} column. See the section on many-facet models.}
 }
 \value{
 A \code{\link[tibble]{tibble}} in long format with one row
@@ -101,18 +107,51 @@ the residuals across all persons who responded to both items.
 \strong{Calibration.} In simulations under a fitting Rasch model
 (dichotomous and partial credit models, 300 and 1000 persons, 8 or 10
 items), the conditional ppp from \code{\link{q3_post}} was close to
-uniform: 4.2\\% to 4.9\\% of item pairs had \code{q3_ppp} above .95. The
-theta method was conservative, with 1.9\\% to 3.1\\%, because the person
+uniform: 4.2\% to 4.9\% of item pairs had \code{q3_ppp} above .95. The
+theta method flagged fewer pairs than that nominal 5\%, 1.9\% to
+3.1\%, because the person
 locations are drawn given the observed responses. With many item pairs,
 some pair will usually exceed .95 by chance. The adjusted
 \code{q3_p_adj} in \code{\link{q3_post}} accounts for this. Under the
 conditional method, the proportion of simulated datasets with any pair
-flagged by it at .05 was 3.5\\% to 5.3\\% (two runs of 200 datasets per
+flagged by it at .05 was 3.5\% to 5.3\% (two runs of 200 datasets per
 condition, pooled).
 
 Replication uses random numbers, so call \code{set.seed()} first for
 reproducible results.
 }
+\section{Many-facet models}{
+
+With \code{facet_var}, for a model such as
+\code{rating ~ 1 + item + (1 | rater) + (1 | id)}, each item x facet
+combination (cell) is treated as an item, and Q3 is computed for every
+pair of cells. \code{item_1} and \code{item_2} are then cell labels
+(\code{"item:facet"}), and a \code{pair_type} column says whether the
+two cells share the facet element (for example \code{"same rater"}:
+two items scored by one rater), the item (\code{"same item"}: one item
+scored by two raters), or neither.
+
+Positive Q3 for \code{"same rater"} pairs is the residual dependence
+expected from a halo effect, where a rater's overall impression of a
+person carries across items. If the model includes a person x facet
+term such as \code{(1 | rater:id)}, the conditional method treats its
+effects as known in each draw, and the theta method includes them in
+the expected values, so Q3 then shows the dependence left after the
+halo term. A message says so. Pairs of cells that no person has in common have
+no Q3 and are left out. The facet variable must be in the model formula.
+
+Positive same-rater Q3 is not specific to a halo. In simulations, a
+rater with central tendency also showed it when the model had common
+thresholds, and so did the raters who shared persons with an
+inconsistent rater, while the inconsistent rater did not. Rater infit
+(\code{\link{infit_statistic}} with \code{by = "facet"}) separates
+these cases: an inconsistent rater underfits, a rater with central
+tendency overfits, and a halo leaves infit near 1. A halo in a single
+rater was flagged in about half of the simulated datasets with 300
+persons and four categories, and rarely with dichotomous ratings. See
+\code{vignette("mfrm-rasch-analysis", package = "easyRaschBayes")}.
+}
+
 \examples{
 \donttest{
 library(brms)

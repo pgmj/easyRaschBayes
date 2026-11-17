@@ -106,7 +106,7 @@ cond_q3_draw <- function(prob, person_idx, item_idx, x_obs) {
   k <- ncol(x_obs)
   st <- .cond_draw_setup(prob, person_idx, item_idx, x_obs)
   mo <- .cond_moments(st, k)
-  x_rep <- .cond_sample(st$W, st$suffix, st$key, st$r)
+  x_rep <- .cond_replicate(st)
   x_rep[is.na(x_obs)] <- NA
   use <- !is.na(mo$V) & mo$V > 1e-12
   r_obs <- ifelse(use, x_obs - mo$E, NA_real_)

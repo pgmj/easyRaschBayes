@@ -2,7 +2,9 @@
 
 export(RMUreliability)
 export(RMUreliability_hpcm)
+export(contr_sum_zero)
 export(dif_statistic)
+export(facet_parameters)
 export(fit_statistic_pcm)
 export(fit_statistic_rm)
 export(hurdle_acat)

@@ -238,6 +238,23 @@ test_that("item_restscore_post uses the item column name it is given", {
   expect_s3_class(res$plot, "ggplot")
 })
 
+test_that("item_restscore_post: an item variable called cell is not many-facet", {
+  set.seed(7)
+  out <- list(
+    result = tibble::tibble(cell = c("q1", "q2"),
+                            gamma_obs = c(0.5, 0.4), gamma_exp = c(0.45, 0.42),
+                            gamma_diff = c(0.05, -0.02), ppp = c(0.8, 0.4),
+                            p_adj = c(0.6, 1)),
+    draws = tibble::tibble(cell = rep(c("q1", "q2"), each = 50),
+                           draw = rep(1:50, 2),
+                           gamma_rep = rnorm(100, 0.44, 0.03),
+                           gamma_exp = 0.44)
+  )
+  expect_named(item_restscore_post(out)$summary,
+               c("cell", "gamma_obs", "gamma_exp", "gamma_diff", "ppp",
+                 "p_adj"))
+})
+
 # --- Conditional infit ------------------------------------------------------
 
 test_that("conditional infit and outfit match brute-force moments", {
@@ -468,4 +485,157 @@ test_that("q3_post adds q3_p_adj and requires equal draws per pair", {
   expect_lt(s$q3_p_adj[s$item_pair == "a : b"], 0.05)
   expect_gt(s$q3_p_adj[s$item_pair == "a : c"], 0.05)
   expect_error(q3_post(q[-1, ]), "same number of draws")
+})
+
+# --- Many-facet support: pooling and sparse cells ------------------------
+
+test_that("pooled conditional infit matches brute force with missing cells", {
+  X <- matrix(c( 0,  1,  2,  1,
+                 1, NA,  3,  2,
+                 2,  1, NA,  0,
+                 0,  0,  0,  1,
+                 2,  1,  3, NA,
+                 1,  1,  2,  0,
+                NA,  0,  1,  1), ncol = 4, byrow = TRUE)
+  pl <- pcm_long(seq(-1, 1, length.out = 7), tau_poly)
+  keep <- !is.na(X[cbind(pl$pid, pl$iid)])
+  prob <- pl$prob[keep, ]
+  pid <- pl$pid[keep]
+  iid <- pl$iid[keep]
+  E <- V <- matrix(NA_real_, nrow(X), 4)
+  for (v in seq_len(nrow(X))) {
+    a <- which(!is.na(X[v, ]))
+    r <- sum(X[v, a])
+    for (j in seq_along(a)) {
+      p <- brute_cond(tau_poly[a], j, r)
+      x <- seq_along(p) - 1
+      E[v, a[j]] <- sum(x * p)
+      V[v, a[j]] <- sum(x^2 * p) - E[v, a[j]]^2
+    }
+  }
+  use <- !is.na(V) & V > 1e-12
+  num <- colSums(ifelse(use, (X - E)^2, 0))
+  den <- colSums(ifelse(use, V, 0))
+  z2 <- colSums(ifelse(use, (X - E)^2 / V, 0))
+  n_use <- colSums(use)
+
+  got <- .cond_infit_draw(prob, pid, iid, X)
+  expect_equal(got$infit, num / den, tolerance = 1e-10)
+
+  group <- c(1L, 1L, 2L, 2L)
+  pooled <- .cond_infit_draw(prob, pid, iid, X, group = group)
+  expect_length(pooled$infit, 2L)
+  expect_equal(pooled$infit, as.vector(rowsum(num, group) / rowsum(den, group)),
+               tolerance = 1e-10)
+  expect_equal(pooled$outfit,
+               as.vector(rowsum(z2, group) / rowsum(n_use, group)),
+               tolerance = 1e-10)
+})
+
+test_that("restscore and sampling survive weight groups with one low score", {
+  # A person with a unique missing pattern and total 0 forms a group in
+  # which no rest score allows the higher categories. Before 0.4.0.9001
+  # cbind() turned that empty selection into a one-row index and the
+  # function failed. Common with a halo term, where every person is a group.
+  set.seed(2)
+  X <- matrix(c(0, 1, 2, 1,
+                1, 0, 3, 2,
+                2, 1, 1, 0,
+                1, 1, 2, 1,
+                0, NA, 0, 0), ncol = 4, byrow = TRUE)
+  pl <- pcm_long(c(-1, 0, 1, 0.5, -2), tau_poly)
+  keep <- !is.na(X[cbind(pl$pid, pl$iid)])
+  expect_no_error(
+    res <- .cond_restscore_draw(pl$prob[keep, ], pl$pid[keep], pl$iid[keep], X)
+  )
+  expect_true(all(is.finite(res$gamma_exp)))
+})
+
+test_that("item x rater cells as items match iarm::out_infit", {
+  skip_if_not_installed("iarm")
+  skip_if_not_installed("eRm")
+  # Complete many-facet design (iarm needs complete data): every person is
+  # rated by every rater on every item, additive rater severity
+  set.seed(11)
+  n <- 250
+  theta <- rnorm(n)
+  b_item <- c(-0.6, -0.1, 0.2, 0.5)
+  sev <- c(-0.4, 0.1, 0.3)
+  cells <- expand.grid(rater = 1:3, item = 1:4)
+  X <- sapply(seq_len(nrow(cells)), function(cc) {
+    rbinom(n, 1, plogis(theta - b_item[cells$item[cc]] - sev[cells$rater[cc]]))
+  })
+  fit <- eRm::RM(X)
+  beta <- -fit$betapar
+  k <- ncol(X)
+  pid <- rep(seq_len(n), k)
+  iid <- rep(seq_len(k), each = n)
+  p1 <- stats::plogis(rnorm(n, sd = 2)[pid] - beta[iid])
+  got <- .cond_infit_draw(cbind(1 - p1, p1), pid, iid, X)
+  ia <- iarm::out_infit(fit)
+  expect_equal(unname(got$infit), unname(ia$Infit), tolerance = 1e-8)
+  expect_equal(unname(got$outfit), unname(ia$Outfit), tolerance = 1e-8)
+})
+
+test_that("ESF tables cover only the answered items in sparse designs", {
+  # 12 items, each person answers a block of 3. The compact tables have 3
+  # positions, not 12, and replicated data keep totals and missing cells.
+  k <- 12
+  tau <- lapply(seq_len(k), function(i) c(-0.5, 0.5) + (i - 6) / 10)
+  n <- 40
+  set.seed(8)
+  pl <- pcm_long(rnorm(n), tau)
+  block <- (seq_len(n) - 1L) %% 4L
+  keep <- (pl$iid - 1L) %/% 3L == block[pl$pid]
+  x_obs <- matrix(NA_real_, n, k)
+  x <- vapply(seq_len(nrow(pl$prob))[keep], function(row) {
+    sample.int(3, 1, prob = pl$prob[row, ]) - 1
+  }, numeric(1))
+  x_obs[cbind(pl$pid[keep], pl$iid[keep])] <- x
+  st <- .cond_draw_setup(pl$prob[keep, ], pl$pid[keep], pl$iid[keep], x_obs)
+  expect_equal(dim(st$W)[2], 3L)
+  expect_equal(dim(st$suffix)[2:3], c(4L, 7L))
+  # Expected probabilities agree with brute force over the answered block
+  g <- st$groups[[st$key[1]]]
+  items <- which(g$answered)
+  for (j in seq_along(items)) {
+    for (rv in g$r_vals) {
+      expect_equal(g$probs[[items[j]]][match(rv, g$r_vals), ],
+                   brute_cond(tau[items], j, rv), tolerance = 1e-10)
+    }
+  }
+  expect_null(g$probs[[setdiff(seq_len(k), items)[1]]])
+  set.seed(9)
+  x_rep <- .cond_replicate(st)
+  expect_equal(rowSums(x_rep), st$r)
+  expect_true(all(x_rep[is.na(x_obs)] == 0L))
+})
+
+test_that("expected probabilities at selected totals match full convolution", {
+  # .cond_expected_probs() fills the rest-score distribution only at the
+  # totals asked for. Compare with the full convolution for each item.
+  W <- rbind(c(1, 0.5, 0.2), c(1, 2, 0.1), c(1, 0.3, 0), c(1, 1, 1))
+  esf <- .cond_esf(W)
+  M1 <- ncol(esf$suffix)
+  r <- c(1L, 4L, 6L)
+  got <- .cond_expected_probs(W, esf, r)
+  for (i in seq_len(nrow(W))) {
+    g <- .cond_convolve(esf$prefix[i, ], esf$suffix[i + 1L, ], M1)
+    pm <- t(vapply(r, function(rr) {
+      t <- rr - 0:2
+      v <- ifelse(t >= 0 & t < M1, W[i, ] * g[pmax(t, 0) + 1], 0)
+      v / sum(v)
+    }, numeric(3)))
+    expect_equal(got[[i]], pm, tolerance = 1e-12)
+  }
+})
+
+test_that("undefined weights are not grouped with a missing item (review 4, F3)", {
+  # Person 1 answered only item 2, with prob[, 1] = 0, so all of its
+  # weights are NaN. Person 2 answered nothing. Before the fix both hashed
+  # to the all-missing value and shared a group.
+  cg <- .cond_weight_groups(rbind(c(0, .5, .5)), person_idx = 1L,
+                            item_idx = 2L, n_persons = 2L, k = 2L)
+  expect_false(cg$key[1] == cg$key[2])
+  expect_equal(cg$items[[cg$key[1]]], 2L)
 })

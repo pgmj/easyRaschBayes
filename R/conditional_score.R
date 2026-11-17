@@ -6,7 +6,7 @@
 # item parameters. The functions below work from the category
 # probabilities that brms returns for one posterior draw:
 #
-# 1. `.cond_item_weights()` removes the person location from those
+# 1. `.cond_weight_groups()` removes the person location from those
 #    probabilities and groups persons whose remaining item weights are the
 #    same (the same answered items and the same item parameters, which
 #    differ only under DIF terms or missing responses).
@@ -100,10 +100,16 @@
 #
 # prob: n_obs x C category probabilities for one draw.
 # person_idx, item_idx: integer indices (1..n_persons, 1..k) per observation.
-# Returns list(key = group per person, W = U x k x C array of scaled item
-# weights per group). A missing item gets weights (1, 0, ..., 0), which
-# forces a score of 0 and leaves the total unchanged.
-.cond_item_weights <- function(prob, person_idx, item_idx, n_persons, k) {
+# Returns list(key = group per person, items = list per group of the
+# answered items in item order, W = list per group of n_answered x C
+# matrices of scaled item weights for those items).
+#
+# Works on the observations only, so memory grows with the number of
+# responses, not with n_persons x k. Before 0.4.0.9001 the function built
+# n_persons x k x C arrays, which in many-facet designs (k = items x
+# raters) were large and mostly empty. Groups, their order and the
+# weights are the same as before, up to the rounding of the hash below.
+.cond_weight_groups <- function(prob, person_idx, item_idx, n_persons, k) {
   n_cat <- ncol(prob)
   # Adjacent-category structure: log P(x) - log P(0) = x * theta - sum(tau).
   lo <- log(prob) - log(prob[, 1L])
@@ -116,34 +122,45 @@
   ref[person_idx[first_obs]] <- lo[first_obs, 2L]
   lo <- lo - outer(ref[person_idx], 0:(n_cat - 1L))
 
-  L <- array(NA_real_, dim = c(n_persons, k, n_cat))
-  for (x in seq_len(n_cat)) {
-    L[cbind(person_idx, item_idx, x)] <- lo[, x]
-  }
-
-  # Hash each person's weights to one number. Missing items and impossible
-  # categories (-Inf) get distinct sentinels. Rounding absorbs floating
-  # point noise, a near-boundary case only splits a group in two.
-  Lh <- L
-  Lh[is.na(L)] <- 1e4
-  Lh[is.infinite(L)] <- -1e4
-  dim(Lh) <- c(n_persons, k * n_cat)
-  hash_w <- sin(seq_len(k * n_cat) * 12.9898) * 43.758
-  h <- round(as.vector(Lh %*% hash_w), 6)
+  # Hash each person's weights to one number: the sum over items and
+  # categories of weight x hash_w, with sentinels 1e4 for missing items,
+  # -1e4 for impossible categories and 2e4 for answered items with
+  # undefined weights (prob[, 1] = 0), so that those are not grouped with
+  # persons who did not answer the item. Written
+  # as the all-missing value plus each observation's difference from it,
+  # summed in item order, so persons with the same weights get the same
+  # number. Rounding absorbs floating point noise, a near-boundary case
+  # only splits a group in two.
+  hash_w <- matrix(sin(seq_len(k * n_cat) * 12.9898) * 43.758,
+                   nrow = k, ncol = n_cat)
+  lh <- lo
+  lh[is.na(lh)] <- 1e4
+  lh[is.infinite(lh)] <- -1e4
+  # Rows handled as undefined in the weights loop below
+  lh[is.na(lo[, 1L]), ] <- 2e4
+  contrib <- rowSums((lh - 1e4) * hash_w[item_idx, , drop = FALSE])
+  h <- rep(1e4 * sum(hash_w), n_persons)
+  ps <- rowsum(contrib[ord], person_idx[ord], reorder = TRUE)
+  h[as.integer(rownames(ps))] <- h[as.integer(rownames(ps))] + ps[, 1L]
+  h <- round(h, 6)
   uh <- unique(h)
   key <- match(h, uh)
   rep_person <- match(seq_along(uh), key)
 
-  W <- array(0, dim = c(length(uh), k, n_cat))
+  # Weights of each group, from its first person's observations
+  obs_by_person <- split(ord, factor(person_idx[ord], levels = seq_len(n_persons)))
+  items <- vector("list", length(uh))
+  W <- vector("list", length(uh))
   for (u in seq_along(uh)) {
-    Lu <- matrix(L[rep_person[u], , ], nrow = k, ncol = n_cat)
-    missing_item <- is.na(Lu[, 1L])
-    Lu[missing_item, ] <- -Inf
-    Lu[missing_item, 1L] <- 0
-    Wu <- exp(Lu - apply(Lu, 1L, max))
-    W[u, , ] <- Wu
+    rows <- obs_by_person[[rep_person[u]]]
+    Lu <- matrix(lo[rows, ], nrow = length(rows), ncol = n_cat)
+    undefined <- is.na(Lu[, 1L])
+    Lu[undefined, ] <- -Inf
+    Lu[undefined, 1L] <- 0
+    items[[u]] <- item_idx[rows]
+    W[[u]] <- exp(Lu - apply(Lu, 1L, max))
   }
-  list(key = key, W = W)
+  list(key = key, items = items, W = W)
 }
 
 # Convolve two score distributions, truncated to length(out_len).
@@ -187,9 +204,24 @@
   k <- nrow(W)
   n_cat <- ncol(W)
   M1 <- ncol(esf$suffix)
+  # Score distribution of all items but i, G[i, t + 1], the convolution of
+  # prefix[i, ] and suffix[i + 1, ]. Only t = r - x is needed, so G is
+  # filled at those t, one inner product per t for all items at once.
+  # With a group per person (a person x facet term) that is a few columns
+  # instead of k full convolutions.
+  t_need <- unique(as.vector(outer(r, seq_len(n_cat) - 1L, "-")))
+  t_need <- t_need[t_need >= 0L & t_need < M1]
+  pre <- esf$prefix[seq_len(k), , drop = FALSE]
+  suf <- esf$suffix[seq_len(k) + 1L, , drop = FALSE]
+  G <- matrix(0, nrow = k, ncol = M1)
+  for (t in t_need) {
+    j <- seq_len(t + 1L)
+    G[, t + 1L] <- rowSums(pre[, j, drop = FALSE] *
+                             suf[, t + 2L - j, drop = FALSE])
+  }
   out <- vector("list", k)
   for (i in seq_len(k)) {
-    g_rest <- .cond_convolve(esf$prefix[i, ], esf$suffix[i + 1L, ], M1)
+    g_rest <- G[i, ]
     pm <- matrix(0, nrow = length(r), ncol = n_cat)
     for (x in seq_len(n_cat)) {
       t <- r - (x - 1L)
@@ -223,6 +255,9 @@
     for (x in seq_len(n_cat)) {
       t <- remaining - (x - 1L)
       ok <- t >= 0L & t < M1
+      # cbind() drops a zero-length column, so an empty selection would
+      # become a one-row index matrix
+      if (!any(ok)) next
       pm[ok, x] <- W[cbind(key[ok], i, x)] *
         suffix[cbind(key[ok], i + 1L, t[ok] + 1L)]
     }
@@ -248,37 +283,80 @@
 #
 # prob: n_obs x C category probabilities for one draw.
 # x_obs: n_persons x k observed scores (0-based, NA when missing).
-# Returns list(r, key, W, suffix, groups). Each element of groups describes
-# one set of persons with the same item weights: members, the distinct
-# totals r_vals and their counts, P(X_i = x | r) for those totals, and which
-# items the group answered.
+#
+# The ESF tables of a group cover only the items its members answered. In a
+# sparse design (many-facet models, where the items are item x facet cells,
+# or planned missing data) this keeps the tables at the size of one
+# person's answered set instead of all k items. The answered items of group
+# u sit at positions 1..n_answered of the compact arrays, in item order,
+# and pos_item[u, j] gives the item column at position j (NA for padding).
+# Padding positions get weights (1, 0, ..., 0), which force a score of 0.
+#
+# Returns list(r, key, W, suffix, pos_item, k, groups). W (U x ka x C) and
+# suffix (U x (ka + 1) x (M + 1)) are the compact arrays, with ka the
+# largest number of answered items in any group. Each element of groups
+# describes one set of persons with the same item weights: members, the
+# distinct totals r_vals and their counts, P(X_i = x | r) for those totals
+# (a k-length list, NULL for unanswered items), and which items the group
+# answered.
 .cond_draw_setup <- function(prob, person_idx, item_idx, x_obs) {
   n_persons <- nrow(x_obs)
   k <- ncol(x_obs)
   r <- rowSums(x_obs, na.rm = TRUE)
-  cw <- .cond_item_weights(prob, person_idx, item_idx, n_persons, k)
-  U <- dim(cw$W)[1L]
-  n_cat <- dim(cw$W)[3L]
-  M1 <- k * (n_cat - 1L) + 1L
+  cw <- .cond_weight_groups(prob, person_idx, item_idx, n_persons, k)
+  U <- length(cw$W)
+  n_cat <- ncol(prob)
+  rep_person <- match(seq_len(U), cw$key)
+  answered <- !is.na(x_obs[rep_person, , drop = FALSE])
+  ka <- max(rowSums(answered))
+  M1 <- ka * (n_cat - 1L) + 1L
 
-  suffix_all <- array(0, dim = c(U, k + 1L, M1))
+  pos_item <- matrix(NA_integer_, nrow = U, ncol = ka)
+  W_c <- array(0, dim = c(U, ka, n_cat))
+  W_c[, , 1L] <- 1
+  suffix_all <- array(0, dim = c(U, ka + 1L, M1))
+  suffix_all[, , 1L] <- 1
   groups <- vector("list", U)
   for (u in seq_len(U)) {
-    Wu <- matrix(cw$W[u, , ], nrow = k, ncol = n_cat)
+    items <- which(answered[u, ])
+    na <- length(items)
+    if (!identical(as.integer(cw$items[[u]]), as.integer(items))) {
+      stop("Internal error: the item weights do not match the observed ",
+           "responses.", call. = FALSE)
+    }
+    Wu <- cw$W[[u]]
+    pos_item[u, seq_len(na)] <- items
+    W_c[u, seq_len(na), ] <- Wu
     esf <- .cond_esf(Wu)
-    suffix_all[u, , ] <- esf$suffix
+    suffix_all[u, seq_len(na + 1L), seq_len(ncol(esf$suffix))] <- esf$suffix
     members <- which(cw$key == u)
     r_tab <- table(r[members])
     r_vals <- as.integer(names(r_tab))
+    probs <- vector("list", k)
+    probs[items] <- .cond_expected_probs(Wu, esf, r_vals)
     groups[[u]] <- list(
       members  = members,
       r_vals   = r_vals,
       r_counts = as.numeric(r_tab),
-      probs    = .cond_expected_probs(Wu, esf, r_vals),
-      answered = !is.na(x_obs[members[1L], ])
+      probs    = probs,
+      answered = answered[u, ]
     )
   }
-  list(r = r, key = cw$key, W = cw$W, suffix = suffix_all, groups = groups)
+  list(r = r, key = cw$key, W = W_c, suffix = suffix_all,
+       pos_item = pos_item, k = k, groups = groups)
+}
+
+# Replicated responses for one draw, conditional on each person's total.
+# Samples over the compact positions of .cond_draw_setup() and maps them
+# back to item columns. Returns an n_persons x k matrix, 0 for unanswered
+# items.
+.cond_replicate <- function(st) {
+  x_pos <- .cond_sample(st$W, st$suffix, st$key, st$r)
+  items <- st$pos_item[st$key, , drop = FALSE]
+  ok <- !is.na(items)
+  out <- matrix(0L, nrow = length(st$key), ncol = st$k)
+  out[cbind(row(items)[ok], items[ok])] <- x_pos[ok]
+  out
 }
 
 # Expected item x restscore table and replicated scores for one draw.
@@ -296,6 +374,9 @@
       for (x in seq_len(n_cat)) {
         rest <- g$r_vals - (x - 1L)
         ok <- rest >= 0L
+        # cbind() drops a zero-length column, so an empty selection would
+        # become a one-row index matrix
+        if (!any(ok)) next
         idx <- cbind(rest[ok] + 1L, x)
         exp_tab[[i]][idx] <- exp_tab[[i]][idx] +
           g$r_counts[ok] * g$probs[[i]][ok, x]
@@ -303,7 +384,7 @@
     }
   }
 
-  x_rep <- .cond_sample(st$W, st$suffix, st$key, r)
+  x_rep <- .cond_replicate(st)
   gamma_exp <- gamma_rep <- numeric(k)
   for (i in seq_len(k)) {
     gamma_exp[i] <- gk_gamma(exp_tab[[i]])
@@ -337,24 +418,32 @@
 # Expectations and variances are conditional on the total score, as in
 # Christensen et al. (2013) and iarm::out_infit(). Persons with the minimum
 # or maximum total have zero variance on every item and drop out.
-# Returns list(infit, infit_rep, outfit, outfit_rep), each of length k.
-.cond_infit_draw <- function(prob, person_idx, item_idx, x_obs) {
+# group: optional integer vector of length k mapping items (columns) to
+# groups, for many-facet models where the items are item x facet cells.
+# Sums of squared residuals and variances are then pooled within groups.
+# Returns list(infit, infit_rep, outfit, outfit_rep), each of length k, or
+# of length max(group).
+.cond_infit_draw <- function(prob, person_idx, item_idx, x_obs,
+                             group = NULL) {
   k <- ncol(x_obs)
   st <- .cond_draw_setup(prob, person_idx, item_idx, x_obs)
   mo <- .cond_moments(st, k)
-  x_rep <- .cond_sample(st$W, st$suffix, st$key, st$r)
+  x_rep <- .cond_replicate(st)
   x_rep[is.na(x_obs)] <- NA
 
   use <- !is.na(mo$V) & mo$V > 1e-12
   V <- ifelse(use, mo$V, NA_real_)
   res_obs <- ifelse(use, (x_obs - mo$E)^2, NA_real_)
   res_rep <- ifelse(use, (x_rep - mo$E)^2, NA_real_)
-  sum_v <- colSums(V, na.rm = TRUE)
+  if (is.null(group)) group <- seq_len(k)
+  pool <- function(m) as.vector(rowsum(colSums(m, na.rm = TRUE), group))
+  sum_v <- pool(V)
+  n_use <- pool(use)
   list(
-    infit      = colSums(res_obs, na.rm = TRUE) / sum_v,
-    infit_rep  = colSums(res_rep, na.rm = TRUE) / sum_v,
-    outfit     = colMeans(res_obs / V, na.rm = TRUE),
-    outfit_rep = colMeans(res_rep / V, na.rm = TRUE)
+    infit      = pool(res_obs) / sum_v,
+    infit_rep  = pool(res_rep) / sum_v,
+    outfit     = pool(res_obs / V) / n_use,
+    outfit_rep = pool(res_rep / V) / n_use
   )
 }
 
@@ -443,8 +532,14 @@
 
 # Conditional branch of infit_statistic(). Returns the same long format as
 # the theta branch.
+#
+# group_of: optional function mapping the item labels (dd$unique_items) to
+# group labels. Items in the same group are pooled, see .cond_infit_draw().
+# The output then has one row per group and draw, and the first column is
+# named out_name.
 .infit_conditional <- function(model, resp_var, item_name, person_name,
-                               ndraws_use, outfit) {
+                               ndraws_use, outfit, group_of = NULL,
+                               out_name = item_name) {
   .check_unique_person_item(model$data[[person_name]], model$data[[item_name]],
                             person_name, item_name, "infit_statistic")
   .check_sufficient_score_brmsfit(model, person_name, "infit_statistic")
@@ -452,16 +547,24 @@
   draw_ids <- .select_draw_ids(model, ndraws_use)
   n_draws <- length(draw_ids)
   dd <- .cond_prepare_data(model, resp_var, item_name, person_name)
-  k <- length(dd$unique_items)
+  labels <- dd$unique_items
+  group <- NULL
+  if (!is.null(group_of)) {
+    g <- group_of(labels)
+    labels <- unique(g)
+    group <- match(g, labels)
+  }
+  k <- length(labels)
 
   per_draw <- .cond_map_draws(model, draw_ids, dd$n_cat_max,
                               .cond_infit_draw,
                               person_idx = dd$person_idx,
-                              item_idx = dd$item_idx, x_obs = dd$x_obs)
+                              item_idx = dd$item_idx, x_obs = dd$x_obs,
+                              group = group)
   stack <- function(name) do.call(rbind, lapply(per_draw, `[[`, name))
 
   result <- tibble::tibble(
-    item      = rep(dd$unique_items, each = n_draws),
+    item      = rep(labels, each = n_draws),
     draw      = rep(seq_len(n_draws), times = k),
     infit     = as.vector(stack("infit")),
     infit_rep = as.vector(stack("infit_rep"))
@@ -470,9 +573,9 @@
     result$outfit     <- as.vector(stack("outfit"))
     result$outfit_rep <- as.vector(stack("outfit_rep"))
   }
-  names(result)[1] <- item_name
-  result <- dplyr::group_by(result, .data[[item_name]])
-  dplyr::arrange(result, .data[[item_name]], .data$draw)
+  names(result)[1] <- out_name
+  result <- dplyr::group_by(result, .data[[out_name]])
+  dplyr::arrange(result, .data[[out_name]], .data$draw)
 }
 
 # Conditional Q3 for one draw, observed and replicated.
@@ -481,12 +584,13 @@
 # the draw. Replicated data keep each person's total score. Persons with the
 # minimum or maximum total have zero conditional variance and drop out, as
 # in conditional infit. Returns list(obs, rep): Q3 for each item pair, upper
-# triangle in row-major order (1:2, 1:3, ..., 2:3, ...).
-.cond_q3_draw <- function(prob, person_idx, item_idx, x_obs) {
+# triangle in row-major order (1:2, 1:3, ..., 2:3, ...), or only the pairs
+# where `keep` (logical, same order) is TRUE.
+.cond_q3_draw <- function(prob, person_idx, item_idx, x_obs, keep = NULL) {
   k <- ncol(x_obs)
   st <- .cond_draw_setup(prob, person_idx, item_idx, x_obs)
   mo <- .cond_moments(st, k)
-  x_rep <- .cond_sample(st$W, st$suffix, st$key, st$r)
+  x_rep <- .cond_replicate(st)
   x_rep[is.na(x_obs)] <- NA
   use <- !is.na(mo$V) & mo$V > 1e-12
   r_obs <- ifelse(use, x_obs - mo$E, NA_real_)
@@ -494,29 +598,50 @@
   c_obs <- suppressWarnings(stats::cor(r_obs, use = "pairwise.complete.obs"))
   c_rep <- suppressWarnings(stats::cor(r_rep, use = "pairwise.complete.obs"))
   lower <- lower.tri(diag(k))
-  list(obs = t(c_obs)[lower], rep = t(c_rep)[lower])
+  obs <- t(c_obs)[lower]
+  rep <- t(c_rep)[lower]
+  if (!is.null(keep)) {
+    obs <- obs[keep]
+    rep <- rep[keep]
+  }
+  list(obs = obs, rep = rep)
+}
+
+# Item pairs, upper triangle in row-major order, that at least one person
+# answered both. Logical vector of length k (k - 1) / 2.
+.q3_shared_pairs <- function(person_idx, item_idx, n_persons, k) {
+  answered <- matrix(0, n_persons, k)
+  answered[cbind(person_idx, item_idx)] <- 1
+  shared <- crossprod(answered)
+  t(shared)[lower.tri(shared)] > 0
 }
 
 # Conditional branch of q3_statistic(). Returns the same long format as the
-# theta branch.
+# theta branch. With shared_only = TRUE only item pairs that at least one
+# person answered both are computed (many-facet cells).
 .q3_conditional <- function(model, resp_var, item_name, person_name,
-                            ndraws_use) {
+                            ndraws_use, shared_only = FALSE) {
   .check_sufficient_score_brmsfit(model, person_name, "q3_statistic")
 
   draw_ids <- .select_draw_ids(model, ndraws_use)
   n_draws <- length(draw_ids)
   dd <- .cond_prepare_data(model, resp_var, item_name, person_name)
   k <- length(dd$unique_items)
+  keep <- if (shared_only) {
+    .q3_shared_pairs(dd$person_idx, dd$item_idx, nrow(dd$x_obs), k)
+  }
 
   per_draw <- .cond_map_draws(model, draw_ids, dd$n_cat_max,
                               .cond_q3_draw,
                               person_idx = dd$person_idx,
-                              item_idx = dd$item_idx, x_obs = dd$x_obs)
+                              item_idx = dd$item_idx, x_obs = dd$x_obs,
+                              keep = keep)
   obs <- do.call(rbind, lapply(per_draw, `[[`, "obs"))
   rep <- do.call(rbind, lapply(per_draw, `[[`, "rep"))
 
   pg <- which(upper.tri(diag(k)), arr.ind = TRUE)
   pg <- pg[order(pg[, "row"], pg[, "col"]), , drop = FALSE]
+  if (!is.null(keep)) pg <- pg[keep, , drop = FALSE]
   n_pairs <- nrow(pg)
   item_1 <- dd$unique_items[pg[, "row"]]
   item_2 <- dd$unique_items[pg[, "col"]]

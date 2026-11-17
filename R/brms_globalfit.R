@@ -51,6 +51,10 @@
 #'   2.5.
 #' @param point_color Color for the item points and error bars.
 #'   Default is \code{"#0072B2"}.
+#' @param facet_var Optional unquoted variable name of a third facet in a
+#'   many-facet Rasch model, for example \code{rater}. Each person x facet
+#'   combination is then one row of the residual matrix. See the section
+#'   on many-facet models.
 #'
 #' @return A list with three elements:
 #' \describe{
@@ -106,6 +110,17 @@
 #'
 #' Item loadings are aligned across draws using majority-sign
 #' alignment to resolve the sign indeterminacy of eigenvectors.
+#'
+#' @section Many-facet models:
+#' With \code{facet_var}, for a model such as
+#' \code{rating ~ 1 + item + (1 | rater) + (1 | id)}, each person x facet
+#' combination (for example one rater's ratings of one person) is one row
+#' of the residual matrix, and the components are taken across items.
+#' Residuals use the person location and the facet effect of each draw.
+#' A halo effect (a rater's overall impression of a person carried across
+#' items) shows as a first component on which all items load in the same
+#' direction. Only person x facet combinations with every item are used.
+#' The facet variable must be in the model formula.
 #'
 #' @references
 #' Smith, E. V. (2002). Detecting and evaluating the impact of
@@ -189,7 +204,8 @@ plot_residual_pca <- function(
     density_palette = NULL,
     label_items = TRUE,
     point_size = 2.5,
-    point_color = "#0072B2"
+    point_color = "#0072B2",
+    facet_var = NULL
 ) {
   
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -210,6 +226,32 @@ plot_residual_pca <- function(
   if (!person_name %in% names(model$data)) {
     stop("Person variable '", person_name, "' not found in model data.",
          call. = FALSE)
+  }
+
+  facet_name <- .optional_name(rlang::enquo(facet_var))
+  if (!is.null(facet_name)) {
+    # Called for its checks and the connectivity warning only
+    .resolve_facet(model, person_name, item_name, facet_name,
+                   "plot_residual_pca")
+    # Units built from integer codes, so labels containing ":" cannot
+    # merge two person x facet combinations
+    unit <- paste(as.integer(factor(model$data[[person_name]])),
+                  as.integer(factor(model$data[[facet_name]])), sep = ":")
+    # Read by the incomplete-rows message of the inner call
+    attr(unit, "unit_label") <- paste(person_name, "x", facet_name,
+                                      "combinations")
+    .check_unique_person_item(unit, model$data[[item_name]],
+                              paste(person_name, "x", facet_name),
+                              item_name, "plot_residual_pca")
+    model$data[[.unit_col]] <- unit
+    return(plot_residual_pca(
+      model, item_var = !!rlang::sym(item_name),
+      person_var = !!rlang::sym(.unit_col), center = center, prob = prob,
+      ndraws_use = ndraws_use, style = style, density_alpha = density_alpha,
+      density_bins = density_bins, density_palette = density_palette,
+      label_items = label_items, point_size = point_size,
+      point_color = point_color
+    ))
   }
 
   .check_unique_person_item(model$data[[person_name]], model$data[[item_name]],
@@ -299,9 +341,17 @@ plot_residual_pca <- function(
   # The eigen decomposition needs a complete person x item matrix
   n_incomplete <- sum(tabulate(person_idx, nbins = n_persons) < k)
   if (n_incomplete > 0) {
-    message("plot_residual_pca() uses the ", n_persons - n_incomplete,
-            " persons who answered every item. ", n_incomplete,
-            " with missing responses are left out.")
+    unit_label <- attr(persons, "unit_label")
+    if (is.null(unit_label)) {
+      message("plot_residual_pca() uses the ", n_persons - n_incomplete,
+              " persons who answered every item. ", n_incomplete,
+              " with missing responses are left out.")
+    } else {
+      # Many-facet call, see the facet_var branch above
+      message("plot_residual_pca() uses the ", n_persons - n_incomplete,
+              " ", unit_label, " with a response to every item. ",
+              n_incomplete, " with missing responses are left out.")
+    }
   }
 
   for (s in seq_len(n_draws)) {

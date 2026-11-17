@@ -10,8 +10,9 @@
 `easyRaschBayes` provides Rasch measurement theory analysis workflows for
 Bayesian item response theory models fitted with
 [brms](https://paulbuerkner.com/brms/). It supports dichotomous Rasch
-models, partial credit and rating scale models, and a hurdle partial credit
-model for data with many zero responses. All output exposes the full
+models, partial credit and rating scale models, many-facet Rasch models
+(for example items rated by raters), and a hurdle partial credit model for
+data with many zero responses. All output exposes the full
 posterior distribution.
 
 The frequentist counterpart is [`easyRasch2`](https://pgmj.github.io/easyRasch2/),
@@ -47,8 +48,8 @@ Or install the development version from GitHub:
 remotes::install_github("pgmj/easyRaschBayes")
 ```
 
-The development version changes several defaults and outputs, among them
-conditional item fit given the total score and a new targeting plot. See
+The development version adds many-facet Rasch models (`facet_var`,
+`facet_parameters()`, `contr_sum_zero()`). See
 the [changelog](https://pgmj.github.io/easyRaschBayes/news/index.html).
 
 The hurdle partial credit model needs a patched version of `brms`, since
@@ -142,6 +143,17 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
 - `posterior_to_prior()`: informative priors from a fitted model, for use
   in a new model
 
+### Many-facet Rasch models
+
+- `facet_var` in `infit_statistic()`, `item_restscore_statistic()`,
+  `q3_statistic()` and `plot_residual_pca()`: fit with raters (or another
+  facet), each item x rater combination treated as an item; Q3 pairs are
+  labelled by `pair_type` (same rater, same item, other)
+- `facet_parameters()`: rater severity with credible intervals, number of
+  ratings, observed and fair average rating
+- `contr_sum_zero()`: orthonormal sum-to-zero contrasts for a small fixed
+  facet, so every level gets the same prior variance
+
 ### Hurdle partial credit model
 
 - `hurdle_acat()` + `hurdle_acat_stanvars()`: custom `brms` family: a
@@ -171,6 +183,9 @@ remotes::install_github("rpsychologist/brms@fix-custom-ordinal-grouped-thres")
   a full analysis of `phq9`
 - [Hurdle partial credit model](https://pgmj.github.io/easyRaschBayes/articles/hpcm-rasch-analysis.html),
   `phq9_nhanes` analysed with an ordinary and a hurdle partial credit model
+- [Many-facet Rasch models](https://pgmj.github.io/easyRaschBayes/articles/mfrm-rasch-analysis.html),
+  simulated ratings by raters, with rater severity, fit and halo
+  (development version)
 
 There is also a [comparison with frequentist Rasch tools in R](https://pgmj.github.io/rasch_bayes_comp.html).
 

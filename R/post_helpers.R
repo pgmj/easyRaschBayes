@@ -10,8 +10,9 @@
 #'   \code{\link{infit_statistic_hpcm}}, containing the columns
 #'   \code{infit} (observed infit per draw) and \code{infit_rep}
 #'   (replicated infit per draw). The item identifier is taken from a
-#'   column named \code{item} if there is one, and otherwise from the
-#'   first column.
+#'   column named \code{cell} if there is one (many-facet output, whose
+#'   item and facet columns are kept in the tables), then from a column
+#'   named \code{item}, and otherwise from the first column.
 #' @param ci Numeric in \eqn{(0, 1)}. Width of the highest density
 #'   continuous interval of the replicated (posterior predictive)
 #'   infit distribution, used in the \code{hdi} table and the slab
@@ -83,7 +84,8 @@
 #' replicated HDI indicate underfit (more variation than expected);
 #' items below indicate overfit (less variation than expected).
 #'
-#' The infit ppp is conservative. Values near 0 or 1 are rarer than for a
+#' The infit ppp flags misfit less often than its nominal level. Values
+#' near 0 or 1 are rarer than for a
 #' uniform p-value, and misfit can go undetected (see
 #' \code{\link{infit_statistic}}).
 #' It is suggested to also evaluate item fit with
@@ -127,8 +129,18 @@ infit_post <- function(infit_draws, ci = 0.84) {
     stop("'infit_draws' must contain columns 'infit' and 'infit_rep'.",
          call. = FALSE)
   }
-  item_col <- if ("item" %in% names(infit_draws)) "item" else names(infit_draws)[1]
   infit_draws <- dplyr::ungroup(infit_draws)
+  # Many-facet output (infit_statistic() with facet_var) is identified by
+  # its cell column, with the item and facet columns before draw.
+  extra_cols <- character(0)
+  if ("cell" %in% names(infit_draws)) {
+    item_col <- "cell"
+    before_draw <- names(infit_draws)[seq_len(match("draw", names(infit_draws)) - 1L)]
+    extra_cols <- setdiff(before_draw, "cell")
+  } else {
+    item_col <- if ("item" %in% names(infit_draws)) "item" else names(infit_draws)[1]
+  }
+  extra_tbl <- dplyr::distinct(infit_draws[c(item_col, extra_cols)])
   infit_draws$item <- infit_draws[[item_col]]
   
   # --- Summary table: means and ppp ---
@@ -208,6 +220,10 @@ infit_post <- function(infit_draws, ci = 0.84) {
   
   names(summary_tbl)[names(summary_tbl) == "item"] <- item_col
   names(hdi_tbl)[names(hdi_tbl) == "item"] <- item_col
+  if (length(extra_cols)) {
+    summary_tbl <- dplyr::right_join(extra_tbl, summary_tbl, by = item_col)
+    hdi_tbl <- dplyr::right_join(extra_tbl, hdi_tbl, by = item_col)
+  }
   list(summary = summary_tbl, hdi = hdi_tbl, plot = p)
 }
 
@@ -222,7 +238,8 @@ infit_post <- function(infit_draws, ci = 0.84) {
 #' @param item_restscore A list as returned by
 #'   \code{\link{item_restscore_statistic}}, with elements
 #'   \code{result} and \code{draws}. The first column of both is the
-#'   item identifier.
+#'   item identifier. For many-facet output (\code{facet_var}) it is
+#'   \code{cell}, and the item and facet columns are kept in the summary.
 #'
 #' @return A list with two elements:
 #' \describe{
@@ -297,9 +314,15 @@ item_restscore_post <- function(item_restscore) {
   }
 
   item_col <- names(item_restscore$result)[1]
+  # Many-facet output (facet_var): the item and facet columns sit between
+  # cell and the statistics. Standard output has none, also when the item
+  # variable is called `cell`.
+  res_names <- names(item_restscore$result)
+  extra_cols <- setdiff(res_names[seq_len(match("gamma_obs", res_names) - 1L)],
+                        item_col)
 
   # --- Summary table ---
-  summary_tbl <- item_restscore$result[, c(item_col, summary_cols)]
+  summary_tbl <- item_restscore$result[, c(item_col, extra_cols, summary_cols)]
   summary_tbl[summary_cols] <- lapply(summary_tbl[summary_cols], round, 3)
   summary_tbl <- summary_tbl[order(summary_tbl[[item_col]]), ]
 
@@ -312,7 +335,14 @@ item_restscore_post <- function(item_restscore) {
     item      = as.character(item_restscore$result[[item_col]]),
     gamma_obs = item_restscore$result$gamma_obs
   )
-  item_levels <- sort(unique(obs_df$item))
+  # Same order as the table: factor levels (cells in brms order), else
+  # sorted labels
+  item_key <- item_restscore$result[[item_col]]
+  item_levels <- if (is.factor(item_key)) {
+    levels(droplevels(item_key))
+  } else {
+    sort(unique(obs_df$item))
+  }
   draws_df$item <- factor(draws_df$item, levels = rev(item_levels))
   obs_df$item   <- factor(obs_df$item, levels = rev(item_levels))
 
@@ -433,7 +463,8 @@ item_restscore_post <- function(item_restscore) {
 #' \code{q3_ppp} was close to uniform in simulations under a fitting Rasch
 #' model, and \code{q3_p_adj} kept the proportion of datasets with any
 #' pair flagged at .05 near or below .05. With \code{method = "theta"},
-#' \code{q3_ppp} is conservative, and so is \code{q3_p_adj} (2\% to 3\% of
+#' \code{q3_ppp} flags pairs less often than its nominal level, and so
+#' does \code{q3_p_adj} (2% to 3% of
 #' datasets with any pair flagged at .05). See \code{\link{q3_statistic}}.
 #'
 #' \strong{Reading \code{q3_p_adj}.} For the pair with the smallest value,
@@ -451,8 +482,8 @@ item_restscore_post <- function(item_restscore) {
 #' the mean over all pairs. Given the total score, expected Q3 differs
 #' between pairs, and is highest for pairs of the easiest and hardest
 #' items. In simulations, a reference at the mean over all pairs made such
-#' a pair the most deviant one in 11\% to 13\% of datasets without local
-#' dependence, against about 2\% if every pair were equally likely.
+#' a pair the most deviant one in 11% to 13% of datasets without local
+#' dependence, against about 2% if every pair were equally likely.
 #'
 #' @references
 #' Christensen, K. B., Makransky, G. & Horton, M. (2017). Critical
@@ -549,23 +580,29 @@ q3_post <- function(q3_draws,
     )
 
   # --- Max-T adjusted one-sided p-value over pairs ---
-  wide <- q3_draws |>
-    dplyr::ungroup() |>
-    dplyr::select("draw", "item_pair", "q3", "q3_rep")
   pairs <- summary_tbl$item_pair
-  rep_mat <- vapply(pairs, function(p) {
-    d <- wide[wide$item_pair == p, ]
-    d$q3_rep[order(d$draw)]
-  }, numeric(sum(wide$item_pair == pairs[1])))
+  rows <- split(seq_len(nrow(q3_draws)),
+                factor(q3_draws$item_pair, levels = pairs))
+  rep_mat <- vapply(rows, function(ix) {
+    q3_draws$q3_rep[ix][order(q3_draws$draw[ix])]
+  }, numeric(length(rows[[1]])))
   rep_mat <- matrix(rep_mat, ncol = length(pairs))
-  obs_mean <- vapply(pairs, function(p) {
-    mean(wide$q3[wide$item_pair == p], na.rm = TRUE)
-  }, numeric(1))
+  obs_mean <- vapply(rows, function(ix) mean(q3_draws$q3[ix], na.rm = TRUE),
+                     numeric(1))
   summary_tbl$q3_p_adj <- round(.ppp_maxt_upper(obs_mean, rep_mat), 3)
 
+  id_cols <- c("item_pair", "item_1", "item_2")
+  types <- NULL
+  if ("pair_type" %in% names(q3_draws)) {
+    # Many-facet output (q3_statistic() with facet_var)
+    types <- dplyr::distinct(dplyr::ungroup(q3_draws), .data$item_pair,
+                             .data$pair_type)
+    summary_tbl <- dplyr::left_join(summary_tbl, types, by = "item_pair")
+    id_cols <- c(id_cols, "pair_type")
+  }
   summary_tbl <- summary_tbl |>
-    dplyr::select("item_pair", "item_1", "item_2", "q3_obs", "q3_rep",
-                  "q3_diff", "q3_ppp", "q3_p_adj") |>
+    dplyr::select(dplyr::all_of(c(id_cols, "q3_obs", "q3_rep", "q3_diff",
+                                  "q3_ppp", "q3_p_adj"))) |>
     dplyr::arrange(dplyr::desc(.data$q3_diff))
   ref_line <- mean(q3_draws$q3_rep, na.rm = TRUE)
   
@@ -600,6 +637,10 @@ q3_post <- function(q3_draws,
       .groups = "drop"
     ) |>
     dplyr::arrange(dplyr::desc(.data$ld))
+  if (!is.null(types)) {
+    hdi_tbl <- dplyr::left_join(hdi_tbl, types, by = "item_pair") |>
+      dplyr::relocate("pair_type", .after = "item_2")
+  }
   
   # --- Determine which pairs to plot ---
   if (sort_by == "q3_diff") {

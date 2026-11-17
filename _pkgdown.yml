@@ -23,6 +23,8 @@ navbar:
         href: articles/pcm-rasch-analysis.html
       - text: Hurdle Partial Credit Model
         href: articles/hpcm-rasch-analysis.html
+      - text: Many-Facet Rasch Models
+        href: articles/mfrm-rasch-analysis.html
 #      - text: Comparing Rasch with CML/MML and `brms`
 #        href: https://pgmj.github.io/rasch_bayes_comp.html
     news:
@@ -71,6 +73,13 @@ reference:
   - item_parameters
   - person_parameters
   - posterior_to_prior
+- title: Many-Facet Models
+  desc: >
+    Use `facet_var` in infit_statistic(), item_restscore_statistic(),
+    q3_statistic() and plot_residual_pca() for fit with raters.
+  contents:
+  - facet_parameters
+  - contr_sum_zero
 - title: Data
   contents:
   - phq9

@@ -104,7 +104,8 @@ With \code{q3_statistic(method = "conditional")}, the default,
 \code{q3_ppp} was close to uniform in simulations under a fitting Rasch
 model, and \code{q3_p_adj} kept the proportion of datasets with any
 pair flagged at .05 near or below .05. With \code{method = "theta"},
-\code{q3_ppp} is conservative, and so is \code{q3_p_adj} (2\\% to 3\\% of
+\code{q3_ppp} flags pairs less often than its nominal level, and so
+does \code{q3_p_adj} (2\% to 3\% of
 datasets with any pair flagged at .05). See \code{\link{q3_statistic}}.
 
 \strong{Reading \code{q3_p_adj}.} For the pair with the smallest value,
@@ -122,8 +123,8 @@ Each pair is compared with its own mean replicated Q3 rather than with
 the mean over all pairs. Given the total score, expected Q3 differs
 between pairs, and is highest for pairs of the easiest and hardest
 items. In simulations, a reference at the mean over all pairs made such
-a pair the most deviant one in 11\\% to 13\\% of datasets without local
-dependence, against about 2\\% if every pair were equally likely.
+a pair the most deviant one in 11\% to 13\% of datasets without local
+dependence, against about 2\% if every pair were equally likely.
 }
 \examples{
 \dontrun{

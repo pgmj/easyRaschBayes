@@ -503,9 +503,9 @@ Unlike `infit_statistic()` for Rasch models, these expected values use the
 person locations in each posterior draw, not the total score. The total
 score is not sufficient for the person locations in the hurdle model, so
 the conditional method does not apply. Since the person locations are
-estimated from the same data, the posterior predictive p-values are
-conservative: values near 0 or 1 occur less often than they should when an
-item misfits. For the same reason, `item_restscore_statistic()` is not
+estimated from the same data, the posterior predictive p-values flag
+misfit less often than their nominal level: values near 0 or 1 occur less
+often than they should when an item misfits. For the same reason, `item_restscore_statistic()` is not
 available for the hurdle model.
 
 The conditional item characteristic curves show where along each latent
@@ -640,8 +640,8 @@ above 0, about a third of all responses here, and 37% of those with any
 such response have only one or two. Its statistics are much less certain,
 and with this sample it has little power to flag misfit or dependence. A
 severity part without flagged items is therefore weak evidence that it
-fits. The posterior predictive p-values in both parts are also
-conservative.
+fits. The posterior predictive p-values in both parts also flag misfit
+less often than their nominal level.
 
 Why would the two parts differ? @watts_covariation_2026 found that broad
 dimensions of psychopathology are strongly associated among people with

@@ -10,7 +10,8 @@ item_restscore_post(item_restscore)
 \item{item_restscore}{A list as returned by
 \code{\link{item_restscore_statistic}}, with elements
 \code{result} and \code{draws}. The first column of both is the
-item identifier.}
+item identifier. For many-facet output (\code{facet_var}) it is
+\code{cell}, and the item and facet columns are kept in the summary.}
 }
 \value{
 A list with two elements:
